@@ -33,6 +33,10 @@ import {
   XCircle,
   PauseCircle,
   UserCircle,
+  LucideIcon,
+  Download,
+  FileSpreadsheet,
+  FileJson,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -93,6 +97,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Switch } from '@/components/ui/switch'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { exportToCSV, exportToJSON, type ExportOptions } from '@/lib/export-utils'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 // ==========================================
@@ -219,9 +224,50 @@ const RADIUS_OPERATORS = [
   { value: '!*', label: '!*' },
 ]
 
+const COMMON_RADIUS_ATTRIBUTES = [
+  'User-Password',
+  'Cleartext-Password',
+  'NT-Password',
+  'LM-Password',
+  'Crypt-Password',
+  'MD5-Password',
+  'SHA-Password',
+  'Simultaneous-Use',
+  'Max-Daily-Session',
+  'Max-Weekly-Session',
+  'Max-Monthly-Session',
+  'Session-Timeout',
+  'Idle-Timeout',
+  'Login-Time',
+  'Expiration',
+  'Auth-Type',
+  'Framed-Protocol',
+  'Framed-IP-Address',
+  'Framed-IP-Netmask',
+  'Framed-Route',
+  'Framed-Pool',
+  'Framed-MTU',
+  'Filter-Id',
+  'Reply-Message',
+  'Service-Type',
+  'Called-Station-Id',
+  'Calling-Station-Id',
+  'NAS-IP-Address',
+  'NAS-Port-Type',
+  'WISPr-Bandwidth-Max-Up',
+  'WISPr-Bandwidth-Max-Down',
+  'WISPr-Session-Terminate-Time',
+  'CoovaChilli-Bandwidth-Max-Up',
+  'CoovaChilli-Bandwidth-Max-Down',
+  'Mikrotik-Recv-Limit',
+  'Mikrotik-Xmit-Limit',
+  'Huawei-Qos-Profile-Name',
+  'Cisco-AVPair',
+]
+
 const AUTH_TYPES = ['PAP', 'CHAP', 'MS-CHAPv2', 'EAP']
 
-const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof CheckCircle2 }> = {
+const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: LucideIcon }> = {
   active: { label: 'Active', variant: 'default', icon: CheckCircle2 },
   disabled: { label: 'Disabled', variant: 'destructive', icon: XCircle },
   suspended: { label: 'Suspended', variant: 'secondary', icon: PauseCircle },
@@ -275,6 +321,25 @@ function StatusBadge({ status }: { status: string }) {
     <Badge variant="outline" className={`gap-1.5 text-xs font-medium ${colorClasses[status] || ''}`}>
       <Icon className="h-3 w-3" />
       {config.label}
+    </Badge>
+  )
+}
+
+// ==========================================
+// Auth Type Badge Component
+// ==========================================
+
+function AuthTypeBadge({ authType }: { authType: string }) {
+  const colorClasses: Record<string, string> = {
+    PAP: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+    CHAP: 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300 border-sky-200 dark:border-sky-800',
+    'MS-CHAPv2': 'bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300 border-violet-200 dark:border-violet-800',
+    EAP: 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300 border-orange-200 dark:border-orange-800',
+  }
+
+  return (
+    <Badge variant="outline" className={`text-xs font-mono font-medium ${colorClasses[authType] || ''}`}>
+      {authType}
     </Badge>
   )
 }
@@ -336,6 +401,262 @@ function AttributeRow({
       >
         <X className="h-3.5 w-3.5" />
       </Button>
+    </div>
+  )
+}
+
+// ==========================================
+// Attribute Card Component (for sheet display)
+// ==========================================
+
+function AttributeCard({
+  attr,
+  onDelete,
+  isDeleting,
+}: {
+  attr: RadAttr
+  onDelete: (attrId: string) => void
+  isDeleting: boolean
+}) {
+  return (
+    <Card className="p-2.5 group hover:border-primary/30 transition-colors">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-mono font-semibold text-foreground truncate" title={attr.attribute}>
+            {attr.attribute}
+          </p>
+          <div className="flex items-center gap-1.5 mt-1">
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium">
+              {attr.op}
+            </span>
+            <p className="text-xs font-mono text-muted-foreground truncate" title={attr.value}>
+              {attr.value}
+            </p>
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+          onClick={() => onDelete(attr.id)}
+          disabled={isDeleting}
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      </div>
+    </Card>
+  )
+}
+
+// ==========================================
+// Quick Attribute Editor Component
+// ==========================================
+
+function QuickAttributeEditor({
+  userId,
+  type,
+  attributes,
+  queryKey,
+}: {
+  userId: string
+  type: 'check' | 'reply'
+  attributes: RadAttr[]
+  queryKey: string[]
+}) {
+  const queryClient = useQueryClient()
+
+  const [attrName, setAttrName] = useState('')
+  const [operator, setOperator] = useState(type === 'check' ? ':=' : '=')
+  const [attrValue, setAttrValue] = useState('')
+  const [useCustomAttr, setUseCustomAttr] = useState(false)
+
+  // Add attribute mutation
+  const addMutation = useMutation({
+    mutationFn: async ({ attribute, operator, value }: { attribute: string; operator: string; value: string }) => {
+      const res = await fetch(`/api/users/${userId}/attributes?type=${type}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ attribute, operator, value }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to add attribute')
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      toast.success(`${type === 'check' ? 'Check' : 'Reply'} attribute added`)
+      queryClient.invalidateQueries({ queryKey })
+      setAttrName('')
+      setAttrValue('')
+      setUseCustomAttr(false)
+    },
+    onError: (error: Error) => {
+      toast.error(error.message)
+    },
+  })
+
+  // Delete attribute mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (attrId: string) => {
+      const res = await fetch(`/api/users/${userId}/attributes?type=${type}&attrId=${attrId}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to delete attribute')
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      toast.success(`${type === 'check' ? 'Check' : 'Reply'} attribute deleted`)
+      queryClient.invalidateQueries({ queryKey })
+    },
+    onError: (error: Error) => {
+      toast.error(error.message)
+    },
+  })
+
+  const handleAdd = () => {
+    const name = attrName.trim()
+    const val = attrValue.trim()
+    if (!name) {
+      toast.error('Attribute name is required')
+      return
+    }
+    if (!val) {
+      toast.error('Attribute value is required')
+      return
+    }
+    addMutation.mutate({ attribute: name, operator, value: val })
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h5 className="text-sm font-semibold">
+          {type === 'check' ? 'Check' : 'Reply'} Attributes
+          <span className="ml-1.5 text-xs text-muted-foreground font-normal">
+            ({attributes?.length || 0})
+          </span>
+        </h5>
+      </div>
+
+      {/* Quick Add Form */}
+      <Card className="p-3 border-dashed">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 text-xs">
+              <Switch
+                checked={useCustomAttr}
+                onCheckedChange={setUseCustomAttr}
+                className="scale-75"
+              />
+              <span className="text-muted-foreground">Custom</span>
+            </div>
+          </div>
+
+          {useCustomAttr ? (
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Attribute name"
+                value={attrName}
+                onChange={(e) => setAttrName(e.target.value)}
+                className="h-8 text-xs font-mono flex-1 min-w-0"
+              />
+              <Select value={operator} onValueChange={setOperator}>
+                <SelectTrigger className="h-8 text-xs w-16 shrink-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {RADIUS_OPERATORS.map((op) => (
+                    <SelectItem key={op.value} value={op.value} className="font-mono">
+                      {op.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="Value"
+                value={attrValue}
+                onChange={(e) => setAttrValue(e.target.value)}
+                className="h-8 text-xs font-mono flex-1 min-w-0"
+              />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Select value={attrName} onValueChange={setAttrName}>
+                <SelectTrigger className="h-8 text-xs font-mono">
+                  <SelectValue placeholder="Select attribute..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {COMMON_RADIUS_ATTRIBUTES.map((a) => (
+                    <SelectItem key={a} value={a} className="font-mono text-xs">
+                      {a}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex items-center gap-2">
+                <Select value={operator} onValueChange={setOperator}>
+                  <SelectTrigger className="h-8 text-xs w-16 shrink-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RADIUS_OPERATORS.map((op) => (
+                      <SelectItem key={op.value} value={op.value} className="font-mono">
+                        {op.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="Value"
+                  value={attrValue}
+                  onChange={(e) => setAttrValue(e.target.value)}
+                  className="h-8 text-xs font-mono flex-1 min-w-0"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAdd()
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          <Button
+            size="sm"
+            onClick={handleAdd}
+            disabled={addMutation.isPending || !attrName.trim() || !attrValue.trim()}
+            className="h-7 text-xs gap-1 w-full"
+          >
+            {addMutation.isPending ? (
+              <RefreshCw className="h-3 w-3 animate-spin" />
+            ) : (
+              <Plus className="h-3 w-3" />
+            )}
+            Add {type === 'check' ? 'Check' : 'Reply'} Attribute
+          </Button>
+        </div>
+      </Card>
+
+      {/* Existing Attributes as Cards */}
+      {attributes && attributes.length > 0 ? (
+        <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+          {attributes.map((attr) => (
+            <AttributeCard
+              key={attr.id}
+              attr={attr}
+              onDelete={(attrId) => deleteMutation.mutate(attrId)}
+              isDeleting={deleteMutation.isPending}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-6">
+          <Key className="h-6 w-6 mx-auto text-muted-foreground/40 mb-2" />
+          <p className="text-xs text-muted-foreground">No {type} attributes configured</p>
+        </div>
+      )}
     </div>
   )
 }
@@ -850,27 +1171,53 @@ function UserFormDialog({
 }
 
 // ==========================================
-// User Details Sheet
+// User Details Sheet (Enhanced)
 // ==========================================
 
 function UserDetailsSheet({
   open,
   onOpenChange,
   userId,
+  onEditUser,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   userId: string | null
+  onEditUser: (userId: string) => void
 }) {
+  const queryClient = useQueryClient()
+
   const { data: user, isLoading } = useQuery<UserDetail>({
     queryKey: ['user-detail', userId],
     queryFn: async () => { const res = await fetch(`/api/users/${userId}`); if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); },
     enabled: !!userId && open,
   })
 
+  // Toggle status mutation
+  const toggleStatusMutation = useMutation({
+    mutationFn: async ({ id, currentStatus }: { id: string; currentStatus: string }) => {
+      const newStatus = currentStatus === 'active' ? 'disabled' : 'active'
+      const res = await fetch(`/api/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      if (!res.ok) throw new Error('Failed to update status')
+      return res.json()
+    },
+    onSuccess: () => {
+      toast.success('User status updated')
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['user-detail', userId] })
+    },
+    onError: () => {
+      toast.error('Failed to update status')
+    },
+  })
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="sm:max-w-lg w-full p-0">
+      <SheetContent side="right" className="sm:max-w-xl w-full p-0">
         {isLoading ? (
           <div className="p-6 space-y-4">
             <Skeleton className="h-6 w-48" />
@@ -884,47 +1231,83 @@ function UserDetailsSheet({
         ) : user ? (
           <>
             <SheetHeader className="p-6 pb-4 border-b">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <UserCircle className="h-5 w-5 text-primary" />
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <UserCircle className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="text-left">
+                    <SheetTitle className="text-lg">{user.fullName || user.username}</SheetTitle>
+                    <SheetDescription className="text-xs">
+                      @{user.username}
+                    </SheetDescription>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <SheetTitle className="text-lg">{user.fullName || user.username}</SheetTitle>
-                  <SheetDescription className="text-xs">
-                    @{user.username} &middot; {user.authType}
-                  </SheetDescription>
+                <div className="flex items-center gap-2 shrink-0">
+                  <StatusBadge status={user.status} />
+                  <AuthTypeBadge authType={user.authType} />
                 </div>
               </div>
-              <div className="mt-3">
-                <StatusBadge status={user.status} />
+
+              {/* Action Buttons */}
+              <div className="mt-4 flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  onClick={() => {
+                    onEditUser(user.id)
+                    onOpenChange(false)
+                  }}
+                >
+                  <Edit2 className="h-3.5 w-3.5" />
+                  Edit User
+                </Button>
+                <Button
+                  variant={user.status === 'active' ? 'destructive' : 'default'}
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  onClick={() => toggleStatusMutation.mutate({ id: user.id, currentStatus: user.status })}
+                  disabled={toggleStatusMutation.isPending}
+                >
+                  {toggleStatusMutation.isPending ? (
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  ) : user.status === 'active' ? (
+                    <XCircle className="h-3.5 w-3.5" />
+                  ) : (
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  )}
+                  {user.status === 'active' ? 'Disable' : 'Enable'}
+                </Button>
               </div>
             </SheetHeader>
 
-            <ScrollArea className="h-[calc(100vh-12rem)]">
+            <ScrollArea className="h-[calc(100vh-14rem)]">
               <Tabs defaultValue="overview" className="w-full">
                 <div className="px-6 pt-4">
                   <TabsList className="w-full">
-                    <TabsTrigger value="overview" className="flex-1 gap-1.5">
+                    <TabsTrigger value="overview" className="flex-1 gap-1.5 text-xs">
                       <Eye className="h-3.5 w-3.5" />
-                      Overview
+                      <span className="hidden sm:inline">Overview</span>
                     </TabsTrigger>
-                    <TabsTrigger value="attributes" className="flex-1 gap-1.5">
+                    <TabsTrigger value="attributes" className="flex-1 gap-1.5 text-xs">
                       <Key className="h-3.5 w-3.5" />
-                      Attributes
+                      <span className="hidden sm:inline">Attributes</span>
                     </TabsTrigger>
-                    <TabsTrigger value="sessions" className="flex-1 gap-1.5">
+                    <TabsTrigger value="sessions" className="flex-1 gap-1.5 text-xs">
                       <Activity className="h-3.5 w-3.5" />
-                      Sessions
+                      <span className="hidden sm:inline">Sessions</span>
                     </TabsTrigger>
-                    <TabsTrigger value="billing" className="flex-1 gap-1.5">
+                    <TabsTrigger value="billing" className="flex-1 gap-1.5 text-xs">
                       <CreditCard className="h-3.5 w-3.5" />
-                      Billing
+                      <span className="hidden sm:inline">Billing</span>
                     </TabsTrigger>
                   </TabsList>
                 </div>
 
                 {/* Overview Tab */}
                 <TabsContent value="overview" className="px-6 py-4 space-y-4">
+                  {/* User Info Section */}
                   <div className="grid grid-cols-2 gap-3">
                     <InfoItem icon={UserCircle} label="Username" value={user.username} />
                     <InfoItem icon={Key} label="Auth Type" value={user.authType} />
@@ -952,14 +1335,20 @@ function UserDetailsSheet({
                   )}
 
                   <Separator />
+
+                  {/* Groups Section */}
                   <div>
-                    <h5 className="text-sm font-semibold mb-2">Groups</h5>
+                    <h5 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+                      <Shield className="h-3.5 w-3.5" />
+                      Group Memberships
+                    </h5>
                     <div className="flex flex-wrap gap-1.5">
                       {user.groups?.length > 0 ? (
                         user.groups.map((g) => (
-                          <Badge key={g.id} variant="outline" className="gap-1">
+                          <Badge key={g.id} variant="outline" className="gap-1 text-xs">
                             <Shield className="h-3 w-3" />
                             {g.group?.name || g.groupName}
+                            <span className="text-[10px] text-muted-foreground ml-1">P:{g.priority}</span>
                           </Badge>
                         ))
                       ) : (
@@ -969,6 +1358,8 @@ function UserDetailsSheet({
                   </div>
 
                   <Separator />
+
+                  {/* Stats */}
                   <div className="grid grid-cols-2 gap-3">
                     <MiniStat label="Check Attrs" value={user.checkAttrs?.length || 0} />
                     <MiniStat label="Reply Attrs" value={user.replyAttrs?.length || 0} />
@@ -977,73 +1368,37 @@ function UserDetailsSheet({
                   </div>
                 </TabsContent>
 
-                {/* Attributes Tab */}
-                <TabsContent value="attributes" className="px-6 py-4 space-y-4">
-                  <div>
-                    <h5 className="text-sm font-semibold mb-2">Check Attributes</h5>
-                    {user.checkAttrs?.length > 0 ? (
-                      <div className="rounded-md border overflow-hidden">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="h-8 text-xs">Attribute</TableHead>
-                              <TableHead className="h-8 text-xs w-16">Op</TableHead>
-                              <TableHead className="h-8 text-xs">Value</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {user.checkAttrs.map((attr) => (
-                              <TableRow key={attr.id}>
-                                <TableCell className="py-2 text-xs font-mono">{attr.attribute}</TableCell>
-                                <TableCell className="py-2 text-xs font-mono text-muted-foreground">
-                                  {attr.op}
-                                </TableCell>
-                                <TableCell className="py-2 text-xs font-mono">{attr.value}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No check attributes</p>
-                    )}
-                  </div>
+                {/* Attributes Tab with Quick Editor */}
+                <TabsContent value="attributes" className="px-6 py-4 space-y-6">
+                  <QuickAttributeEditor
+                    userId={user.id}
+                    type="check"
+                    attributes={user.checkAttrs || []}
+                    queryKey={['user-detail', user.id]}
+                  />
 
-                  <div>
-                    <h5 className="text-sm font-semibold mb-2">Reply Attributes</h5>
-                    {user.replyAttrs?.length > 0 ? (
-                      <div className="rounded-md border overflow-hidden">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="h-8 text-xs">Attribute</TableHead>
-                              <TableHead className="h-8 text-xs w-16">Op</TableHead>
-                              <TableHead className="h-8 text-xs">Value</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {user.replyAttrs.map((attr) => (
-                              <TableRow key={attr.id}>
-                                <TableCell className="py-2 text-xs font-mono">{attr.attribute}</TableCell>
-                                <TableCell className="py-2 text-xs font-mono text-muted-foreground">
-                                  {attr.op}
-                                </TableCell>
-                                <TableCell className="py-2 text-xs font-mono">{attr.value}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No reply attributes</p>
-                    )}
-                  </div>
+                  <Separator />
+
+                  <QuickAttributeEditor
+                    userId={user.id}
+                    type="reply"
+                    attributes={user.replyAttrs || []}
+                    queryKey={['user-detail', user.id]}
+                  />
                 </TabsContent>
 
                 {/* Sessions Tab */}
                 <TabsContent value="sessions" className="px-6 py-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h5 className="text-sm font-semibold">
+                      Session History
+                      <span className="ml-1.5 text-xs text-muted-foreground font-normal">
+                        ({user.sessions?.length || 0} recent)
+                      </span>
+                    </h5>
+                  </div>
                   {user.sessions?.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
                       {user.sessions.map((session) => (
                         <Card key={session.id} className="p-3">
                           <div className="flex items-center justify-between mb-1.5">
@@ -1191,7 +1546,7 @@ function InfoItem({
   label,
   value,
 }: {
-  icon: React.ElementType
+  icon: LucideIcon
   label: string
   value: string
 }) {
@@ -1333,9 +1688,24 @@ export default function UsersView() {
 
   const handleEditUser = (user: UserListItem) => {
     // Fetch full user details for editing
-    (async () => {
+    ;(async () => {
       try {
         const res = await fetch(`/api/users/${user.id}`)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data: UserDetail = await res.json()
+        setEditUser(data)
+        setFormDialogOpen(true)
+      } catch {
+        toast.error('Failed to load user details')
+      }
+    })()
+  }
+
+  // Handle edit from detail sheet - fetch full user then open edit dialog
+  const handleEditFromSheet = (userId: string) => {
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/users/${userId}`)
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const data: UserDetail = await res.json()
         setEditUser(data)
@@ -1371,6 +1741,52 @@ export default function UsersView() {
       <div className="space-y-6">
         {/* Action Bar */}
         <div className="flex items-center justify-end gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5" disabled={isLoading || !users.length}>
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => {
+                  const opts: ExportOptions = {
+                    headers: ['Username', 'Full Name', 'Email', 'Groups', 'Status', 'Auth Type', 'Created At'],
+                    rows: users.map(u => [
+                      u.username, u.fullName || '', u.email || '',
+                      u.groups?.map(g => g.groupName).join('; ') || '',
+                      u.status, u.authType, u.createdAt ? format(new Date(u.createdAt), 'yyyy-MM-dd HH:mm') : '',
+                    ]),
+                    filename: `users-export-${new Date().toISOString().slice(0, 10)}`,
+                  }
+                  exportToCSV(opts)
+                  toast.success(`${users.length} users exported as CSV`)
+                }}
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Export CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  const opts: ExportOptions = {
+                    headers: ['Username', 'Full Name', 'Email', 'Groups', 'Status', 'Auth Type', 'Created At'],
+                    rows: users.map(u => [
+                      u.username, u.fullName || '', u.email || '',
+                      u.groups?.map(g => g.groupName).join('; ') || '',
+                      u.status, u.authType, u.createdAt ? format(new Date(u.createdAt), 'yyyy-MM-dd HH:mm') : '',
+                    ]),
+                    filename: `users-export-${new Date().toISOString().slice(0, 10)}`,
+                  }
+                  exportToJSON(opts)
+                  toast.success(`${users.length} users exported as JSON`)
+                }}
+              >
+                <FileJson className="h-4 w-4 mr-2" />
+                Export JSON
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button onClick={handleAddUser} className="gap-2 shrink-0">
             <Plus className="h-4 w-4" />
             Add User
@@ -1658,6 +2074,7 @@ export default function UsersView() {
           open={detailSheetOpen}
           onOpenChange={setDetailSheetOpen}
           userId={detailUserId}
+          onEditUser={handleEditFromSheet}
         />
 
         {/* Delete Confirmation */}

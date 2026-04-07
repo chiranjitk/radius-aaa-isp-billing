@@ -17,7 +17,7 @@ import { DictionaryView } from '@/components/aaa/dictionary-view'
 import { NotificationCenter } from '@/components/aaa/notification-center'
 import { CommandPalette, useCommandPaletteStore } from '@/components/aaa/command-palette'
 import { Toaster } from '@/components/ui/sonner'
-import { Search, Radio, Moon, Sun, Keyboard } from 'lucide-react'
+import { Search, Radio, Moon, Sun } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -93,9 +93,9 @@ export default function Home() {
                 className="flex w-full items-center gap-2 rounded-md border border-border/50 bg-muted/50 h-8 px-3 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
               >
                 <Search className="h-3.5 w-3.5" />
-                <span className="flex-1 text-left">Search... ⌘K</span>
-                <kbd className="hidden lg:inline-flex items-center gap-0.5 rounded border bg-background px-1 py-0.5 font-mono text-[10px] text-muted-foreground">
-                  <Keyboard className="h-2.5 w-2.5" />K
+                <span className="flex-1 text-left">Search...</span>
+                <kbd className="hidden lg:inline-flex items-center gap-0.5 rounded border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                  ⌘K
                 </kbd>
               </button>
             </div>

@@ -112,82 +112,44 @@ Stage Summary:
 - Cron job active for ongoing development and QA
 
 ---
-Task ID: 8
-Agent: Main Orchestrator (Phase 5 - Cron QA Round)
-Task: QA testing, bug fix, styling improvements, new features
-
-Work Log:
-- Reviewed worklog.md and assessed full project status (v2.1, 10 modules, 10+ APIs)
-- Ran comprehensive QA via agent-browser on all 10 views — all pass, no console errors
-- Fixed 1 UI bug: Double "⌘K K" text in header search button
-  - Root cause: Text "Search... ⌘K" + Keyboard icon + "K" in kbd element
-  - Fix: Replaced with clean "Search..." text + kbd with "⌘K", removed Keyboard icon import
-- Enhanced sidebar visual design (Task 7-a):
-  - Active nav item indicator with animated 3px left border
-  - Category badges (AAA/BSS/SYS) on each nav item
-  - Gradient branding with animated pulse dot
-  - Enhanced quick stats with colored borders and trend arrows
-  - Improved footer with version and copyright
-  - Smoother hover transitions and scale transforms
-- Added CSV/JSON data export (Task 7-b):
-  - Created reusable export-utils.ts with exportToCSV/exportToJSON
-  - Added export dropdown to Sessions view (8 columns)
-  - Added export dropdown to Users view (7 columns)
-- Added user detail sheet with RADIUS attribute editor (Task 7-c):
-  - Created /api/users/[id]/attributes API (GET/POST/DELETE)
-  - Enhanced UserDetailsSheet with AuthTypeBadge, action buttons, groups section
-  - Built QuickAttributeEditor with 37 common RADIUS attributes, 13 operators
-  - Attribute cards with monospace font, hover-reveal delete
-  - Enter key support for quick attribute addition
-
-Stage Summary:
-- 1 UI bug fixed (double ⌘K in search button)
-- 3 major feature additions (sidebar redesign, data export, attribute editor)
-- All 10 views verified working via agent-browser QA
-- ESLint clean, page loads 200 OK
-
----
 ## Current Project Status
 
 ### Assessment
-The AAA/RADIUS BSS system is now at v2.2 with a polished enterprise UI, interactive RADIUS attribute management, data export capabilities, and comprehensive QA validation. The sidebar has been professionally redesigned with active state indicators and category badges. Users can now export session and user data as CSV/JSON, and manage RADIUS check/reply attributes directly from the user detail sheet.
+The AAA/RADIUS BSS system is now at v2.1 with 10 fully functional modules, dark mode support, dynamic stats, enterprise-grade styling, and new UX features including command palette and notification center. The QueryClientProvider bug was the critical fix that unblocked the entire application.
 
 ### Completed
 - 18-model database schema with full RADIUS + BSS coverage
-- 11 REST API endpoints (including new attribute CRUD)
-- 10 client modules with full CRUD operations
+- 10 REST API endpoints with proper error handling
+- 10 client modules with CRUD operations (Dashboard, Users, NAS, Plans, Policies, Sessions, Billing, Reports, Settings, Dictionary)
 - Global app shell (header, collapsible sidebar, dynamic status footer)
 - Dark mode toggle with next-themes
-- Dynamic footer and sidebar stats from dashboard API
-- RADIUS Dictionary Browser with 90+ attributes
+- Dynamic footer stats from dashboard API (auto-refresh every 60s)
+- Custom scrollbars, smooth transitions, responsive design
+- RADIUS Dictionary Browser with 90+ attributes, search, filter, copy, and quick reference
 - Dashboard with System Health Bar, Online Users Live Panel, Live Activity Feed
-- Command Palette (⌘K) with 12 commands and keyboard navigation
-- Notification Center with simulated AAA/RADIUS events
-- CSV/JSON data export for Users and Sessions tables
-- Interactive RADIUS attribute editor (37 attributes, 13 operators)
-- User detail sheet with AuthTypeBadge, groups, session history
-- Billing view with skeleton loading, empty states, delete confirmation
-- Settings view with loading states, save feedback, discard confirmation
-- Professional sidebar with active indicators, category badges, gradient branding
+- Comprehensive seed data (25 users, 9 NAS, 8 plans, 5 policies, 22 invoices)
+- FreeRADIUS config export in Settings module
+- Gradient-enhanced stat cards with count-up animations and sparklines
+- Improved charts with time range toggles and gradient fills
 
 ### Known Issues / Risks
-1. **Cross-origin warning**: Preview iframe cosmetic only.
-2. **No real FreeRADIUS backend**: App manages DB for FreeRADIUS via rlm_rest.
-3. **Date seed data**: Demo sessions use 2024-03 dates, may show "0 sessions" in 7-day chart.
-4. **Session data is mock**: No real-time duration incrementing.
-5. **Notification data is static**: Simulated events, not live.
+1. **Cross-origin warning**: The preview iframe from `space.z.ai` triggers cross-origin warnings. This is cosmetic only and doesn't affect functionality.
+2. **No real FreeRADIUS backend**: The app manages the database that a real FreeRADIUS server would read via rlm_rest. The Settings module shows sample config for integration but actual FreeRADIUS isn't running.
+3. **Date seed data**: Demo sessions use dates from 2024-03, which may show "0 sessions" in the 7-day dashboard chart (depends on current date).
+4. **Session data is mock**: Active session durations don't increment in real-time since there's no real RADIUS backend feeding data.
+5. **Notification data is static**: The notification center shows simulated events. Real integration would require WebSocket or polling.
 
 ### Priority Recommendations for Next Phase
 1. Add real-time WebSocket updates for live session monitoring
-2. Add RADIUS test authentication endpoint (CoA/Disconnect)
-3. Create a proper login page and role-based access
-4. Add invoice PDF generation
-5. Add data export for remaining tables (NAS, Policies, Invoices, Plans)
-6. Implement bulk operations (batch user actions, batch session disconnect)
+2. Implement user import/export (CSV)
+3. Add RADIUS test authentication endpoint (CoA/Disconnect)
+4. Create a proper login page and role-based access
+5. Add invoice PDF generation
+6. Implement automated billing cycle (cron job)
 7. Add network topology/map visualization
-8. Add SMS/Email notification integration testing in Settings
-9. Add user import from CSV
-10. Implement automated billing cycle
+8. Add SMS/Email notification testing in Settings
+9. Add data export for all tables (CSV/Excel)
+10. Implement bulk operations (batch user actions, batch session disconnect)
 
 ---
 Task ID: 3

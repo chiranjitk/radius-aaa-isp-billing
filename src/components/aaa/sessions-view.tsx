@@ -27,6 +27,9 @@ import {
   Zap,
   Timer,
   HardDrive,
+  Download,
+  FileSpreadsheet,
+  FileJson,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -69,6 +72,13 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { exportToCSV, exportToJSON, type ExportOptions } from '@/lib/export-utils'
 
 // ==================== Utility Functions ====================
 
@@ -324,6 +334,66 @@ export function SessionsView() {
     <div className="space-y-6">
       {/* Action Bar */}
       <div className="flex items-center justify-end gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" disabled={isLoading || sortedSessions.length === 0} className="gap-2">
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => {
+                const opts: ExportOptions = {
+                  title: 'Sessions Export',
+                  headers: ['Session ID', 'Username', 'NAS IP', 'Start Time', 'Duration', 'Input Octets', 'Output Octets', 'Status'],
+                  filename: `sessions-export-${new Date().toISOString().slice(0, 10)}`,
+                  rows: sortedSessions.map((s) => [
+                    s.sessionId,
+                    s.username || '',
+                    s.nasIpAddress || '',
+                    format(new Date(s.acctStartTime), 'yyyy-MM-dd HH:mm:ss'),
+                    formatDuration(s.calculatedDuration),
+                    (s.acctInputGigawords || 0) * 4294967296 + (s.acctInputOctets || 0),
+                    (s.acctOutputGigawords || 0) * 4294967296 + (s.acctOutputOctets || 0),
+                    s.status === 'active' ? 'Active' : 'Stopped',
+                  ]),
+                }
+                exportToCSV(opts)
+                toast({ title: 'Exported', description: `${sortedSessions.length} sessions exported as CSV` })
+              }}
+              className="gap-2"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              Export CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                const opts: ExportOptions = {
+                  title: 'Sessions Export',
+                  headers: ['Session ID', 'Username', 'NAS IP', 'Start Time', 'Duration', 'Input Octets', 'Output Octets', 'Status'],
+                  filename: `sessions-export-${new Date().toISOString().slice(0, 10)}`,
+                  rows: sortedSessions.map((s) => [
+                    s.sessionId,
+                    s.username || '',
+                    s.nasIpAddress || '',
+                    format(new Date(s.acctStartTime), 'yyyy-MM-dd HH:mm:ss'),
+                    formatDuration(s.calculatedDuration),
+                    (s.acctInputGigawords || 0) * 4294967296 + (s.acctInputOctets || 0),
+                    (s.acctOutputGigawords || 0) * 4294967296 + (s.acctOutputOctets || 0),
+                    s.status === 'active' ? 'Active' : 'Stopped',
+                  ]),
+                }
+                exportToJSON(opts)
+                toast({ title: 'Exported', description: `${sortedSessions.length} sessions exported as JSON` })
+              }}
+              className="gap-2"
+            >
+              <FileJson className="h-4 w-4" />
+              Export JSON
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button
           variant="outline"
           size="sm"
