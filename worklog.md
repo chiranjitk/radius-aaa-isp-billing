@@ -847,3 +847,42 @@ The AAA/RADIUS BSS system is at v2.4.0 with a polished violet-tinted design syst
 8. Add data validation and form error indicators
 9. Create printable reports with company branding
 10. Implement WebSocket-based real-time collaboration
+
+---
+Task ID: 19
+Agent: full-stack-developer
+Task: Add keyboard shortcuts help overlay
+
+Work Log:
+- Created `/src/components/aaa/keyboard-shortcuts-dialog.tsx` — a Dialog component with:
+  - Props: `open: boolean`, `onOpenChange: (open: boolean) => void`
+  - Title "Keyboard Shortcuts" with description "Quick navigation and actions"
+  - Three organized sections: Navigation (12 shortcuts), Actions (7 shortcuts), General (1 shortcut)
+  - Each shortcut row: left = description text, right = styled kbd element(s) with monospace font, rounded border, muted bg, subtle shadow
+  - glass-card class applied to the shortcuts content area for glassmorphism styling
+  - Footer with search icon and "Press ⌘K for full command search" hint
+  - Scrollable shortcuts list (max-h-400px with overflow-y-auto)
+  - Proper accessibility with sr-only DialogTitle/DialogDescription
+- Updated `src/app/page.tsx`:
+  - Added imports: `useCallback`, `useEffect`, `useState` from React, `Keyboard` icon from lucide-react, `KeyboardShortcutsDialog` component
+  - Added `viewKeyMap` mapping keys 1-0 to view IDs (dashboard, users, nas, plans, policies, sessions, billing, reports, dictionary, settings)
+  - Added `isInputFocused()` helper to check if target is INPUT/TEXTAREA/SELECT/contentEditable
+  - Added store selectors: `setActiveView`, `sidebarOpen`, `setSidebarOpen`
+  - Added `shortcutsOpen` state for dialog visibility
+  - Added `useEffect` for global keyboard shortcuts:
+    - `⌘+Shift+/` → toggle shortcuts dialog (works even in inputs)
+    - `?` (when not in input) → open shortcuts dialog
+    - `⌘1` through `⌘0` → switch views (only when not in input)
+    - `⌘B` → toggle sidebar (only when not in input)
+    - All shortcuts call `e.preventDefault()` to avoid browser defaults
+  - Added `toggleShortcutsDialog` callback with `useCallback`
+  - Added Keyboard icon button in header between Dark Mode toggle and FreeRADIUS badge
+  - Added `<KeyboardShortcutsDialog>` component in JSX
+- ESLint passes clean on both modified files (1 pre-existing error in user-profile-dialog.tsx, not related)
+
+Stage Summary:
+- New keyboard shortcuts help dialog at src/components/aaa/keyboard-shortcuts-dialog.tsx
+- Global keyboard shortcuts: ⌘⇧/ for help, ? for help, ⌘1-0 for view switching, ⌘B for sidebar toggle
+- Keyboard icon button in header as alternative trigger
+- Input-aware shortcut guards to prevent conflicts with text editing
+- All existing functionality preserved

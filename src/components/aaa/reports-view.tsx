@@ -11,10 +11,15 @@ import {
   Server,
   Wifi,
   Loader2,
+  TrendingUp,
+  Clock,
+  CheckCircle2,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Table,
@@ -59,6 +64,13 @@ const TABS = [
   { id: 'nas', label: 'NAS', icon: Server },
 ]
 
+const QUICK_STATS = [
+  { label: 'Total Revenue', value: '$12,450', icon: DollarSign, color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' },
+  { label: 'Active Users', value: '25', icon: Users, color: 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400' },
+  { label: 'Avg Session', value: '2h 15m', icon: Clock, color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400' },
+  { label: 'Uptime', value: '99.9%', icon: CheckCircle2, color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' },
+]
+
 export function ReportsView() {
   const [activeTab, setActiveTab] = useState('usage')
   const [dateFrom, setDateFrom] = useState('')
@@ -94,20 +106,63 @@ export function ReportsView() {
   const data = reportData[activeTab]
 
   return (
-    <div className="space-y-6">
-      {/* Action Bar */}
-      <div className="flex items-center justify-end gap-2">
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-36" />
-          <span className="text-muted-foreground">to</span>
-          <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-36" />
-        </div>
-        <Button variant="outline" onClick={handleExport} className="gap-2">
-          <Download className="h-4 w-4" />
-          Export
-        </Button>
+    <div className="space-y-6 page-transition">
+      {/* Section Header */}
+      <div className="space-y-1">
+        <h2 className="text-2xl font-bold tracking-tight">
+          <span className="gradient-text">Reports & Analytics</span>
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Comprehensive insights into your network usage, revenue, sessions, and more.
+        </p>
       </div>
+
+      {/* Quick Stats Row */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {QUICK_STATS.map((stat, i) => {
+          const Icon = stat.icon
+          const staggerClasses = ['stagger-1', 'stagger-2', 'stagger-3', 'stagger-4']
+          return (
+            <Card key={stat.label} className={`card-hover animate-fade-in-up ${staggerClasses[i] || ''}`}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${stat.color}`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-muted-foreground">{stat.label}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-lg font-bold truncate">{stat.value}</p>
+                      <Badge variant="secondary" className="badge-glow-success text-[10px] px-1.5 py-0 h-5">
+                        <TrendingUp className="h-3 w-3 mr-0.5" />
+                        Live
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      {/* Action Bar - Date Range & Export */}
+      <Card className="glass-card">
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-36" />
+              <span className="text-muted-foreground">to</span>
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-36" />
+            </div>
+            <Button variant="outline" onClick={handleExport} className="gap-2">
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Report Type Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -173,68 +228,74 @@ function renderUsageTab(data: ReportData | undefined, loading: boolean) {
 
       {/* Charts */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Daily Sessions</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={dailySessions}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Line type="monotone" dataKey="sessions" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-lg p-2">
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={dailySessions}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="sessions" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Top Users by Bandwidth</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={topUsers} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" tick={{ fontSize: 11 }} unit=" GB" />
-                <YAxis dataKey="username" type="category" tick={{ fontSize: 11 }} width={100} />
-                <Tooltip formatter={(v: number) => [`${v} GB`, 'Total']} />
-                <Bar dataKey="totalGB" fill="#10b981" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-lg p-2">
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={topUsers} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" tick={{ fontSize: 11 }} unit=" GB" />
+                  <YAxis dataKey="username" type="category" tick={{ fontSize: 11 }} width={100} />
+                  <Tooltip formatter={(v: number) => [`${v} GB`, 'Total']} />
+                  <Bar dataKey="totalGB" fill="#10b981" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Data Usage by Group</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
-              <PieChart>
-                <Pie data={dataByGroup} dataKey="usage" nameKey="group" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={11}>
-                  {dataByGroup.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(v: number) => [`${v} GB`, 'Usage']} />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-lg p-2">
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie data={dataByGroup} dataKey="usage" nameKey="group" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={11}>
+                    {dataByGroup.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(v: number) => [`${v} GB`, 'Usage']} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Bandwidth Details</CardTitle>
           </CardHeader>
           <CardContent className="max-h-[260px] overflow-y-auto">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="table-row-hover">
                   <TableHead>User</TableHead>
                   <TableHead className="text-right">Download</TableHead>
                   <TableHead className="text-right">Upload</TableHead>
@@ -242,8 +303,8 @@ function renderUsageTab(data: ReportData | undefined, loading: boolean) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(charts.topUsersBandwidth as { username: string; downloadGB: string; uploadGB: string; sessions: number }[] || []).map((u) => (
-                  <TableRow key={u.username}>
+                {(charts.topUsersBandwidth as { username: string; downloadGB: string; uploadGB: string; sessions: number }[] || []).map((u, idx) => (
+                  <TableRow key={u.username} className={`table-row-hover ${idx % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}>
                     <TableCell className="font-medium text-sm">{u.username}</TableCell>
                     <TableCell className="text-right text-sm">{u.downloadGB} GB</TableCell>
                     <TableCell className="text-right text-sm">{u.uploadGB} GB</TableCell>
@@ -278,74 +339,82 @@ function renderRevenueTab(data: ReportData | undefined, loading: boolean) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={monthlyRevenue}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
-                <Tooltip formatter={(v: number) => [`$${v.toLocaleString()}`, 'Revenue']} />
-                <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-lg p-2">
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={monthlyRevenue}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
+                  <Tooltip formatter={(v: number) => [`$${v.toLocaleString()}`, 'Revenue']} />
+                  <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Revenue by Plan</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie data={planRevenue} dataKey="revenue" nameKey="plan" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
-                  {planRevenue.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(v: number) => [`$${v.toLocaleString()}`, 'Revenue']} />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-lg p-2">
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie data={planRevenue} dataKey="revenue" nameKey="plan" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
+                    {planRevenue.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(v: number) => [`$${v.toLocaleString()}`, 'Revenue']} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
+      <Card className="card-hover">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">Revenue Trend & Payment Methods</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={monthlyRevenue}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
-              <Tooltip formatter={(v: number) => [`$${v.toLocaleString()}`, 'Revenue']} />
-              <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="#10b981" fillOpacity={0.2} strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-lg p-2">
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={monthlyRevenue}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
+                <Tooltip formatter={(v: number) => [`$${v.toLocaleString()}`, 'Revenue']} />
+                <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="#10b981" fillOpacity={0.2} strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="card-hover">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">Payment Methods</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={260}>
-            <PieChart>
-              <Pie data={paymentMethods} dataKey="amount" nameKey="method" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={11}>
-                {paymentMethods.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(v: number) => [`$${v.toLocaleString()}`, 'Amount']} />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-lg p-2">
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie data={paymentMethods} dataKey="amount" nameKey="method" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={11}>
+                  {paymentMethods.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v: number) => [`$${v.toLocaleString()}`, 'Amount']} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
     </>
@@ -371,56 +440,62 @@ function renderSessionsTab(data: ReportData | undefined, loading: boolean) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Sessions by NAS</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={sessionsByNas} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" tick={{ fontSize: 11 }} />
-                <YAxis dataKey="nas" type="category" tick={{ fontSize: 11 }} width={100} />
-                <Tooltip />
-                <Bar dataKey="sessions" fill="#10b981" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-lg p-2">
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={sessionsByNas} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" tick={{ fontSize: 11 }} />
+                  <YAxis dataKey="nas" type="category" tick={{ fontSize: 11 }} width={100} />
+                  <Tooltip />
+                  <Bar dataKey="sessions" fill="#10b981" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Avg Session Duration</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={avgDuration}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
-                <YAxis tick={{ fontSize: 11 }} unit=" min" />
-                <Tooltip />
-                <Line type="monotone" dataKey="avgMinutes" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-lg p-2">
+              <ResponsiveContainer width="100%" height={280}>
+                <LineChart data={avgDuration}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
+                  <YAxis tick={{ fontSize: 11 }} unit=" min" />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="avgMinutes" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
+      <Card className="card-hover">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">Authentication Methods</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={260}>
-            <PieChart>
-              <Pie data={authTypes} dataKey="count" nameKey="type" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={12}>
-                {authTypes.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-lg p-2">
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie data={authTypes} dataKey="count" nameKey="type" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={12}>
+                  {authTypes.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
     </>
@@ -445,56 +520,62 @@ function renderUsersTab(data: ReportData | undefined, loading: boolean) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Registration Trend</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
-              <AreaChart data={registrationTrend}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Area type="monotone" dataKey="users" stroke="#10b981" fill="#10b981" fillOpacity={0.2} strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-lg p-2">
+              <ResponsiveContainer width="100%" height={260}>
+                <AreaChart data={registrationTrend}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="users" stroke="#10b981" fill="#10b981" fillOpacity={0.2} strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">User Status Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
-              <PieChart>
-                <Pie data={userStatus} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={12}>
-                  {userStatus.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-lg p-2">
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie data={userStatus} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={12}>
+                    {userStatus.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
+      <Card className="card-hover">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">Users by Group</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={usersByGroup} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" tick={{ fontSize: 11 }} />
-              <YAxis dataKey="group" type="category" tick={{ fontSize: 11 }} width={100} />
-              <Tooltip />
-              <Bar dataKey="count" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-lg p-2">
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={usersByGroup} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" tick={{ fontSize: 11 }} />
+                <YAxis dataKey="group" type="category" tick={{ fontSize: 11 }} width={100} />
+                <Tooltip />
+                <Bar dataKey="count" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
     </>
@@ -519,51 +600,55 @@ function renderNasTab(data: ReportData | undefined, loading: boolean) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">NAS Utilization</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={nasUtilization}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="nas" tick={{ fontSize: 10 }} angle={-20} textAnchor="end" height={60} />
-                <YAxis tick={{ fontSize: 11 }} unit="%" />
-                <Tooltip />
-                <Bar dataKey="utilization" fill="#10b981" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-lg p-2">
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={nasUtilization}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="nas" tick={{ fontSize: 10 }} angle={-20} textAnchor="end" height={60} />
+                  <YAxis tick={{ fontSize: 11 }} unit="%" />
+                  <Tooltip />
+                  <Bar dataKey="utilization" fill="#10b981" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">NAS by Type</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie data={nasTypes} dataKey="count" nameKey="type" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={12}>
-                  {nasTypes.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-lg p-2">
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie data={nasTypes} dataKey="count" nameKey="type" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={12}>
+                    {nasTypes.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* NAS Performance Table */}
-      <Card>
+      <Card className="card-hover">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">NAS Performance Details</CardTitle>
         </CardHeader>
         <CardContent className="max-h-[320px] overflow-y-auto">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="table-row-hover">
                 <TableHead>NAS Name</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Total Sessions</TableHead>
@@ -571,8 +656,8 @@ function renderNasTab(data: ReportData | undefined, loading: boolean) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {nasUtilization.map((nas) => (
-                <TableRow key={nas.nas}>
+              {nasUtilization.map((nas, idx) => (
+                <TableRow key={nas.nas} className={`table-row-hover ${idx % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}>
                   <TableCell className="font-medium text-sm">{nas.nas}</TableCell>
                   <TableCell>
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -604,7 +689,7 @@ function SummaryCard({ title, value, icon: Icon, color }: { title: string; value
     red: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
   }
   return (
-    <Card>
+    <Card className="card-hover">
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
           <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${colorMap[color] || colorMap.emerald}`}>
@@ -612,7 +697,12 @@ function SummaryCard({ title, value, icon: Icon, color }: { title: string; value
           </div>
           <div>
             <p className="text-xs text-muted-foreground">{title}</p>
-            <p className="text-lg font-bold">{value}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-lg font-bold">{value}</p>
+              <Badge variant="secondary" className="badge-glow-success text-[10px] px-1.5 py-0 h-5">
+                Live
+              </Badge>
+            </div>
           </div>
         </div>
       </CardContent>
@@ -622,10 +712,35 @@ function SummaryCard({ title, value, icon: Icon, color }: { title: string; value
 
 function LoadingState() {
   return (
-    <div className="flex items-center justify-center py-20">
-      <div className="flex flex-col items-center gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">Loading report data...</p>
+    <div className="space-y-6 py-8">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Card key={i} className="card-hover">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-lg shimmer" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-3 w-24 shimmer" />
+                  <Skeleton className="h-6 w-16 shimmer" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card className="card-hover">
+          <CardContent className="p-4 space-y-3">
+            <Skeleton className="h-4 w-36 shimmer" />
+            <Skeleton className="h-[260px] w-full shimmer rounded-lg" />
+          </CardContent>
+        </Card>
+        <Card className="card-hover">
+          <CardContent className="p-4 space-y-3">
+            <Skeleton className="h-4 w-40 shimmer" />
+            <Skeleton className="h-[260px] w-full shimmer rounded-lg" />
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

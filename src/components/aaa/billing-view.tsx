@@ -19,6 +19,9 @@ import {
   Trash2,
   Edit3,
   FileText,
+  Check,
+  ClipboardList,
+  Receipt,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -156,6 +159,73 @@ function getStatusBadge(status: string) {
   return variants[status] || 'bg-gray-100 text-gray-600'
 }
 
+function getStatusGlow(status: string) {
+  const glows: Record<string, string> = {
+    paid: 'badge-glow-success',
+    pending: 'badge-glow-warning',
+    overdue: 'badge-glow-danger',
+  }
+  return glows[status] || ''
+}
+
+// Sparkline decorative SVG component
+function MiniSparkline({ color = '#10b981', height = 20 }: { color?: string; height?: number }) {
+  const points = [4, 12, 8, 16, 10, 18, 14, 20, 16, 22]
+  const w = 60
+  const h = height
+  const max = Math.max(...points)
+  const min = Math.min(...points)
+  const range = max - min || 1
+  const step = w / (points.length - 1)
+  const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${i * step},${h - ((p - min) / range) * (h - 2) - 1}`).join(' ')
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} fill="none" className="opacity-50">
+      <path d={pathD} stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+// Step indicator component for create invoice dialog
+function StepIndicator({ currentStep }: { currentStep: number }) {
+  const steps = [
+    { num: 1, label: 'Details', icon: ClipboardList },
+    { num: 2, label: 'Items', icon: Receipt },
+    { num: 3, label: 'Review', icon: Check },
+  ]
+  return (
+    <div className="flex items-center gap-2 mb-4">
+      {steps.map((step, idx) => {
+        const Icon = step.icon
+        const isCompleted = currentStep > step.num
+        const isActive = currentStep === step.num
+        return (
+          <div key={step.num} className="flex items-center gap-2 flex-1">
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg flex-1 glass-card transition-all ${
+              isActive ? 'ring-1 ring-primary/30 shadow-sm' : ''
+            }`}>
+              <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                isCompleted
+                  ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400'
+                  : isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground'
+              }`}>
+                {isCompleted ? <Check className="h-3.5 w-3.5" /> : step.num}
+              </div>
+              <span className={`text-xs font-medium ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
+                {step.label}
+              </span>
+            </div>
+            {idx < steps.length - 1 && (
+              <div className={`h-px w-6 shrink-0 ${currentStep > step.num ? 'bg-emerald-400' : 'bg-border'}`} />
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ============ Component ============
 export function BillingView() {
   // State
@@ -197,6 +267,9 @@ export function BillingView() {
     gateway: '',
     transactionId: '',
   })
+
+  // Create dialog step
+  const [createStep, setCreateStep] = useState(1)
 
   // Fetch invoices
   const fetchInvoices = useCallback(async () => {
@@ -283,6 +356,7 @@ export function BillingView() {
       if (!res.ok) throw new Error('Failed to create')
       toast.success('Invoice created successfully')
       setCreateDialogOpen(false)
+      setCreateStep(1)
       setCreateForm({ username: '', planId: '', amount: '', tax: '10', total: '', dueDate: '', notes: '' })
       fetchInvoices()
     } catch {
@@ -353,7 +427,7 @@ export function BillingView() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-transition">
       {/* Action Bar */}
       <div className="flex items-center justify-end gap-2">
         <DropdownMenu>
@@ -420,7 +494,7 @@ export function BillingView() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
+        <Button onClick={() => { setCreateDialogOpen(true); setCreateStep(1) }} className="gap-2">
           <Plus className="h-4 w-4" />
           Create Invoice
         </Button>
@@ -430,66 +504,79 @@ export function BillingView() {
       {loading ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i}>
+            <Card key={i} className="card-hover">
               <CardContent className="p-4">
-                <Skeleton className="h-4 w-24 mb-2" />
-                <Skeleton className="h-8 w-16 mb-2" />
-                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-1 w-full rounded-full mb-3 shimmer" />
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-10 w-10 rounded-lg shimmer" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-3 w-24 shimmer" />
+                    <Skeleton className="h-6 w-20 shimmer" />
+                  </div>
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
+          <Card className="card-hover relative overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-emerald-400 to-emerald-600" />
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-900/40 dark:to-emerald-800/30">
                   <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">Total Revenue</p>
                   <p className="text-lg font-bold">{formatCurrency(summary.totalRevenue)}</p>
                 </div>
+                <MiniSparkline color="#10b981" />
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="card-hover relative overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-amber-400 to-amber-600" />
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/40 dark:to-amber-800/30">
                   <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">Pending Amount</p>
                   <p className="text-lg font-bold">{formatCurrency(summary.pendingAmount)}</p>
                 </div>
+                <MiniSparkline color="#f59e0b" />
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="card-hover relative overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-red-400 to-red-600" />
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/40 dark:to-red-800/30">
                   <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">Overdue Invoices</p>
                   <p className="text-lg font-bold">{summary.overdueCount}</p>
                 </div>
+                <MiniSparkline color="#ef4444" />
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="card-hover relative overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-cyan-400 to-cyan-600" />
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-100 dark:bg-cyan-900/30">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-100 to-cyan-200 dark:from-cyan-900/40 dark:to-cyan-800/30">
                   <TrendingUp className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">This Month Collections</p>
                   <p className="text-lg font-bold">{formatCurrency(summary.thisMonthCollections)}</p>
                 </div>
+                <MiniSparkline color="#06b6d4" />
               </div>
             </CardContent>
           </Card>
@@ -497,7 +584,7 @@ export function BillingView() {
       )}
 
       {/* Filters */}
-      <Card>
+      <Card className="card-hover">
         <CardContent className="p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative flex-1">
@@ -539,23 +626,24 @@ export function BillingView() {
       </Card>
 
       {/* Invoice Table */}
-      <Card className="border-0 shadow-md">
+      <Card className="border-0 shadow-md card-hover">
         <CardContent className="p-4">
           {loading ? (
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <Card key={i}>
+                  <Card key={i} className="card-hover">
                     <CardContent className="p-4">
-                      <Skeleton className="h-4 w-24 mb-2" />
-                      <Skeleton className="h-8 w-16 mb-2" />
-                      <Skeleton className="h-3 w-20" />
+                      <Skeleton className="h-1 w-full rounded-full mb-3 shimmer" />
+                      <Skeleton className="h-4 w-24 mb-2 shimmer" />
+                      <Skeleton className="h-8 w-16 mb-2 shimmer" />
+                      <Skeleton className="h-3 w-20 shimmer" />
                     </CardContent>
                   </Card>
                 ))}
               </div>
               {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
+                <Skeleton key={i} className="h-12 w-full shimmer" />
               ))}
             </div>
           ) : invoices.length === 0 ? (
@@ -567,7 +655,7 @@ export function BillingView() {
               <p className="text-sm text-muted-foreground mb-4 max-w-sm">
                 Get started by creating your first invoice for a user.
               </p>
-              <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
+              <Button onClick={() => { setCreateDialogOpen(true); setCreateStep(1) }} className="gap-2">
                 <Plus className="h-4 w-4" />
                 Create Invoice
               </Button>
@@ -577,7 +665,7 @@ export function BillingView() {
               <div className="max-h-[520px] overflow-y-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
+                    <TableRow className="table-row-hover">
                       <TableHead className="sticky top-0 bg-card z-10">Invoice #</TableHead>
                       <TableHead className="sticky top-0 bg-card z-10">User</TableHead>
                       <TableHead className="sticky top-0 bg-card z-10">Plan</TableHead>
@@ -591,8 +679,8 @@ export function BillingView() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {invoices.map((inv) => (
-                      <TableRow key={inv.id}>
+                    {invoices.map((inv, idx) => (
+                      <TableRow key={inv.id} className={`table-row-hover ${idx % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}>
                         <TableCell className="font-mono text-xs">{inv.invoiceNo}</TableCell>
                         <TableCell>
                           <div>
@@ -605,7 +693,7 @@ export function BillingView() {
                         <TableCell className="text-right text-sm">{formatCurrency(inv.tax)}</TableCell>
                         <TableCell className="text-right text-sm font-medium">{formatCurrency(inv.total)}</TableCell>
                         <TableCell>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${getStatusBadge(inv.status)}`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${getStatusBadge(inv.status)} ${getStatusGlow(inv.status)}`}>
                             {inv.status}
                           </span>
                         </TableCell>
@@ -699,90 +787,146 @@ export function BillingView() {
       </AlertDialog>
 
       {/* ===== Create Invoice Dialog ===== */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+      <Dialog open={createDialogOpen} onOpenChange={(open) => {
+        setCreateDialogOpen(open)
+        if (!open) setCreateStep(1)
+      }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Create Invoice</DialogTitle>
             <DialogDescription>Create a new invoice for a user.</DialogDescription>
           </DialogHeader>
+
+          {/* Step Indicator */}
+          <StepIndicator currentStep={createStep} />
+
           <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label>User *</Label>
-              <Select value={createForm.username} onValueChange={(v) => setCreateForm((p) => ({ ...p, username: v }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select user..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {users.map((u) => (
-                    <SelectItem key={u.username} value={u.username}>
-                      {u.fullName ? `${u.fullName} (${u.username})` : u.username}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label>Plan</Label>
-              <Select value={createForm.planId} onValueChange={(v) => setCreateForm((p) => ({ ...p, planId: v }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select plan (optional)..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {plans.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name} — {formatCurrency(p.price)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label>Amount *</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={createForm.amount}
-                  onChange={(e) => setCreateForm((p) => ({ ...p, amount: e.target.value }))}
-                />
+            {/* Step 1: Details */}
+            {createStep === 1 && (
+              <>
+                <div className="grid gap-2">
+                  <Label>User *</Label>
+                  <Select value={createForm.username} onValueChange={(v) => setCreateForm((p) => ({ ...p, username: v }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select user..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users.map((u) => (
+                        <SelectItem key={u.username} value={u.username}>
+                          {u.fullName ? `${u.fullName} (${u.username})` : u.username}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Plan</Label>
+                  <Select value={createForm.planId} onValueChange={(v) => setCreateForm((p) => ({ ...p, planId: v }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select plan (optional)..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {plans.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name} — {formatCurrency(p.price)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Due Date *</Label>
+                  <Input
+                    type="date"
+                    value={createForm.dueDate}
+                    onChange={(e) => setCreateForm((p) => ({ ...p, dueDate: e.target.value }))}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Step 2: Items */}
+            {createStep === 2 && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Amount *</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={createForm.amount}
+                      onChange={(e) => setCreateForm((p) => ({ ...p, amount: e.target.value }))}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Tax %</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      placeholder="10"
+                      value={createForm.tax}
+                      onChange={(e) => setCreateForm((p) => ({ ...p, tax: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Total (auto-calculated)</Label>
+                  <Input type="text" value={createForm.total ? formatCurrency(parseFloat(createForm.total)) : ''} readOnly className="bg-muted" />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Notes</Label>
+                  <Textarea
+                    placeholder="Invoice notes..."
+                    value={createForm.notes}
+                    onChange={(e) => setCreateForm((p) => ({ ...p, notes: e.target.value }))}
+                    rows={2}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Step 3: Review */}
+            {createStep === 3 && (
+              <div className="glass-card rounded-lg p-4 space-y-3">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <span className="text-muted-foreground">User</span>
+                  <span className="font-medium text-right">{createForm.username || '—'}</span>
+                  <span className="text-muted-foreground">Plan</span>
+                  <span className="font-medium text-right">
+                    {plans.find((p) => p.id === createForm.planId)?.name || '—'}
+                  </span>
+                  <span className="text-muted-foreground">Amount</span>
+                  <span className="font-medium text-right">{createForm.amount ? formatCurrency(parseFloat(createForm.amount)) : '—'}</span>
+                  <span className="text-muted-foreground">Tax</span>
+                  <span className="font-medium text-right">{createForm.tax}%</span>
+                  <span className="text-muted-foreground">Total</span>
+                  <span className="font-bold text-right text-primary">{createForm.total ? formatCurrency(parseFloat(createForm.total)) : '—'}</span>
+                  <span className="text-muted-foreground">Due Date</span>
+                  <span className="font-medium text-right">{createForm.dueDate || '—'}</span>
+                </div>
+                {createForm.notes && (
+                  <div className="pt-2 border-t">
+                    <p className="text-xs text-muted-foreground mb-1">Notes</p>
+                    <p className="text-sm">{createForm.notes}</p>
+                  </div>
+                )}
               </div>
-              <div className="grid gap-2">
-                <Label>Tax %</Label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  placeholder="10"
-                  value={createForm.tax}
-                  onChange={(e) => setCreateForm((p) => ({ ...p, tax: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <Label>Total (auto-calculated)</Label>
-              <Input type="text" value={createForm.total ? formatCurrency(parseFloat(createForm.total)) : ''} readOnly className="bg-muted" />
-            </div>
-            <div className="grid gap-2">
-              <Label>Due Date *</Label>
-              <Input
-                type="date"
-                value={createForm.dueDate}
-                onChange={(e) => setCreateForm((p) => ({ ...p, dueDate: e.target.value }))}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label>Notes</Label>
-              <Textarea
-                placeholder="Invoice notes..."
-                value={createForm.notes}
-                onChange={(e) => setCreateForm((p) => ({ ...p, notes: e.target.value }))}
-                rows={2}
-              />
-            </div>
+            )}
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreateInvoice}>Create Invoice</Button>
+            {createStep > 1 && (
+              <Button variant="outline" onClick={() => setCreateStep((s) => s - 1)}>Back</Button>
+            )}
+            <Button variant="outline" onClick={() => { setCreateDialogOpen(false); setCreateStep(1) }}>Cancel</Button>
+            {createStep < 3 ? (
+              <Button onClick={() => setCreateStep((s) => s + 1)} disabled={createStep === 1 && !createForm.username}>
+                Next
+              </Button>
+            ) : (
+              <Button onClick={handleCreateInvoice}>Create Invoice</Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -863,7 +1007,7 @@ export function BillingView() {
               {/* Invoice Info */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${getStatusBadge(selectedInvoice.status)}`}>
+                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${getStatusBadge(selectedInvoice.status)} ${getStatusGlow(selectedInvoice.status)}`}>
                     {selectedInvoice.status}
                   </span>
                   <span className="text-xs text-muted-foreground">Created {formatDate(selectedInvoice.createdAt)}</span>
@@ -891,7 +1035,7 @@ export function BillingView() {
               </div>
 
               {/* Amount Breakdown */}
-              <Card>
+              <Card className="card-hover">
                 <CardContent className="p-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Subtotal</span>

@@ -1,5 +1,6 @@
 'use client'
 
+import { useCallback, useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
 import { AppSidebar } from '@/components/aaa/app-sidebar'
@@ -16,8 +17,10 @@ import { SettingsView } from '@/components/aaa/settings-view'
 import { DictionaryView } from '@/components/aaa/dictionary-view'
 import { NotificationCenter } from '@/components/aaa/notification-center'
 import { CommandPalette, useCommandPaletteStore } from '@/components/aaa/command-palette'
+import { UserProfileDialog } from '@/components/aaa/user-profile-dialog'
 import { Toaster } from '@/components/ui/sonner'
-import { Search, Radio, Moon, Sun, Shield, Clock, Activity } from 'lucide-react'
+import { Search, Radio, Moon, Sun, Shield, Clock, Activity, Keyboard } from 'lucide-react'
+import { KeyboardShortcutsDialog } from '@/components/aaa/keyboard-shortcuts-dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -45,12 +48,84 @@ interface FooterStats {
   revenueThisMonth: number
 }
 
+const viewKeyMap: Record<string, string> = {
+  '1': 'dashboard',
+  '2': 'users',
+  '3': 'nas',
+  '4': 'plans',
+  '5': 'policies',
+  '6': 'sessions',
+  '7': 'billing',
+  '8': 'reports',
+  '9': 'dictionary',
+  '0': 'settings',
+}
+
+function isInputFocused(e: KeyboardEvent): boolean {
+  const target = e.target as HTMLElement
+  const tag = target.tagName
+  return (
+    tag === 'INPUT' ||
+    tag === 'TEXTAREA' ||
+    tag === 'SELECT' ||
+    target.isContentEditable
+  )
+}
+
 export default function Home() {
   const activeView = useAppStore((s) => s.activeView)
+  const setActiveView = useAppStore((s) => s.setActiveView)
+  const sidebarOpen = useAppStore((s) => s.sidebarOpen)
+  const setSidebarOpen = useAppStore((s) => s.setSidebarOpen)
   const { theme, setTheme } = useTheme()
   const commandPaletteStore = useCommandPaletteStore()
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
 
   const currentView = viewTitles[activeView] || viewTitles.dashboard
+
+  // Global keyboard shortcuts
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      const mod = e.metaKey || e.ctrlKey
+
+      // ⌘+Shift+/ or ? (when not in input) → open shortcuts dialog
+      if (mod && e.shiftKey && e.key === '/') {
+        e.preventDefault()
+        setShortcutsOpen((prev) => !prev)
+        return
+      }
+      if (e.key === '?' && !isInputFocused(e)) {
+        e.preventDefault()
+        setShortcutsOpen(true)
+        return
+      }
+
+      // Skip remaining shortcuts if focused on input
+      if (isInputFocused(e)) return
+
+      // ⌘1 through ⌘0 → switch to views
+      if (mod && e.key >= '0' && e.key <= '9') {
+        e.preventDefault()
+        const view = viewKeyMap[e.key]
+        if (view) setActiveView(view as 'dashboard')
+        return
+      }
+
+      // ⌘B → toggle sidebar
+      if (mod && e.key === 'b') {
+        e.preventDefault()
+        setSidebarOpen(!sidebarOpen)
+        return
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [setActiveView, setSidebarOpen, sidebarOpen])
+
+  const toggleShortcutsDialog = useCallback(() => {
+    setShortcutsOpen((prev) => !prev)
+  }, [])
 
   // Fetch footer stats from dashboard API
   const { data: footerStats, isLoading: footerLoading } = useQuery<FooterStats>({
@@ -131,6 +206,17 @@ export default function Home() {
                 )}
               </Button>
 
+              {/* Keyboard Shortcuts Help */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 md:h-8 md:w-8 rounded-lg"
+                onClick={toggleShortcutsDialog}
+                title="Keyboard Shortcuts (?)"
+              >
+                <Keyboard className="h-4 w-4 text-muted-foreground" />
+              </Button>
+
               {/* FreeRADIUS Status Badge */}
               <Badge variant="outline" className="hidden md:flex items-center gap-1.5 text-[10px] font-medium px-2.5 h-6 rounded-full border-emerald-200/60 bg-emerald-50/80 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-950/40 dark:text-emerald-400 badge-glow-success">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 status-pulse" />
@@ -139,7 +225,10 @@ export default function Home() {
 
               <NotificationCenter />
               <Separator orientation="vertical" className="h-5 mx-0.5" />
-              <div className="flex items-center gap-2.5">
+              <button
+                onClick={() => setProfileOpen(true)}
+                className="flex items-center gap-2.5 rounded-lg px-1.5 py-1 transition-colors hover:bg-muted/60 cursor-pointer"
+              >
                 <Avatar className="h-9 w-9 md:h-8 md:w-8 ring-2 ring-primary/10">
                   <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-[10px] font-bold">
                     AD
@@ -149,7 +238,7 @@ export default function Home() {
                   <p className="text-xs font-semibold leading-none">Admin</p>
                   <p className="text-[10px] text-muted-foreground mt-0.5">System Administrator</p>
                 </div>
-              </div>
+              </button>
             </div>
           </header>
 
@@ -227,6 +316,8 @@ export default function Home() {
       </div>
       <Toaster position="top-right" richColors closeButton />
       <CommandPalette />
+      <KeyboardShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+      <UserProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
     </>
   )
 }

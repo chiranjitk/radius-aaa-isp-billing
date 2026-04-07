@@ -404,9 +404,27 @@ export function PlansView() {
     ]
   }, [])
 
+  // Plan type badge glow classes
+  const PLAN_TYPE_GLOW: Record<string, string> = {
+    'flat-rate': 'badge-glow-success',
+    'data-based': 'badge-glow-warning',
+    'time-based': 'badge-glow-danger',
+    hybrid: 'badge-glow-warning',
+  }
+
+  // Plan type gradient accent bar colors
+  const PLAN_TYPE_GRADIENT: Record<string, string> = {
+    'flat-rate': 'bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-400',
+    'data-based': 'bg-gradient-to-r from-purple-400 via-purple-500 to-fuchsia-400',
+    'time-based': 'bg-gradient-to-r from-rose-400 via-red-400 to-orange-400',
+    hybrid: 'bg-gradient-to-r from-amber-400 via-yellow-400 to-orange-400',
+  }
+
+  const staggerClasses = ['stagger-1', 'stagger-2', 'stagger-3', 'stagger-4', 'stagger-5', 'stagger-6']
+
   // ─── Render ──────────────────────────────────────────────────────
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-transition">
       {/* Action Bar */}
       <div className="flex items-center justify-end gap-2">
         <DropdownMenu>
@@ -500,7 +518,7 @@ export function PlansView() {
           return (
             <Card
               key={type}
-              className="cursor-pointer transition-shadow hover:shadow-md"
+              className="card-hover cursor-pointer"
               onClick={() => {
                 setPlanTypeFilter(planTypeFilter === type ? 'all' : type)
                 setPage(1)
@@ -521,7 +539,7 @@ export function PlansView() {
       </div>
 
       {/* Filter Bar */}
-      <Card>
+      <Card className="card-hover">
         <CardContent className="p-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="relative">
@@ -592,7 +610,7 @@ export function PlansView() {
 
       {/* Plan Comparison Table */}
       {comparisonMode && selectedForCompare.length >= 2 && (
-        <Card>
+        <Card className="glass-card">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <GitCompareArrows className="h-5 w-5" />
@@ -636,13 +654,13 @@ export function PlansView() {
       {isLoading && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i}>
+            <Card key={i} className="card-hover">
               <CardContent className="p-6 space-y-4">
-                <Skeleton className="h-5 w-2/3" />
-                <Skeleton className="h-8 w-1/3" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-5 w-2/3 shimmer" />
+                <Skeleton className="h-8 w-1/3 shimmer" />
+                <Skeleton className="h-4 w-full shimmer" />
+                <Skeleton className="h-4 w-3/4 shimmer" />
+                <Skeleton className="h-4 w-1/2 shimmer" />
               </CardContent>
             </Card>
           ))}
@@ -653,7 +671,7 @@ export function PlansView() {
       {!isLoading && data?.plans && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {data.plans.map((plan) => {
+            {data.plans.map((plan, planIdx) => {
               const typeConfig = PLAN_TYPE_CONFIG[plan.planType]
               const TypeIcon = typeConfig?.icon || Layers
               const isBestValue = plan.planType === 'flat-rate' && plan._count.subscriptions >= 3
@@ -663,21 +681,31 @@ export function PlansView() {
                 <Card
                   key={plan.id}
                   className={cn(
-                    'relative transition-all hover:shadow-lg',
+                    'card-hover relative overflow-hidden transition-all hover:shadow-lg animate-fade-in-up',
+                    staggerClasses[planIdx % 6],
                     comparisonMode && selectedForCompare.includes(plan.id) && 'ring-2 ring-primary shadow-lg',
                     isBestValue && 'border-emerald-300 dark:border-emerald-700',
                     isHighestTier && 'border-amber-300 dark:border-amber-700'
                   )}
                 >
+                  {/* Decorative top accent gradient bar */}
+                  <div className={cn('h-[3px] rounded-t-lg', PLAN_TYPE_GRADIENT[plan.planType] || PLAN_TYPE_GRADIENT['flat-rate'])} />
+
                   {/* Badges on card top-right */}
                   <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                    {planIdx === 0 && (
+                      <Badge variant="default" className="bg-primary hover:bg-primary/90 text-primary-foreground text-[10px] gap-1 badge-glow-success">
+                        <Star className="h-3 w-3" />
+                        Recommended
+                      </Badge>
+                    )}
                     {isHighestTier && (
                       <Badge variant="default" className="bg-amber-500 hover:bg-amber-600 text-white text-[10px] gap-1">
                         <Crown className="h-3 w-3" />
                         Premium
                       </Badge>
                     )}
-                    {isBestValue && (
+                    {isBestValue && planIdx !== 0 && (
                       <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] gap-1">
                         <Star className="h-3 w-3" />
                         Popular
@@ -702,7 +730,7 @@ export function PlansView() {
                     <div className="space-y-1.5 pr-20">
                       <h3 className="font-semibold text-lg leading-tight truncate">{plan.name}</h3>
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="gap-1 text-xs">
+                        <Badge variant="outline" className={cn('gap-1 text-xs', PLAN_TYPE_GLOW[plan.planType])}>
                           <TypeIcon className="h-3 w-3" />
                           {typeConfig?.label || plan.planType}
                         </Badge>
