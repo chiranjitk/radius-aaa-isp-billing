@@ -15,11 +15,14 @@ import { BillingView } from '@/components/aaa/billing-view'
 import { ReportsView } from '@/components/aaa/reports-view'
 import { SettingsView } from '@/components/aaa/settings-view'
 import { DictionaryView } from '@/components/aaa/dictionary-view'
+import { IpPoolsView } from '@/components/aaa/ip-pools-view'
 import { NotificationCenter } from '@/components/aaa/notification-center'
 import { CommandPalette, useCommandPaletteStore } from '@/components/aaa/command-palette'
 import { UserProfileDialog } from '@/components/aaa/user-profile-dialog'
 import { Toaster } from '@/components/ui/sonner'
-import { Search, Radio, Moon, Sun, Shield, Clock, Activity, Keyboard } from 'lucide-react'
+import { RegistrationsView } from '@/components/aaa/registrations-view'
+import { SelfcarePortal } from '@/components/aaa/selfcare-portal'
+import { Search, Radio, Moon, Sun, Shield, Clock, Activity, Keyboard, UserCircle } from 'lucide-react'
 import { KeyboardShortcutsDialog } from '@/components/aaa/keyboard-shortcuts-dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -38,6 +41,9 @@ const viewTitles: Record<string, { title: string; description: string; icon: str
   reports: { title: 'Reports & Analytics', description: 'Usage statistics and insights', icon: 'chart' },
   settings: { title: 'System Settings', description: 'Configuration and maintenance', icon: 'settings' },
   dictionary: { title: 'RADIUS Dictionary', description: 'Attribute reference and vendor dictionaries', icon: 'book' },
+  'ip-pools': { title: 'IP Pool Management', description: 'IP address allocation and pool management', icon: 'globe' },
+  registrations: { title: 'Registrations', description: 'User registration requests and approval', icon: 'users' },
+  selfcare: { title: 'Selfcare Portal', description: 'End-user portal (demo)', icon: 'user' },
 }
 
 interface FooterStats {
@@ -248,6 +254,8 @@ export default function Home() {
               {activeView === 'dashboard' && <Activity className="h-3 w-3 mr-1" />}
               {activeView === 'users' && <Shield className="h-3 w-3 mr-1" />}
               {activeView === 'sessions' && <Clock className="h-3 w-3 mr-1" />}
+              {activeView === 'registrations' && <Shield className="h-3 w-3 mr-1" />}
+              {activeView === 'selfcare' && <UserCircle className="h-3 w-3 mr-1" />}
               {currentView.description}
             </Badge>
           </div>
@@ -265,6 +273,9 @@ export default function Home() {
               {activeView === 'reports' && <ReportsView />}
               {activeView === 'settings' && <SettingsView />}
               {activeView === 'dictionary' && <DictionaryView />}
+              {activeView === 'ip-pools' && <IpPoolsView />}
+              {activeView === 'registrations' && <RegistrationsView />}
+              {activeView === 'selfcare' && <SelfcarePortal />}
             </div>
           </main>
 
@@ -273,7 +284,7 @@ export default function Home() {
             <div className="flex items-center gap-2.5">
               <span className="font-semibold text-foreground/80">FreeRADIUS AAA/BSS</span>
               <Badge variant="outline" className="text-[9px] font-mono px-1.5 h-4 rounded bg-primary/5 border-primary/10 text-primary">
-                v2.4.0
+                v2.5.0
               </Badge>
               <Separator orientation="vertical" className="h-3" />
               <span className="hidden sm:inline">{new Date().toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>

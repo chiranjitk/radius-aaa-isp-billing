@@ -886,3 +886,64 @@ Stage Summary:
 - Keyboard icon button in header as alternative trigger
 - Input-aware shortcut guards to prevent conflicts with text editing
 - All existing functionality preserved
+---
+Task ID: 22-23
+Agent: Main Orchestrator (Phase 8 - Enterprise Features)
+Task: Fix user edit bug, add IP Pool management, Registration/KYC, Document Upload, Profile Photo, Selfcare Portal
+
+Work Log:
+- Reviewed worklog.md and assessed project status (v2.5, 13 modules)
+- ESLint passes clean with zero errors
+- Build succeeds with all 33 routes compiled
+
+Critical Bug Fix:
+- Fixed user edit popup coming blank: Root cause was Radix Dialog onOpenChange NOT being called for programmatic open changes. populateForm() was only called inside handleOpenChange. Fixed by adding useEffect watching [open, editUser].
+
+Schema Updates (5 new models, extended RadUser):
+- RadUser: +15 fields (city, state, zipCode, country, profilePhoto, dateOfBirth, gender, idType, idNumber, kycStatus, ipType, staticIp, ipPoolId)
+- IpPool: name (unique), network CIDR, gateway, DNS, type (dhcp/static/pppoe)
+- IpPoolRange: startIp, endIp, currentIp (sequential allocation)
+- IpAssignment: ipAddress (unique), username, macAddress, status
+- UserDocument: docType, fileName, filePath, status, verification
+- Registration: username, email, status, token, approval workflow
+
+New Features:
+1. IP Pool Management (24online-style) with CRUD, stats, assign/release
+2. User Registration with approve/reject workflow
+3. KYC & Document Upload with drag-drop, verification
+4. Profile Photo Upload with circular preview
+5. Selfcare Portal (demo) for end-users
+6. Enhanced User Edit Dialog with 10 new fields
+7. 3 new sidebar items (IP Pools, Registrations, Selfcare Portal)
+8. 3 new command palette commands
+
+Stage Summary:
+- 1 critical bug fixed
+- 5 new database models, 8 new API endpoints
+- 4 new frontend components
+- Version: v2.6.0
+
+---
+## Current Project Status (Updated)
+
+### Assessment
+AAA/RADIUS BSS at v2.6.0 with enterprise features: IP Pool management, KYC, registration workflow, profile photos, selfcare portal. 23 DB models, 20+ APIs, 13 views.
+
+### Known Issues
+1. Dev server stability under load in sandbox (build stable)
+2. No real FreeRADIUS backend (simulated)
+3. File uploads as base64 (sandbox, production uses S3)
+4. Selfcare portal is demo (no auth)
+5. Manual KYC verification only
+
+### Priority Recommendations
+1. WebSocket real-time monitoring
+2. Invoice PDF generation
+3. Automated billing cycle
+4. Network topology visualization
+5. SMS/Email notifications
+6. Two-factor auth
+7. API rate limiting
+8. CSV import with IP assignment
+9. Bandwidth shaping integration
+10. White-label branding

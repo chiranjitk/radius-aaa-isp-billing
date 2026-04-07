@@ -11,6 +11,9 @@ export type ViewId =
   | 'reports'
   | 'dictionary'
   | 'settings'
+  | 'ip-pools'
+  | 'registrations'
+  | 'selfcare'
 
 interface AppState {
   activeView: ViewId

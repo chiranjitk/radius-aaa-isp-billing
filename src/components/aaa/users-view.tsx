@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -42,6 +42,9 @@ import {
   UserCheck,
   UserX,
   Upload,
+  ShieldCheck,
+  Calendar,
+  Hash,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -107,6 +110,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { RadiusTestDialog } from '@/components/aaa/radius-test-dialog'
 import { CsvImportDialog } from '@/components/aaa/csv-import-dialog'
 import { Checkbox } from '@/components/ui/checkbox'
+import { UserKycPanel } from '@/components/aaa/user-kyc-panel'
 
 // ==========================================
 // Types
@@ -693,6 +697,16 @@ function UserFormDialog({
     phone: '',
     company: '',
     address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: '',
+    dateOfBirth: '',
+    gender: '',
+    idType: '',
+    idNumber: '',
+    ipType: 'dynamic',
+    staticIp: '',
     authType: 'PAP',
     simultaneous: 1,
     status: 'active',
@@ -721,6 +735,16 @@ function UserFormDialog({
       phone: user.phone || '',
       company: user.company || '',
       address: user.address || '',
+      city: (user as Record<string, unknown>).city as string || '',
+      state: (user as Record<string, unknown>).state as string || '',
+      zipCode: (user as Record<string, unknown>).zipCode as string || '',
+      country: (user as Record<string, unknown>).country as string || '',
+      dateOfBirth: (user as Record<string, unknown>).dateOfBirth as string || '',
+      gender: (user as Record<string, unknown>).gender as string || '',
+      idType: (user as Record<string, unknown>).idType as string || '',
+      idNumber: (user as Record<string, unknown>).idNumber as string || '',
+      ipType: (user as Record<string, unknown>).ipType as string || 'dynamic',
+      staticIp: (user as Record<string, unknown>).staticIp as string || '',
       authType: user.authType,
       simultaneous: user.simultaneous,
       status: user.status,
@@ -754,6 +778,16 @@ function UserFormDialog({
       phone: '',
       company: '',
       address: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      country: '',
+      dateOfBirth: '',
+      gender: '',
+      idType: '',
+      idNumber: '',
+      ipType: 'dynamic',
+      staticIp: '',
       authType: 'PAP',
       simultaneous: 1,
       status: 'active',
@@ -763,13 +797,17 @@ function UserFormDialog({
     setReplyAttrs([])
   }, [])
 
-  // Handle open change
-  const handleOpenChange = (val: boolean) => {
-    if (val && editUser) {
+  // Populate form when dialog opens with editUser data
+  useEffect(() => {
+    if (open && editUser) {
       populateForm(editUser)
-    } else if (val && !editUser) {
+    } else if (open && !editUser) {
       resetForm()
     }
+  }, [open, editUser])
+
+  // Handle open change
+  const handleOpenChange = (val: boolean) => {
     onOpenChange(val)
   }
 
@@ -843,6 +881,16 @@ function UserFormDialog({
         phone: formData.phone.trim() || undefined,
         company: formData.company.trim() || undefined,
         address: formData.address.trim() || undefined,
+        city: formData.city.trim() || undefined,
+        state: formData.state.trim() || undefined,
+        zipCode: formData.zipCode.trim() || undefined,
+        country: formData.country.trim() || undefined,
+        dateOfBirth: formData.dateOfBirth || undefined,
+        gender: formData.gender || undefined,
+        idType: formData.idType || undefined,
+        idNumber: formData.idNumber.trim() || undefined,
+        ipType: formData.ipType,
+        staticIp: formData.ipType === 'static' ? formData.staticIp.trim() || undefined : undefined,
         authType: formData.authType,
         simultaneous: Number(formData.simultaneous) || 1,
         status: formData.status,
@@ -985,10 +1033,137 @@ function UserFormDialog({
               <Label htmlFor="address">Address</Label>
               <Input
                 id="address"
-                placeholder="123 Main St, City, Country"
+                placeholder="123 Main St"
                 value={formData.address}
                 onChange={(e) => setFormData((d) => ({ ...d, address: e.target.value }))}
               />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  placeholder="City"
+                  value={formData.city}
+                  onChange={(e) => setFormData((d) => ({ ...d, city: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="state">State</Label>
+                <Input
+                  id="state"
+                  placeholder="State"
+                  value={formData.state}
+                  onChange={(e) => setFormData((d) => ({ ...d, state: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="zipCode">Zip Code</Label>
+                <Input
+                  id="zipCode"
+                  placeholder="12345"
+                  value={formData.zipCode}
+                  onChange={(e) => setFormData((d) => ({ ...d, zipCode: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="country">Country</Label>
+                <Input
+                  id="country"
+                  placeholder="Country"
+                  value={formData.country}
+                  onChange={(e) => setFormData((d) => ({ ...d, country: e.target.value }))}
+                />
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Personal Details */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              Personal Details
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                <Input
+                  id="dateOfBirth"
+                  type="date"
+                  value={formData.dateOfBirth}
+                  onChange={(e) => setFormData((d) => ({ ...d, dateOfBirth: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Gender</Label>
+                <Select
+                  value={formData.gender}
+                  onValueChange={(v) => setFormData((d) => ({ ...d, gender: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>ID Type</Label>
+                <Select
+                  value={formData.idType}
+                  onValueChange={(v) => setFormData((d) => ({ ...d, idType: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="passport">Passport</SelectItem>
+                    <SelectItem value="national_id">National ID</SelectItem>
+                    <SelectItem value="driving_license">Driving License</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="idNumber">ID Number</Label>
+                <Input
+                  id="idNumber"
+                  placeholder="ID Number"
+                  value={formData.idNumber}
+                  onChange={(e) => setFormData((d) => ({ ...d, idNumber: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>IP Type</Label>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={formData.ipType}
+                    onValueChange={(v) => setFormData((d) => ({ ...d, ipType: v }))}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="dynamic">Dynamic</SelectItem>
+                      <SelectItem value="static">Static</SelectItem>
+                      <SelectItem value="pool">Pool</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {formData.ipType === 'static' && (
+                    <Input
+                      placeholder="e.g. 10.0.1.100"
+                      value={formData.staticIp}
+                      onChange={(e) => setFormData((d) => ({ ...d, staticIp: e.target.value }))}
+                      className="flex-1"
+                    />
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1310,6 +1485,10 @@ function UserDetailsSheet({
                       <CreditCard className="h-3.5 w-3.5" />
                       <span className="hidden sm:inline">Billing</span>
                     </TabsTrigger>
+                    <TabsTrigger value="kyc" className="flex-1 gap-1.5 text-xs">
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">KYC</span>
+                    </TabsTrigger>
                   </TabsList>
                 </div>
 
@@ -1522,6 +1701,11 @@ function UserDetailsSheet({
                       <p className="text-sm text-muted-foreground">No subscriptions</p>
                     </div>
                   )}
+                </TabsContent>
+
+                {/* KYC & Documents Tab */}
+                <TabsContent value="kyc" className="px-6 py-4">
+                  <UserKycPanel userId={user.id} />
                 </TabsContent>
               </Tabs>
             </ScrollArea>

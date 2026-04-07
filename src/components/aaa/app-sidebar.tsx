@@ -21,6 +21,9 @@ import {
   Wifi,
   TrendingUp,
   TrendingDown,
+  Globe,
+  UserPlus,
+  UserCog,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -53,14 +56,17 @@ const navItems: NavItem[] = [
   { id: 'billing', label: 'Invoices & Payments', icon: FileText, category: 'BSS', categoryColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' },
   { id: 'reports', label: 'Reports & Analytics', icon: BarChart3, category: 'BSS', categoryColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' },
   { id: 'dictionary', label: 'RADIUS Dictionary', icon: BookOpen, category: 'SYS', categoryColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-400' },
+  { id: 'ip-pools', label: 'IP Pools', icon: Globe, category: 'SYS', categoryColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-400' },
   { id: 'settings', label: 'System Settings', icon: Settings, category: 'SYS', categoryColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-400' },
+  { id: 'registrations', label: 'Registrations', icon: UserPlus, category: 'SYS', categoryColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-400' },
+  { id: 'selfcare', label: 'Selfcare Portal', icon: UserCog, category: 'SYS', categoryColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-400' },
 ]
 
 const groupedItems = {
   'Overview': ['dashboard'] as ViewId[],
   'AAA': ['users', 'nas', 'policies', 'sessions'] as ViewId[],
   'BSS': ['plans', 'billing', 'reports'] as ViewId[],
-  'System': ['dictionary', 'settings'] as ViewId[],
+  'System': ['dictionary', 'ip-pools', 'settings', 'registrations', 'selfcare'] as ViewId[],
 }
 
 export function AppSidebar() {
@@ -321,10 +327,10 @@ export function AppSidebar() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="text-[8px] font-semibold text-muted-foreground/40 tabular-nums cursor-default">
-                    <span className="gradient-text">2.1</span>
+                    <span className="gradient-text">2.5</span>
                   </span>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="text-xs">v2.1.0 — &copy; 2025 FreeRADIUS BSS</TooltipContent>
+                <TooltipContent side="right" className="text-xs">v2.5.0 — &copy; 2025 FreeRADIUS BSS</TooltipContent>
               </Tooltip>
             </div>
           )}

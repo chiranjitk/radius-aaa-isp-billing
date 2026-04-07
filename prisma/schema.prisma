@@ -20,6 +20,22 @@ model RadUser {
   phone         String?
   company       String?
   address       String?
+  city          String?
+  state         String?
+  zipCode       String?
+  country       String?
+  profilePhoto  String?                  // URL or base64 of profile photo
+  dateOfBirth   String?
+  gender        String?                  // male, female, other
+  idType        String?                  // passport, national_id, driving_license
+  idNumber      String?
+  kycStatus     String    @default("pending") // pending, submitted, verified, rejected
+  kycVerifiedAt DateTime?
+  kycVerifiedBy String?
+  kycNotes      String?
+  ipType        String    @default("dynamic") // static, dynamic, pool
+  staticIp      String?                  // assigned static IP address
+  ipPoolId      String?
   status        String    @default("active") // active, disabled, suspended
   authType      String    @default("PAP")    // PAP, CHAP, MS-CHAPv2, EAP
   simultaneous  Int       @default(1)        // max simultaneous sessions
@@ -34,9 +50,13 @@ model RadUser {
   subscriptions Subscription[]
   invoices      Invoice[]
   payments      Payment[]
+  documents     UserDocument[]
+  ipPool        IpPool?  @relation(fields: [ipPoolId], references: [id])
 
   @@index([username])
   @@index([status])
+  @@index([kycStatus])
+  @@index([ipType])
 }
 
 model RadGroup {
@@ -411,4 +431,126 @@ model SystemSetting {
   description String?
 
   @@index([group])
+}
+
+// ==========================================
+// IP POOL MANAGEMENT (24online-style)
+// ==========================================
+
+model IpPool {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  network     String                    // e.g. "10.0.0.0/24"
+  gateway     String?
+  subnetMask  String?
+  dnsPrimary  String?
+  dnsSecondary String?
+  leaseTime   Int      @default(86400)  // in seconds
+  type        String   @default("dhcp")  // dhcp, static, pppoe
+  status      String   @default("active") // active, disabled, full
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ranges      IpPoolRange[]
+  assignments IpAssignment[]
+  users       RadUser[]
+
+  @@index([status])
+}
+
+model IpPoolRange {
+  id        String  @id @default(cuid())
+  poolId    String
+  startIp   String  // e.g. "10.0.0.100"
+  endIp     String  // e.g. "10.0.0.200"
+  currentIp String? // next IP to assign (for sequential allocation)
+  isAvailable Boolean @default(true)
+
+  pool      IpPool  @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  assignments IpAssignment[]
+
+  @@index([poolId])
+}
+
+model IpAssignment {
+  id          String   @id @default(cuid())
+  poolId      String
+  rangeId     String
+  ipAddress   String   @unique
+  username    String?  // null = available, set = assigned
+  macAddress  String?
+  hostname    String?
+  assignedAt  DateTime?
+  releasedAt  DateTime?
+  status      String   @default("available") // available, assigned, reserved, quarantined
+
+  pool        IpPool     @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  range       IpPoolRange @relation(fields: [rangeId], references: [id], onDelete: Cascade)
+
+  @@index([poolId])
+  @@index([username])
+  @@index([ipAddress])
+  @@index([status])
+}
+
+// ==========================================
+// KYC & DOCUMENT MANAGEMENT
+// ==========================================
+
+model UserDocument {
+  id          String   @id @default(cuid())
+  userId      String
+  username    String
+  docType     String   // id_proof, address_proof, photo, contract, other
+  docName     String   // display name
+  fileName    String   // original file name
+  filePath    String   // stored path/URL
+  fileSize    Int?
+  mimeType    String?
+  status      String   @default("pending") // pending, approved, rejected
+  verifiedBy  String?
+  verifiedAt  DateTime?
+  rejectReason String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        RadUser   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([username])
+  @@index([docType])
+  @@index([status])
+}
+
+// ==========================================
+// USER REGISTRATION
+// ==========================================
+
+model Registration {
+  id            String   @id @default(cuid())
+  username      String   @unique
+  password      String
+  fullName      String?
+  email         String?
+  phone         String?
+  company       String?
+  address       String?
+  planId        String?
+  ipAddress     String?
+  userAgent     String?
+  status        String   @default("pending") // pending, approved, rejected, completed
+  approvedBy    String?
+  approvedAt    DateTime?
+  rejectReason  String?
+  token         String?  @unique // verification token
+  tokenExpiresAt DateTime?
+  verifiedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status])
+  @@index([email])
+  @@index([token])
 }

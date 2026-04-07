@@ -25,6 +25,9 @@ import {
   Moon,
   Database,
   Search,
+  Globe,
+  UserPlus,
+  UserCog,
   type LucideIcon,
 } from 'lucide-react'
 import { create } from 'zustand'
@@ -123,11 +126,32 @@ export function CommandPalette() {
         action: () => setActiveView('dictionary'),
       },
       {
+        id: 'nav-ip-pools',
+        label: 'Go to IP Pool Management',
+        category: 'Navigation',
+        icon: Globe,
+        action: () => setActiveView('ip-pools'),
+      },
+      {
         id: 'nav-settings',
         label: 'Go to System Settings',
         category: 'Navigation',
         icon: Settings,
         action: () => setActiveView('settings'),
+      },
+      {
+        id: 'nav-registrations',
+        label: 'Go to Registrations',
+        category: 'Navigation',
+        icon: UserPlus,
+        action: () => setActiveView('registrations'),
+      },
+      {
+        id: 'nav-selfcare',
+        label: 'Go to Selfcare Portal',
+        category: 'Navigation',
+        icon: UserCog,
+        action: () => setActiveView('selfcare'),
       },
       {
         id: 'action-dark-mode',
