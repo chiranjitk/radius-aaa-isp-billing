@@ -1593,10 +1593,10 @@ export function DictionaryView() {
     let result = [...RADIUS_ATTRIBUTES]
 
     // Tab filter
-    if (activeTab !== 'all') {
-      result = result.filter(a => a.category === activeTab)
-    } else if (activeTab === 'common') {
+    if (activeTab === 'common') {
       result = result.filter(a => a.commonlyUsed)
+    } else if (activeTab !== 'all') {
+      result = result.filter(a => a.category === activeTab)
     }
 
     // Search filter

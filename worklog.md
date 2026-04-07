@@ -233,6 +233,41 @@ The AAA/RADIUS BSS system is now at v2.3 with real-time session monitoring, RADI
 10. Create printable reports with company branding
 
 ---
+Task ID: 31
+Agent: frontend-styling-expert
+Task: Enhanced global styling with new animations, patterns, and micro-interactions
+
+Work Log:
+- Read existing globals.css (398 lines with 18+ utility classes) and analyzed current component structure
+- Added 11 new CSS utility classes to globals.css:
+  1. `.neo-card` — Neo-brutalism card with offset border shadow, hover translate(-1px,-1px) + shadow grow
+  2. `.stat-card` — Gradient top-border accent (emerald→violet), padding, hover lift + shadow
+  3. `.shimmer-text` — Gradient mask text animation moving left-to-right with 3s infinite loop, light/dark mode variants
+  4. `.glass-panel` — Enhanced glassmorphism with blur(16px) saturate(180%), semi-transparent bg, 1px border, inner glow
+  5. `.badge-dot` — 6px circle with pulse animation for status indicators inside badges
+  6. `.hover-lift` — Smooth translateY(-2px) + enhanced shadow on hover (200ms transition)
+  7. `.data-bar` / `.data-bar-fill` — 6px rounded-full progress bar with gradient fill and mount animation
+  8. `.text-gradient` — 135° gradient text (primary→violet→orange) with -webkit-background-clip
+  9. `.grid-pattern` — Subtle 24px grid background lines at 0.03-0.04 opacity
+  10. `.border-gradient` — Animated gradient border with pseudo-element mask approach, background-size shift on hover
+  11. `.toast-enter` — Slide-in from right + fade + scale(0.95→1) entrance animation
+- Applied `.glass-panel` to page.tsx header and footer (replaced `.glass-card`)
+- Applied `.pulse-ring` to both status dots in app-sidebar.tsx (branding area + footer operational indicator)
+- Applied `.hover-lift` to all nav item buttons in app-sidebar.tsx
+- Applied `.badge-dot` before footer stat labels: Users, NAS (muted color), Revenue (amber color)
+- Applied `.shimmer-text` to welcome banner heading in dashboard-view.tsx (replaced `.gradient-text`)
+- All animations use transform/opacity only for performance (compositor-friendly)
+- Full light/dark mode support via `.dark` variant selectors
+- No indigo or blue colors used (emerald, violet, orange, amber palette only)
+- CSS custom properties (var(--border), var(--foreground), var(--radius)) used throughout
+- ESLint passes clean with zero errors
+
+Stage Summary:
+- 11 new reusable CSS utility classes added to globals.css
+- 4 components enhanced with new styles (page.tsx, app-sidebar.tsx, dashboard-view.tsx)
+- All animations are GPU-accelerated (transform/opacity only)
+- Full dark mode support
+- No breaking changes to existing functionality
 Task ID: 3
 Agent: Main Orchestrator (Phase 3)
 Task: QA testing, bug fixes, styling improvements, new features
@@ -940,10 +975,189 @@ AAA/RADIUS BSS at v2.6.0 with enterprise features: IP Pool management, KYC, regi
 1. WebSocket real-time monitoring
 2. Invoice PDF generation
 3. Automated billing cycle
-4. Network topology visualization
+4. ~~Network topology visualization~~ ✅ Done (Task 30)
 5. SMS/Email notifications
 6. Two-factor auth
 7. API rate limiting
 8. CSV import with IP assignment
 9. Bandwidth shaping integration
 10. White-label branding
+
+---
+Task ID: 30
+Agent: full-stack-developer
+Task: Add Network Topology Map and Dashboard System Alerts Panel
+
+Work Log:
+
+Part A: Network Topology Map
+- Created `/src/components/aaa/network-topology.tsx` — pure CSS/SVG network topology visualization
+  - Central FreeRADIUS Server node with emerald glow, spinning outer ring, and status indicator
+  - NAS device nodes positioned in a circle around the center, fetched from /api/nas
+  - Each NAS node shows: vendor icon (color-coded per vendor), status dot (green=online, red=offline), device name, IP address
+  - Vendor color coding: Cisco=blue, Juniper=emerald, MikroTik=amber, Huawei=red, Aruba=violet
+  - Animated dashed connection lines from server to each NAS (CSS animation dashMove)
+  - Hover on NAS node: highlights connection line (solid, thicker), shows tooltip with full device details (name, IP, vendor, model, status, sessions)
+  - Responsive SVG with viewBox, horizontal scroll on small screens
+  - Background dot pattern, center radial glow for visual depth
+  - Legend showing online/offline counts and vendor breakdown with colored dots
+  - Vendor badge strip below the map
+  - Loading skeleton and empty state for zero devices
+  - Uses existing CSS utilities: status-pulse, animate-fade-in-up
+
+Part A: NAS View Tabs Integration
+- Modified `/src/components/aaa/nas-view.tsx`:
+  - Added Tabs/TabsList/TabsTrigger/TabsContent imports from shadcn/ui
+  - Added NetworkTopology import
+  - Wrapped existing device list content in Tabs component with two tabs: "Device List" (default) and "Network Map"
+  - Device List tab shows all existing content (action bar, stats, filter bar, card grid, pagination, dialogs)
+  - Network Map tab renders the NetworkTopology component
+  - Tab triggers have icons (LayoutGrid, MapPin) and small text labels
+  - Tabs close properly with dialogs outside the Tabs component
+
+Part B: System Alerts Panel
+- Created `/src/components/aaa/system-alerts-panel.tsx` — dashboard system alerts panel
+  - Four severity levels: Critical (red, AlertCircle), Warning (amber, AlertTriangle), Info (sky, Info), Success (emerald, CheckCircle2)
+  - 17 simulated alerts across all severity levels with realistic AAA/RADIUS messages
+  - Each alert row: severity icon, colored left border, title, "New" badge (green), severity badge, description (2-line clamp), timestamp, hover-reveal "Acknowledge" button
+  - Auto-refresh: new random alert added every 60 seconds via setInterval, previous "New" badges cleared
+  - Filter buttons: All, Critical, Warning, Info, Success — with active state styling and count badges
+  - Alert counts summary in card description: "3 Critical, 5 Warning, 2 Info" with per-severity colors
+  - "Clear All" button to dismiss all alerts at once
+  - Individual "Acknowledge" button per alert to dismiss it
+  - Max 8 alerts visible, scrollable with max-h-[380px]
+  - Animated entrance for new alerts via animate-fade-in-up
+  - Auto-refresh indicator spinner at bottom
+  - Empty state with checkmark icon and appropriate message per filter
+  - Total alert count badge in header
+
+Part B: Dashboard Integration
+- Modified `/src/components/aaa/dashboard-view.tsx`:
+  - Added SystemAlertsPanel import
+  - Placed SystemAlertsPanel component between SystemActivityTimeline and QuickActionsGrid in the main dashboard layout
+
+Stage Summary:
+- 2 new components created: network-topology.tsx, system-alerts-panel.tsx
+- 2 existing components modified: nas-view.tsx (tabs), dashboard-view.tsx (alerts panel)
+- ESLint passes clean with zero errors
+- TypeScript compilation clean for all new/modified files
+- Network topology shows interactive SVG map of all NAS devices around FreeRADIUS server
+- System alerts panel provides severity-filtered alert monitoring with auto-refresh
+- No new npm packages installed
+
+---
+Task ID: 30-31
+Agent: Main Orchestrator (Phase 9 - Cron QA Round)
+
+Work Log:
+- Reviewed worklog.md and assessed project status (v2.6.0, 23 models, 20+ APIs, 13 views)
+- ESLint passes clean with zero errors
+- Production build succeeds with all 33+ routes compiled
+- TypeScript: zero errors in src/ (only pre-existing in examples/ and skills/)
+
+TypeScript Errors Fixed:
+1. store.ts: Removed duplicate command palette store (was conflicting with command-palette.tsx)
+2. users-view.tsx: Added 12 new fields to UserListItem interface (city, state, zipCode, country, profilePhoto, dateOfBirth, gender, idType, idNumber, kycStatus, ipType, staticIp, ipPoolId)
+3. users-view.tsx: Removed Record<string, unknown> casts - using proper typed fields
+4. users-view.tsx: Added Mail import from lucide-react, removed conflicting local Mail SVG
+5. billing-view.tsx: Fixed tax calculation type error (string | 0 → string)
+6. plans-view.tsx: Fixed boolean | null → boolean with Boolean() wrapper
+7. dictionary-view.tsx: Fixed unreachable code - reordered if/else for activeTab check
+8. reports/route.ts: Fixed array type inference (never[]) with explicit typed arrays
+
+New Features:
+
+1. Network Topology Map (Task 30-a):
+   - Created `/src/components/aaa/network-topology.tsx`
+   - Pure SVG/CSS topology map, NO external packages
+   - Central FreeRADIUS Server node with emerald glow and spinning ring
+   - NAS devices positioned in circle around center, fetched live from /api/nas
+   - Vendor-colored nodes: Cisco, Juniper, MikroTik, Huawei, Aruba
+   - Status indicators: green pulse for online, red for offline
+   - Animated dashed connection lines with CSS animation
+   - Hover interaction: highlights connection, shows tooltip with device details
+   - Background dot pattern and center radial glow
+   - Legend with online/offline counts and vendor breakdown
+   - Integrated into nas-view.tsx with Tabs: "Device List" and "Network Map"
+
+2. Dashboard System Alerts Panel (Task 30-b):
+   - Created `/src/components/aaa/system-alerts-panel.tsx`
+   - 4 severity levels: Critical (red), Warning (amber), Info (sky), Success (emerald)
+   - 17 realistic AAA/RADIUS alerts
+   - Auto-refresh every 60s with new random alerts
+   - Filter buttons: All, Critical, Warning, Info, Success with counts
+   - "New" badge on fresh alerts
+   - "Acknowledge" button and "Clear All" button
+   - Integrated into dashboard between System Activity Timeline and Quick Actions Grid
+
+Styling Improvements (Task 31):
+- 11 new CSS utility classes in globals.css:
+  1. `.neo-card` - Neo-brutalism card with offset shadow
+  2. `.stat-card` - Gradient top border stat card
+  3. `.shimmer-text` - Gradient mask text animation (3s loop)
+  4. `.glass-panel` - Enhanced glassmorphism (blur 16px, saturate 180%)
+  5. `.badge-dot` - 6px pulsing inline status indicator
+  6. `.hover-lift` - Smooth translateY(-2px) + shadow on hover
+  7. `.data-bar` / `.data-bar-fill` - Animated gradient progress bar
+  8. `.text-gradient` - 135deg gradient text (primary→violet→orange)
+  9. `.grid-pattern` - Subtle 24px grid lines background
+  10. `.border-gradient` - Animated gradient border via pseudo-element
+  11. `.toast-enter` - Slide-in + fade + scale entrance animation
+- Applied to page.tsx: header/footer → glass-panel, stats → badge-dot
+- Applied to app-sidebar.tsx: nav items → hover-lift, status dots → pulse-ring
+- Applied to dashboard-view.tsx: welcome heading → shimmer-text
+
+Stage Summary:
+- 8 TypeScript errors fixed
+- 2 new features (Network Topology, System Alerts)
+- 11 new CSS utility classes
+- ESLint: Clean ✅
+- TypeScript: Zero src/ errors ✅
+- Build: Success ✅
+- Version: v2.7.0
+
+---
+## Current Project Status (Updated)
+
+### Assessment
+AAA/RADIUS BSS system at v2.7.0 with network topology visualization, system alerts panel, and enhanced styling system. 23 DB models, 20+ API endpoints, 13+ views, 25+ CSS utility classes. Enterprise-grade ISP management platform with comprehensive RADIUS integration, IP pool management, KYC workflows, and polished UI.
+
+### Completed
+- 23-model database schema
+- 20+ REST API endpoints
+- 13+ client views (Dashboard, Users, NAS with Topology, Plans, Policies, Sessions, Billing, Reports, Dictionary, Settings, IP Pools, Registrations, Selfcare)
+- Network Topology Map with animated connections
+- System Alerts Panel with severity filtering
+- IP Pool Management (24online-style) with DHCP/Static/PPPoE
+- User Registration with approval workflow
+- KYC & Document Management with drag-drop upload
+- Profile Photo Upload
+- Selfcare Portal (demo)
+- CSV/JSON export for all tables
+- Bulk user operations
+- Live session monitoring with bandwidth simulation
+- RADIUS Test Tool (Auth/CoA/Disconnect)
+- Command Palette (⌘K) with keyboard navigation
+- Notification Center
+- Dark mode with next-themes
+- 25+ custom CSS utility classes
+- Glass-morphism design system
+
+### Known Issues
+1. Dev server stability in sandbox (build is stable, Turbopack sometimes crashes under load)
+2. No real FreeRADIUS backend (simulated operations)
+3. File uploads as base64 (production would use S3)
+4. Selfcare portal is demo mode
+5. Reports API has minor type edge cases (non-blocking)
+
+### Priority Recommendations
+1. WebSocket real-time session monitoring
+2. Invoice PDF generation
+3. Automated billing cycle engine
+4. Network topology enhancements (drill-down)
+5. Two-factor authentication
+6. API rate limiting
+7. SMS/Email notification integration
+8. Advanced analytics and forecasting
+9. White-label/branding support
+10. Mobile-responsive selfcare portal

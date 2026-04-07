@@ -83,6 +83,8 @@ import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { NetworkTopology } from '@/components/aaa/network-topology'
 import { cn } from '@/lib/utils'
 import { exportToCSV, exportToJSON, type ExportOptions } from '@/lib/export-utils'
 
@@ -606,7 +608,26 @@ export function NasView() {
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        {/* ========== ACTION BAR ========== */}
+        {/* ========== VIEW TABS ========== */}
+        <Tabs defaultValue="list" className="space-y-4">
+          <TabsList className="grid w-full max-w-xs grid-cols-2">
+            <TabsTrigger value="list" className="gap-1.5 text-xs">
+              <LayoutGrid className="h-3.5 w-3.5" />
+              Device List
+            </TabsTrigger>
+            <TabsTrigger value="map" className="gap-1.5 text-xs">
+              <MapPin className="h-3.5 w-3.5" />
+              Network Map
+            </TabsTrigger>
+          </TabsList>
+
+          {/* ========== TAB: Network Map ========== */}
+          <TabsContent value="map" className="space-y-4">
+            <NetworkTopology />
+          </TabsContent>
+
+          {/* ========== TAB: Device List ========== */}
+          <TabsContent value="list" className="space-y-6">
         <div className="flex items-center justify-end gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -1165,6 +1186,9 @@ export function NasView() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+          </TabsContent>
+        </Tabs>
 
         {/* ========== VENDOR TEMPLATES DIALOG ========== */}
         <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>

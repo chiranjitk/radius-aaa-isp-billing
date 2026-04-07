@@ -1303,7 +1303,7 @@ export function PlansView() {
             <AlertDialogAction
               onClick={() => deletingPlan && deleteMutation.mutate(deletingPlan.id)}
               className="bg-destructive text-white hover:bg-destructive/90"
-              disabled={deleteMutation.isPending || (deletingPlan && deletingPlan._count.subscriptions > 0)}
+              disabled={deleteMutation.isPending || Boolean(deletingPlan && deletingPlan._count.subscriptions > 0)}
             >
               {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>

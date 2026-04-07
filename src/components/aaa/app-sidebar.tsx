@@ -109,7 +109,7 @@ export function AppSidebar() {
               <span className="text-[10px] text-muted-foreground truncate leading-tight flex items-center gap-1">
                 AAA/BSS Platform
                 <span className="relative flex h-1.5 w-1.5">
-                  <span className="status-pulse absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="status-pulse pulse-ring absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
                 </span>
               </span>
@@ -206,7 +206,7 @@ export function AppSidebar() {
                     key={id}
                     onClick={() => setActiveView(id)}
                     className={cn(
-                      'group relative w-full flex items-center gap-2.5 rounded-lg text-[13px] transition-all duration-200 hover:scale-[1.02]',
+                      'group relative w-full flex items-center gap-2.5 rounded-lg text-[13px] transition-all duration-200 hover:scale-[1.02] hover-lift',
                       sidebarOpen ? 'px-2.5 py-2' : 'px-0 py-2 justify-center',
                       isActive
                         ? 'bg-gradient-to-r from-primary/8 to-transparent text-primary font-medium'
@@ -289,7 +289,7 @@ export function AppSidebar() {
           {sidebarOpen && (
             <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/20">
               <div className="relative">
-                <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                <div className="h-2 w-2 rounded-full bg-emerald-500 pulse-ring" />
                 <div className="absolute inset-0 h-2 w-2 rounded-full bg-emerald-500 status-pulse opacity-75" />
               </div>
               <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">System Operational</span>

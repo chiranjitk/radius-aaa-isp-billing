@@ -347,7 +347,7 @@ export function BillingView() {
           username: createForm.username,
           planId: createForm.planId || null,
           amount: createForm.amount,
-          tax: (parseFloat(createForm.amount) * parseFloat(createForm.tax || 0) / 100).toFixed(2),
+          tax: (parseFloat(String(createForm.amount)) * parseFloat(String(createForm.tax || 0)) / 100).toFixed(2),
           total: createForm.total,
           dueDate: createForm.dueDate,
           notes: createForm.notes,

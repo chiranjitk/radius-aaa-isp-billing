@@ -42,6 +42,7 @@ import {
   UserCheck,
   UserX,
   Upload,
+  Mail,
   ShieldCheck,
   Calendar,
   Hash,
@@ -180,6 +181,20 @@ interface UserListItem {
   email?: string
   phone?: string
   company?: string
+  address?: string
+  city?: string
+  state?: string
+  zipCode?: string
+  country?: string
+  profilePhoto?: string
+  dateOfBirth?: string
+  gender?: string
+  idType?: string
+  idNumber?: string
+  kycStatus?: string
+  ipType?: string
+  staticIp?: string
+  ipPoolId?: string
   status: string
   authType: string
   simultaneous: number
@@ -735,16 +750,16 @@ function UserFormDialog({
       phone: user.phone || '',
       company: user.company || '',
       address: user.address || '',
-      city: (user as Record<string, unknown>).city as string || '',
-      state: (user as Record<string, unknown>).state as string || '',
-      zipCode: (user as Record<string, unknown>).zipCode as string || '',
-      country: (user as Record<string, unknown>).country as string || '',
-      dateOfBirth: (user as Record<string, unknown>).dateOfBirth as string || '',
-      gender: (user as Record<string, unknown>).gender as string || '',
-      idType: (user as Record<string, unknown>).idType as string || '',
-      idNumber: (user as Record<string, unknown>).idNumber as string || '',
-      ipType: (user as Record<string, unknown>).ipType as string || 'dynamic',
-      staticIp: (user as Record<string, unknown>).staticIp as string || '',
+      city: user.city || '',
+      state: user.state || '',
+      zipCode: user.zipCode || '',
+      country: user.country || '',
+      dateOfBirth: user.dateOfBirth || '',
+      gender: user.gender || '',
+      idType: user.idType || '',
+      idNumber: user.idNumber || '',
+      ipType: user.ipType || 'dynamic',
+      staticIp: user.staticIp || '',
       authType: user.authType,
       simultaneous: user.simultaneous,
       status: user.status,
@@ -1723,15 +1738,6 @@ function UserDetailsSheet({
 // ==========================================
 // Small Helper Components
 // ==========================================
-
-function Mail(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <rect width="20" height="16" x="2" y="4" rx="2" />
-      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-    </svg>
-  )
-}
 
 function InfoItem({
   icon: Icon,

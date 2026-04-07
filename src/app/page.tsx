@@ -158,7 +158,7 @@ export default function Home() {
         <AppSidebar />
         <div className="flex flex-1 flex-col overflow-hidden">
           {/* Top Header Bar */}
-          <header className="glass-card flex h-14 shrink-0 items-center gap-4 border-b px-4 md:px-6 z-10">
+          <header className="glass-panel flex h-14 shrink-0 items-center gap-4 border-b px-4 md:px-6 z-10">
             {/* Breadcrumb / View Title */}
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="flex items-center justify-center w-9 h-9 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10">
@@ -280,7 +280,7 @@ export default function Home() {
           </main>
 
           {/* Status Footer */}
-          <footer className="glass-card flex h-9 shrink-0 items-center justify-between border-t px-4 text-[10px] text-muted-foreground z-10">
+          <footer className="glass-panel flex h-9 shrink-0 items-center justify-between border-t px-4 text-[10px] text-muted-foreground z-10">
             <div className="flex items-center gap-2.5">
               <span className="font-semibold text-foreground/80">FreeRADIUS AAA/BSS</span>
               <Badge variant="outline" className="text-[9px] font-mono px-1.5 h-4 rounded bg-primary/5 border-primary/10 text-primary">
@@ -295,6 +295,7 @@ export default function Home() {
               ) : (
                 <>
                   <div className="hidden sm:flex items-center gap-1.5 px-1.5">
+                    <span className="badge-dot text-muted-foreground/60" />
                     <span className="text-muted-foreground/60">Users</span>
                     <span className="font-semibold text-foreground tabular-nums">{footerStats?.totalUsers ?? '—'}</span>
                   </div>
@@ -306,11 +307,13 @@ export default function Home() {
                   </div>
                   <Separator orientation="vertical" className="h-3 hidden sm:block" />
                   <div className="hidden md:flex items-center gap-1.5 px-1.5">
+                    <span className="badge-dot text-muted-foreground/60" />
                     <span className="text-muted-foreground/60">NAS</span>
                     <span className="font-semibold text-foreground tabular-nums">{footerStats?.onlineNas ?? '—'}/{footerStats?.totalNas ?? '—'}</span>
                   </div>
                   <Separator orientation="vertical" className="h-3 hidden md:block" />
                   <div className="hidden lg:flex items-center gap-1.5 px-1.5">
+                    <span className="badge-dot text-amber-500" />
                     <span className="text-muted-foreground/60">Revenue</span>
                     <span className="font-semibold text-foreground tabular-nums">${footerStats?.revenueThisMonth?.toLocaleString() ?? '—'}</span>
                   </div>

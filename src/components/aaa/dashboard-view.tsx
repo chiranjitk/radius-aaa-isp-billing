@@ -68,6 +68,7 @@ import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useAppStore } from '@/lib/store'
+import { SystemAlertsPanel } from '@/components/aaa/system-alerts-panel'
 
 // =============================================
 // Types
@@ -882,7 +883,7 @@ function WelcomeBanner({ uptime }: { uptime: string }) {
         <div className="absolute inset-0 dot-pattern opacity-40" />
         <div className="relative p-5 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="space-y-1.5">
-            <h1 className="text-2xl md:text-3xl font-bold gradient-text">
+            <h1 className="text-2xl md:text-3xl font-bold shimmer-text">
               Welcome back, Admin
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -1341,6 +1342,11 @@ export function DashboardView() {
       {/* System Activity Timeline */}
       {/* ============================================= */}
       <SystemActivityTimeline />
+
+      {/* ============================================= */}
+      {/* System Alerts Panel */}
+      {/* ============================================= */}
+      <SystemAlertsPanel />
 
       {/* ============================================= */}
       {/* Quick Actions Grid */}

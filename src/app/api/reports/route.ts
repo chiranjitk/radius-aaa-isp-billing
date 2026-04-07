@@ -159,7 +159,7 @@ async function generateRevenueReport(dateFrom: string, dateTo: string) {
     _sum: { total: true },
   })
 
-  const planRevenueData = []
+  const planRevenueData: { plan: string; revenue: number }[] = []
   for (const pr of planRevenue) {
     if (pr.planId) {
       const plan = await db.plan.findUnique({ where: { id: pr.planId }, select: { name: true } })
@@ -211,7 +211,7 @@ async function generateSessionsReport(dateFilter: Prisma.RadAcctWhereInput) {
     _count: { id: true },
   })
 
-  const nasSessionData = []
+  const nasSessionData: { nas: string; sessions: number }[] = []
   for (const s of sessionsByNas) {
     if (s.nasIpAddress) {
       const nas = await db.nas.findUnique({ where: { ipAddress: s.nasIpAddress }, select: { nasName: true, shortName: true } })
