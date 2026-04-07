@@ -849,9 +849,9 @@ export function SessionsView() {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Sessions</p>
-                <p className="text-2xl font-bold text-emerald-600">
+                <div className="text-2xl font-bold text-emerald-600">
                   {isLoading ? <Skeleton className="h-8 w-12" /> : (stats?.activeCount || 0)}
-                </p>
+                </div>
               </div>
               <div className="h-10 w-10 rounded-lg bg-emerald-50 dark:bg-emerald-950 flex items-center justify-center">
                 <Wifi className="h-5 w-5 text-emerald-600" />
@@ -866,9 +866,9 @@ export function SessionsView() {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Today&apos;s Total</p>
-                <p className="text-2xl font-bold">
+                <div className="text-2xl font-bold">
                   {isLoading ? <Skeleton className="h-8 w-12" /> : (stats?.todayCount || 0)}
-                </p>
+                </div>
               </div>
               <div className="h-10 w-10 rounded-lg bg-violet-50 dark:bg-violet-950 flex items-center justify-center">
                 <Clock className="h-5 w-5 text-violet-600" />
@@ -882,9 +882,9 @@ export function SessionsView() {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Avg Duration</p>
-                <p className="text-2xl font-bold">
+                <div className="text-2xl font-bold">
                   {isLoading ? <Skeleton className="h-8 w-16" /> : formatDuration(stats?.avgDuration || 0)}
-                </p>
+                </div>
               </div>
               <div className="h-10 w-10 rounded-lg bg-amber-50 dark:bg-amber-950 flex items-center justify-center">
                 <Timer className="h-5 w-5 text-amber-600" />
@@ -898,9 +898,9 @@ export function SessionsView() {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Bandwidth</p>
-                <p className="text-2xl font-bold">
+                <div className="text-2xl font-bold">
                   {isLoading ? <Skeleton className="h-8 w-16" /> : formatBytes(stats?.totalBandwidth || 0)}
-                </p>
+                </div>
               </div>
               <div className="h-10 w-10 rounded-lg bg-teal-50 dark:bg-teal-950 flex items-center justify-center">
                 <HardDrive className="h-5 w-5 text-teal-600" />

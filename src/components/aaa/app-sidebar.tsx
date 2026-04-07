@@ -19,6 +19,8 @@ import {
   Zap,
   Clock,
   Wifi,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -84,22 +86,24 @@ export function AppSidebar() {
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          'flex flex-col border-r bg-card transition-all duration-300 ease-in-out shrink-0 relative z-30',
+          'glass-card flex flex-col transition-all duration-300 ease-in-out shrink-0 relative z-30',
           sidebarOpen ? 'w-64' : 'w-[58px]'
         )}
       >
         {/* Logo / Brand */}
-        <div className="flex items-center gap-3 h-14 px-3 border-b shrink-0 bg-gradient-to-r from-primary/5 via-primary/[0.02] to-transparent">
-          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shrink-0 shadow-md shadow-primary/20">
+        <div className="relative flex items-center gap-3 h-14 px-3 border-b shrink-0 bg-gradient-to-r from-primary/5 via-primary/[0.02] to-transparent overflow-hidden">
+          {/* dot-pattern overlay */}
+          <div className="dot-pattern absolute inset-0 opacity-50 pointer-events-none" />
+          <div className="gradient-border flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shrink-0 shadow-md shadow-primary/20">
             <Radio className="h-4.5 w-4.5" />
           </div>
           {sidebarOpen && (
-            <div className="flex flex-col overflow-hidden min-w-0">
+            <div className="relative flex flex-col overflow-hidden min-w-0 z-10">
               <span className="text-sm font-bold tracking-tight truncate leading-tight">FreeRADIUS</span>
               <span className="text-[10px] text-muted-foreground truncate leading-tight flex items-center gap-1">
                 AAA/BSS Platform
                 <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="status-pulse absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
                 </span>
               </span>
@@ -107,39 +111,72 @@ export function AppSidebar() {
           )}
         </div>
 
-        {/* Quick Status */}
+        {/* Quick Status — Expanded */}
         {sidebarOpen && (
           <div className="px-3 pt-3 pb-1 shrink-0">
             <div className="grid grid-cols-3 gap-2">
-              <div className="flex flex-col items-center gap-0.5 rounded-lg border border-emerald-200/60 bg-emerald-50/80 px-2 py-2 dark:border-emerald-800/40 dark:bg-emerald-950/20">
+              {/* Users Stat */}
+              <div className="card-hover shine-hover flex flex-col items-center gap-0.5 rounded-lg border border-emerald-200/60 bg-emerald-50/80 px-2 py-2 dark:border-emerald-800/40 dark:bg-emerald-950/20">
                 <div className="flex items-center gap-0.5">
                   <Zap className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-                  <span className="text-[8px] text-emerald-500 dark:text-emerald-500">▲</span>
+                  <TrendingUp className="h-2.5 w-2.5 text-emerald-500" />
                 </div>
                 <span className={cn("text-[11px] font-bold tabular-nums text-emerald-700 dark:text-emerald-400 leading-tight", !quickStats && "animate-pulse")}>{quickStats?.totalUsers ?? '—'}</span>
                 <span className="text-[8px] text-muted-foreground leading-tight">Users</span>
               </div>
-              <div className="flex flex-col items-center gap-0.5 rounded-lg border border-sky-200/60 bg-sky-50/80 px-2 py-2 dark:border-sky-800/40 dark:bg-sky-950/20">
+              {/* NAS Stat */}
+              <div className="card-hover shine-hover flex flex-col items-center gap-0.5 rounded-lg border border-sky-200/60 bg-sky-50/80 px-2 py-2 dark:border-sky-800/40 dark:bg-sky-950/20">
                 <div className="flex items-center gap-0.5">
                   <Wifi className="h-3 w-3 text-sky-600 dark:text-sky-400" />
-                  <span className="text-[8px] text-emerald-500 dark:text-emerald-500">▲</span>
+                  <TrendingUp className="h-2.5 w-2.5 text-emerald-500" />
                 </div>
                 <span className={cn("text-[11px] font-bold tabular-nums text-sky-700 dark:text-sky-400 leading-tight", !quickStats && "animate-pulse")}>{quickStats?.totalNas ?? '—'}</span>
                 <span className="text-[8px] text-muted-foreground leading-tight">NAS</span>
               </div>
-              <div className="flex flex-col items-center gap-0.5 rounded-lg border border-violet-200/60 bg-violet-50/80 px-2 py-2 dark:border-violet-800/40 dark:bg-violet-950/20">
+              {/* Active Sessions Stat */}
+              <div className="card-hover shine-hover flex flex-col items-center gap-0.5 rounded-lg border border-violet-200/60 bg-violet-50/80 px-2 py-2 dark:border-violet-800/40 dark:bg-violet-950/20">
                 <div className="flex items-center gap-0.5">
                   <Clock className="h-3 w-3 text-violet-600 dark:text-violet-400" />
                   {quickStats && quickStats.activeSessions > 0 ? (
-                    <span className="text-[8px] text-emerald-500 dark:text-emerald-500">▲</span>
+                    <TrendingUp className="h-2.5 w-2.5 text-emerald-500" />
                   ) : (
-                    <span className="text-[8px] text-muted-foreground/50">—</span>
+                    <TrendingDown className="h-2.5 w-2.5 text-red-400" />
                   )}
                 </div>
                 <span className={cn("text-[11px] font-bold tabular-nums text-violet-700 dark:text-violet-400 leading-tight", !quickStats && "animate-pulse")}>{quickStats?.activeSessions ?? '—'}</span>
                 <span className="text-[8px] text-muted-foreground leading-tight">Active</span>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Quick Status — Collapsed: show only numbers in vertical stack */}
+        {!sidebarOpen && quickStats && (
+          <div className="px-1.5 pt-2 pb-1 shrink-0 flex flex-col items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-[10px] font-bold tabular-nums text-emerald-600 dark:text-emerald-400 cursor-default">
+                  {quickStats.totalUsers}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="text-xs">Users: {quickStats.totalUsers}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-[10px] font-bold tabular-nums text-sky-600 dark:text-sky-400 cursor-default">
+                  {quickStats.totalNas}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="text-xs">NAS: {quickStats.totalNas}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-[10px] font-bold tabular-nums text-violet-600 dark:text-violet-400 cursor-default">
+                  {quickStats.activeSessions}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="text-xs">Active: {quickStats.activeSessions}</TooltipContent>
+            </Tooltip>
           </div>
         )}
 
@@ -166,25 +203,43 @@ export function AppSidebar() {
                       'group relative w-full flex items-center gap-2.5 rounded-lg text-[13px] transition-all duration-200 hover:scale-[1.02]',
                       sidebarOpen ? 'px-2.5 py-2' : 'px-0 py-2 justify-center',
                       isActive
-                        ? 'bg-primary/10 text-primary font-medium'
+                        ? 'bg-gradient-to-r from-primary/8 to-transparent text-primary font-medium'
                         : 'text-muted-foreground hover:bg-accent/60 hover:text-accent-foreground'
                     )}
                   >
-                    {/* Active left border indicator */}
-                    <span
-                      className={cn(
-                        'absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-primary transition-all duration-300',
-                        isActive
-                          ? 'opacity-100 scale-y-100'
-                          : 'opacity-0 scale-y-0 group-hover:opacity-60 group-hover:scale-y-75'
-                      )}
-                    />
+                    {/* Active indicator — expanded: left border with glow */}
+                    {sidebarOpen && (
+                      <span
+                        className={cn(
+                          'absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-primary transition-all duration-300',
+                          isActive
+                            ? 'opacity-100 scale-y-100 shadow-[0_0_6px_var(--primary)]'
+                            : 'opacity-0 scale-y-0 group-hover:opacity-60 group-hover:scale-y-75'
+                        )}
+                      />
+                    )}
+                    {/* Active indicator — collapsed: colored dot */}
+                    {!sidebarOpen && (
+                      <span
+                        className={cn(
+                          'absolute -left-0.5 top-1/2 -translate-y-1/2 h-1.5 w-1.5 rounded-full bg-primary transition-all duration-300',
+                          isActive
+                            ? 'opacity-100 scale-100'
+                            : 'opacity-0 scale-0 group-hover:opacity-50 group-hover:scale-75'
+                        )}
+                      />
+                    )}
                     <Icon className={cn(
                       'h-4 w-4 shrink-0 transition-colors duration-200',
                       isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-accent-foreground'
                     )} />
                     {sidebarOpen && (
-                      <span className="flex-1 text-left truncate">{item.label}</span>
+                      <span className={cn(
+                        'flex-1 text-left truncate',
+                        isActive && 'gradient-text'
+                      )}>
+                        {item.label}
+                      </span>
                     )}
                     {sidebarOpen && item.category && (
                       <span
@@ -229,30 +284,48 @@ export function AppSidebar() {
             <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/20">
               <div className="relative">
                 <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                <div className="absolute inset-0 h-2 w-2 rounded-full bg-emerald-500 animate-ping opacity-75" />
+                <div className="absolute inset-0 h-2 w-2 rounded-full bg-emerald-500 status-pulse opacity-75" />
               </div>
               <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">System Operational</span>
             </div>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full h-7 justify-center text-muted-foreground transition-all duration-200 hover:scale-[1.02]"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            {sidebarOpen ? (
-              <>
-                <ChevronLeft className="h-3.5 w-3.5 mr-1" />
-                <span className="text-[11px]">Collapse</span>
-              </>
-            ) : (
-              <ChevronRight className="h-3.5 w-3.5" />
-            )}
-          </Button>
+          <div className="flex justify-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                'glass-card h-7 w-9 rounded-full p-0 flex items-center justify-center',
+                'text-muted-foreground transition-all duration-200',
+                'hover:bg-primary/10 hover:text-primary hover:shadow-[0_0_8px_var(--primary)/20]'
+              )}
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              {sidebarOpen ? (
+                <ChevronLeft className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronRight className="h-3.5 w-3.5" />
+              )}
+            </Button>
+          </div>
+          <Separator className="opacity-40" />
           {sidebarOpen && (
             <div className="px-3 pt-0.5 pb-1 flex flex-col gap-0">
-              <span className="text-[10px] font-semibold text-muted-foreground/60 tabular-nums">v2.1.0</span>
-              <span className="text-[9px] text-muted-foreground/40">© 2025 FreeRADIUS BSS</span>
+              <span className="text-[10px] font-semibold text-muted-foreground/60 tabular-nums">
+                v<span className="gradient-text">2.1.0</span>
+              </span>
+              <span className="text-[10px] text-muted-foreground/50">&copy; 2025 FreeRADIUS BSS</span>
+            </div>
+          )}
+          {!sidebarOpen && (
+            <div className="flex justify-center">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-[8px] font-semibold text-muted-foreground/40 tabular-nums cursor-default">
+                    <span className="gradient-text">2.1</span>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="text-xs">v2.1.0 — &copy; 2025 FreeRADIUS BSS</TooltipContent>
+              </Tooltip>
             </div>
           )}
         </div>

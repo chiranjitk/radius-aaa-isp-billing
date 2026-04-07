@@ -29,6 +29,10 @@ import {
   AlertTriangle,
   Signal,
   ChevronRight,
+  XCircle,
+  FileText,
+  BarChart3,
+  Calendar,
 } from 'lucide-react'
 import {
   AreaChart,
@@ -861,6 +865,293 @@ function InvoiceStatusBadge({ status }: { status: string }) {
 }
 
 // =============================================
+// Welcome Banner Component
+// =============================================
+function WelcomeBanner({ uptime }: { uptime: string }) {
+  // Safe: component is only rendered after data loads (client-only)
+  const [now, setNow] = useState(() => new Date())
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60000)
+    return () => clearInterval(timer)
+  }, [])
+
+  return (
+    <FadeIn delay={0}>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/5 via-primary/[0.02] to-transparent border border-primary/10">
+        <div className="absolute inset-0 dot-pattern opacity-40" />
+        <div className="relative p-5 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <h1 className="text-2xl md:text-3xl font-bold gradient-text">
+              Welcome back, Admin
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Here&apos;s what&apos;s happening with your RADIUS server today.
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col items-end gap-0.5">
+              <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Calendar className="h-3 w-3" />
+                {format(now, 'EEEE, MMMM d, yyyy')}
+              </span>
+              <span className="font-mono text-xs font-semibold">{format(now, 'HH:mm:ss')}</span>
+            </div>
+            <div className="hidden sm:block h-8 w-px bg-border" />
+            <div className="hidden sm:flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs text-muted-foreground">Uptime:</span>
+              <span className="text-xs font-semibold">{uptime}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </FadeIn>
+  )
+}
+
+// =============================================
+// System Activity Timeline Component
+// =============================================
+interface TimelineEvent {
+  id: string
+  type: 'login' | 'logout' | 'nas_online' | 'nas_offline' | 'policy_change' | 'invoice_paid' | 'user_created' | 'alert' | 'radius_reject'
+  title: string
+  description: string
+  timestamp: Date
+}
+
+const TIMELINE_EVENT_CONFIG: Record<TimelineEvent['type'], { color: string; borderColor: string; iconBg: string; icon: React.ElementType }> = {
+  login: { color: 'text-emerald-600 dark:text-emerald-400', borderColor: 'border-l-emerald-500', iconBg: 'bg-emerald-100 dark:bg-emerald-900/30', icon: LogIn },
+  logout: { color: 'text-slate-500 dark:text-slate-400', borderColor: 'border-l-slate-400', iconBg: 'bg-slate-100 dark:bg-slate-800', icon: LogOut },
+  nas_online: { color: 'text-sky-600 dark:text-sky-400', borderColor: 'border-l-sky-500', iconBg: 'bg-sky-100 dark:bg-sky-900/30', icon: Wifi },
+  nas_offline: { color: 'text-red-600 dark:text-red-400', borderColor: 'border-l-red-500', iconBg: 'bg-red-100 dark:bg-red-900/30', icon: WifiOff },
+  policy_change: { color: 'text-violet-600 dark:text-violet-400', borderColor: 'border-l-violet-500', iconBg: 'bg-violet-100 dark:bg-violet-900/30', icon: Shield },
+  invoice_paid: { color: 'text-amber-600 dark:text-amber-400', borderColor: 'border-l-amber-500', iconBg: 'bg-amber-100 dark:bg-amber-900/30', icon: DollarSign },
+  user_created: { color: 'text-emerald-600 dark:text-emerald-400', borderColor: 'border-l-emerald-500', iconBg: 'bg-emerald-100 dark:bg-emerald-900/30', icon: UserPlus },
+  alert: { color: 'text-red-600 dark:text-red-400', borderColor: 'border-l-red-500', iconBg: 'bg-red-100 dark:bg-red-900/30', icon: AlertTriangle },
+  radius_reject: { color: 'text-orange-600 dark:text-orange-400', borderColor: 'border-l-orange-500', iconBg: 'bg-orange-100 dark:bg-orange-900/30', icon: XCircle },
+}
+
+const INITIAL_TIMELINE_EVENTS: Array<{ type: TimelineEvent['type']; title: string; description: string; minutesAgo: number }> = [
+  { type: 'login', title: 'User Login', description: 'john.doe authenticated via MS-CHAPv2', minutesAgo: 2 },
+  { type: 'nas_online', title: 'NAS Online', description: 'BR-Router-01 is now reachable', minutesAgo: 5 },
+  { type: 'invoice_paid', title: 'Invoice Paid', description: 'Invoice #INV-0142 paid $29.99', minutesAgo: 8 },
+  { type: 'policy_change', title: 'Policy Updated', description: 'Rate-Limit policy updated', minutesAgo: 12 },
+  { type: 'alert', title: 'System Alert', description: 'High bandwidth usage detected', minutesAgo: 15 },
+  { type: 'radius_reject', title: 'Auth Rejected', description: 'auth.failed attempts from 192.168.1.100', minutesAgo: 18 },
+  { type: 'user_created', title: 'New User', description: 'New user mark.wilson registered', minutesAgo: 22 },
+  { type: 'logout', title: 'User Logout', description: 'jane.smith session ended', minutesAgo: 25 },
+  { type: 'nas_offline', title: 'NAS Offline', description: 'MikroTik-AP-03 unreachable', minutesAgo: 30 },
+  { type: 'login', title: 'User Login', description: 'alice.martin authenticated via EAP-TLS', minutesAgo: 35 },
+  { type: 'invoice_paid', title: 'Invoice Paid', description: 'Invoice #INV-0141 paid $49.99', minutesAgo: 42 },
+  { type: 'policy_change', title: 'Policy Updated', description: 'Bandwidth-Cap policy modified', minutesAgo: 50 },
+]
+
+function generateInitialTimelineEvents(): TimelineEvent[] {
+  const now = Date.now()
+  return INITIAL_TIMELINE_EVENTS.map((e, i) => ({
+    id: `event-${i}-${now}`,
+    type: e.type,
+    title: e.title,
+    description: e.description,
+    timestamp: new Date(now - e.minutesAgo * 60 * 1000),
+  }))
+}
+
+const LIVE_EVENT_TEMPLATES: Array<{ type: TimelineEvent['type']; title: string; description: string }> = [
+  { type: 'login', title: 'User Login', description: '' },
+  { type: 'nas_online', title: 'NAS Online', description: '' },
+  { type: 'logout', title: 'User Logout', description: '' },
+  { type: 'invoice_paid', title: 'Invoice Paid', description: '' },
+  { type: 'alert', title: 'System Alert', description: '' },
+  { type: 'policy_change', title: 'Policy Updated', description: '' },
+  { type: 'user_created', title: 'New User', description: '' },
+  { type: 'radius_reject', title: 'Auth Rejected', description: '' },
+]
+
+function generateRandomLiveEvent(): TimelineEvent {
+  const template = LIVE_EVENT_TEMPLATES[Math.floor(Math.random() * LIVE_EVENT_TEMPLATES.length)]
+  let description = template.description
+
+  switch (template.type) {
+    case 'login': {
+      const users = ['bob.admin', 'sarah.connor', 'mike.chen', 'lisa.wong', 'alex.taylor', 'jordan.lee']
+      const authTypes = ['MS-CHAPv2', 'EAP-TLS', 'PAP', 'PEAP']
+      description = `${users[Math.floor(Math.random() * users.length)]} authenticated via ${authTypes[Math.floor(Math.random() * authTypes.length)]}`
+      break
+    }
+    case 'nas_online': {
+      const devices = ['BR-Router-0', 'AP-Floor-0', 'SW-Core-0', 'GW-VPN-0', 'MikroTik-AP-0']
+      description = `${devices[Math.floor(Math.random() * devices.length)]}${Math.floor(Math.random() * 5) + 1} is now reachable`
+      break
+    }
+    case 'logout': {
+      const users = ['dave.smith', 'emma.jones', 'tom.brown', 'kate.white']
+      description = `${users[Math.floor(Math.random() * users.length)]} session ended`
+      break
+    }
+    case 'invoice_paid': {
+      const invNo = String(143 + Math.floor(Math.random() * 10)).padStart(4, '0')
+      const amount = (Math.random() * 80 + 10).toFixed(2)
+      description = `Invoice #INV-${invNo} paid $${amount}`
+      break
+    }
+    case 'alert': {
+      const alerts = ['High bandwidth usage detected', 'Multiple failed login attempts', 'NAS response time elevated', 'Disk usage above threshold', 'Unusual traffic pattern detected']
+      description = alerts[Math.floor(Math.random() * alerts.length)]
+      break
+    }
+    case 'policy_change': {
+      const policies = ['Rate-Limit', 'Bandwidth-Cap', 'Session-Timeout', 'Data-Quota', 'Access-Hours']
+      description = `${policies[Math.floor(Math.random() * policies.length)]} policy updated`
+      break
+    }
+    case 'user_created': {
+      const names = ['chris.park', 'nina.garcia', 'ryan.kim', 'olivia.davis', 'sam.wilson']
+      description = `New user ${names[Math.floor(Math.random() * names.length)]} registered`
+      break
+    }
+    case 'radius_reject': {
+      const ips = [`192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`, `10.0.${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 255)}`]
+      description = `auth.failed attempts from ${ips[Math.floor(Math.random() * ips.length)]}`
+      break
+    }
+  }
+
+  return {
+    id: `event-live-${Date.now()}`,
+    type: template.type,
+    title: template.title,
+    description,
+    timestamp: new Date(),
+  }
+}
+
+function SystemActivityTimeline() {
+  // Safe: component is only rendered after data loads (client-only)
+  const [events, setEvents] = useState<TimelineEvent[]>(() => generateInitialTimelineEvents())
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setEvents(prev => [
+        generateRandomLiveEvent(),
+        ...prev.slice(0, 11),
+      ])
+      setRefreshKey(k => k + 1)
+    }, 30000)
+    return () => clearInterval(timer)
+  }, [])
+
+  return (
+    <FadeIn delay={450}>
+      <Card className="border-0 shadow-md">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                <Activity className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+              </div>
+              <div>
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  System Activity
+                  <span className="inline-flex items-center gap-1 text-[10px] font-normal text-muted-foreground">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Live
+                  </span>
+                </CardTitle>
+                <CardDescription className="text-xs">Recent system events across all services</CardDescription>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-muted-foreground hover:text-foreground h-7 px-2"
+              onClick={() => toast.info('Full activity log available in the Sessions view')}
+            >
+              View All <ChevronRight className="ml-0.5 h-3 w-3" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {events.map((event, idx) => {
+              const config = TIMELINE_EVENT_CONFIG[event.type]
+              const Icon = config.icon
+              const isNew = idx === 0 && refreshKey > 0
+
+              return (
+                <div
+                  key={`${event.id}-${refreshKey}`}
+                  className={`animate-fade-in-up stagger-${Math.min(idx + 1, 6)} flex items-start gap-3 rounded-xl border-l-[3px] ${config.borderColor} bg-muted/20 p-3 hover:bg-muted/40 transition-all duration-200 hover:scale-[1.01] hover:shadow-sm cursor-default`}
+                >
+                  <div className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 ${config.iconBg}`}>
+                    <Icon className={`h-3.5 w-3.5 ${config.color}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium truncate">{event.title}</p>
+                      {isNew && (
+                        <span className="shrink-0 text-[9px] font-bold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 px-1.5 py-0.5 rounded-full">New</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{event.description}</p>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground shrink-0 whitespace-nowrap mt-0.5">
+                    {formatDistanceToNow(event.timestamp, { addSuffix: true })}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    </FadeIn>
+  )
+}
+
+// =============================================
+// Quick Actions Grid Component
+// =============================================
+function QuickActionsGrid() {
+  const setActiveView = useAppStore((s) => s.setActiveView)
+
+  const actions: Array<{ icon: React.ElementType; label: string; onClick: () => void; color: string; bg: string }> = [
+    { icon: UserPlus, label: 'Add User', onClick: () => setActiveView('users'), color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/30' },
+    { icon: FileText, label: 'New Invoice', onClick: () => setActiveView('billing'), color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30' },
+    { icon: Radio, label: 'Test RADIUS', onClick: () => toast.info('RADIUS Test tool available in Users/Sessions view'), color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-100 dark:bg-sky-900/30' },
+    { icon: BarChart3, label: 'View Reports', onClick: () => setActiveView('reports'), color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-100 dark:bg-violet-900/30' },
+    { icon: Server, label: 'Manage NAS', onClick: () => setActiveView('nas'), color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30' },
+    { icon: Shield, label: 'Edit Policies', onClick: () => setActiveView('policies'), color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-100 dark:bg-rose-900/30' },
+  ]
+
+  return (
+    <FadeIn delay={500}>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {actions.map((action, idx) => {
+          const Icon = action.icon
+          return (
+            <Card
+              key={action.label}
+              className={`card-hover cursor-pointer animate-fade-in-up stagger-${Math.min(idx + 1, 6)} hover:border-primary/10`}
+              onClick={action.onClick}
+            >
+              <CardContent className="flex flex-col items-center gap-2.5 p-4 md:p-5">
+                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${action.bg}`}>
+                  <Icon className={`h-5 w-5 ${action.color}`} />
+                </div>
+                <span className="text-xs font-medium text-center">{action.label}</span>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+    </FadeIn>
+  )
+}
+
+// =============================================
 // Main Dashboard View
 // =============================================
 export function DashboardView() {
@@ -957,6 +1248,11 @@ export function DashboardView() {
   return (
     <div className="space-y-6">
       {/* ============================================= */}
+      {/* Welcome Banner */}
+      {/* ============================================= */}
+      <WelcomeBanner uptime={data.systemInfo.uptime} />
+
+      {/* ============================================= */}
       {/* System Health Bar */}
       {/* ============================================= */}
       <SystemHealthBar data={data} />
@@ -1040,6 +1336,16 @@ export function DashboardView() {
           delay={400}
         />
       </div>
+
+      {/* ============================================= */}
+      {/* System Activity Timeline */}
+      {/* ============================================= */}
+      <SystemActivityTimeline />
+
+      {/* ============================================= */}
+      {/* Quick Actions Grid */}
+      {/* ============================================= */}
+      <QuickActionsGrid />
 
       {/* ============================================= */}
       {/* Online Users Live Panel */}

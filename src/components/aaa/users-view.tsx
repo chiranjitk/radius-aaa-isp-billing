@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -38,6 +38,10 @@ import {
   FileSpreadsheet,
   FileJson,
   Radio,
+  Minus,
+  UserCheck,
+  UserX,
+  Upload,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -101,6 +105,8 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { exportToCSV, exportToJSON, type ExportOptions } from '@/lib/export-utils'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { RadiusTestDialog } from '@/components/aaa/radius-test-dialog'
+import { CsvImportDialog } from '@/components/aaa/csv-import-dialog'
+import { Checkbox } from '@/components/ui/checkbox'
 
 // ==========================================
 // Types
@@ -1598,6 +1604,11 @@ export default function UsersView() {
   const [deleteTarget, setDeleteTarget] = useState<UserListItem | null>(null)
   const [radiusTestOpen, setRadiusTestOpen] = useState(false)
   const [radiusTestUsername, setRadiusTestUsername] = useState('')
+  const [csvImportOpen, setCsvImportOpen] = useState(false)
+
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
 
   // Fetch users
   const {
@@ -1630,6 +1641,10 @@ export default function UsersView() {
   const users = usersData?.users || []
   const totalPages = usersData?.totalPages || 0
   const total = usersData?.total || 0
+
+  // Derived: check if all visible users are selected
+  const allSelected = users.length > 0 && users.every((u) => selectedIds.has(u.id))
+  const someSelected = users.some((u) => selectedIds.has(u.id)) && !allSelected
 
   // Search debounce
   const handleSearch = () => {
@@ -1683,6 +1698,79 @@ export default function UsersView() {
       toast.error('Failed to delete user')
     },
   })
+
+  // Bulk selection handlers
+  const handleToggleAll = useCallback(() => {
+    if (allSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(users.map((u) => u.id)))
+    }
+  }, [allSelected, users])
+
+  const handleToggleRow = useCallback((userId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(userId)) {
+        next.delete(userId)
+      } else {
+        next.add(userId)
+      }
+      return next
+    })
+  }, [])
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedIds(new Set())
+  }, [])
+
+  // Bulk operation mutation
+  const bulkMutation = useMutation({
+    mutationFn: async ({ action, userIds }: { action: 'enable' | 'disable' | 'delete'; userIds: string[] }) => {
+      const res = await fetch('/api/users/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, userIds }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Bulk operation failed')
+      }
+      return res.json()
+    },
+    onSuccess: (_, variables) => {
+      const count = selectedIds.size
+      const actionLabel =
+        variables.action === 'enable'
+          ? 'Enabled'
+          : variables.action === 'disable'
+            ? 'Disabled'
+            : 'Deleted'
+      toast.success(`${actionLabel} ${count} user${count !== 1 ? 's' : ''}`)
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      setSelectedIds(new Set())
+      setBulkDeleteDialogOpen(false)
+    },
+    onError: (error: Error) => {
+      toast.error(error.message)
+    },
+  })
+
+  const handleBulkEnable = () => {
+    bulkMutation.mutate({ action: 'enable', userIds: Array.from(selectedIds) })
+  }
+
+  const handleBulkDisable = () => {
+    bulkMutation.mutate({ action: 'disable', userIds: Array.from(selectedIds) })
+  }
+
+  const handleBulkDelete = () => {
+    setBulkDeleteDialogOpen(true)
+  }
+
+  const confirmBulkDelete = () => {
+    bulkMutation.mutate({ action: 'delete', userIds: Array.from(selectedIds) })
+  }
 
   // Handlers
   const handleAddUser = () => {
@@ -1791,6 +1879,10 @@ export default function UsersView() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setCsvImportOpen(true)}>
+            <Upload className="h-4 w-4" />
+            Import CSV
+          </Button>
           <Button onClick={handleAddUser} className="gap-2 shrink-0">
             <Plus className="h-4 w-4" />
             Add User
@@ -1904,6 +1996,13 @@ export default function UsersView() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="h-10 w-10 sticky left-0 z-10 bg-background">
+                          <Checkbox
+                            checked={allSelected ? true : someSelected ? 'indeterminate' : false}
+                            onCheckedChange={handleToggleAll}
+                            aria-label="Select all users"
+                          />
+                        </TableHead>
                         <TableHead className="h-10 pl-4">Username</TableHead>
                         <TableHead className="h-10">Full Name</TableHead>
                         <TableHead className="h-10">Email</TableHead>
@@ -1916,7 +2015,14 @@ export default function UsersView() {
                     </TableHeader>
                     <TableBody>
                       {users.map((user) => (
-                        <TableRow key={user.id} className="group">
+                        <TableRow key={user.id} className="group" data-selected={selectedIds.has(user.id) || undefined}>
+                          <TableCell className="py-3 w-10 sticky left-0 z-10 bg-background">
+                            <Checkbox
+                              checked={selectedIds.has(user.id)}
+                              onCheckedChange={() => handleToggleRow(user.id)}
+                              aria-label={`Select ${user.username}`}
+                            />
+                          </TableCell>
                           <TableCell className="py-3 pl-4">
                             <div className="flex items-center gap-2">
                               <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -2076,6 +2182,12 @@ export default function UsersView() {
           </CardContent>
         </Card>
 
+        {/* CSV Import Dialog */}
+        <CsvImportDialog
+          open={csvImportOpen}
+          onOpenChange={setCsvImportOpen}
+        />
+
         {/* Add/Edit User Dialog */}
         <UserFormDialog
           open={formDialogOpen}
@@ -2128,6 +2240,107 @@ export default function UsersView() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Bulk Delete Confirmation */}
+        <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-destructive" />
+                Delete {selectedIds.size} Users
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete{' '}
+                <strong className="text-foreground">{selectedIds.size} user{selectedIds.size !== 1 ? 's' : ''}</strong>? This action
+                will permanently remove the selected users and all their associated data including
+                check/reply attributes, sessions, and group assignments. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmBulkDelete}
+                className="bg-destructive text-white hover:bg-destructive/90"
+                disabled={bulkMutation.isPending}
+              >
+                {bulkMutation.isPending && (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                )}
+                Delete {selectedIds.size} User{selectedIds.size !== 1 ? 's' : ''}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Bulk Action Bar */}
+        <div
+          className={`
+            fixed bottom-6 left-1/2 -translate-x-1/2 z-50
+            transition-all duration-300 ease-in-out
+            ${selectedIds.size > 0
+              ? 'translate-y-0 opacity-100 pointer-events-auto'
+              : 'translate-y-4 opacity-0 pointer-events-none'
+            }
+          `}
+        >
+          <div className="glass-card rounded-lg shadow-lg border border-border/50 px-4 py-3 flex items-center gap-3">
+            <Badge className="bg-primary text-primary-foreground text-sm font-semibold px-2.5 py-0.5">
+              {selectedIds.size}
+            </Badge>
+            <span className="text-sm font-medium text-foreground whitespace-nowrap">
+              selected
+            </span>
+            <Separator orientation="vertical" className="h-6" />
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950 h-8 text-xs"
+              onClick={handleBulkEnable}
+              disabled={bulkMutation.isPending}
+            >
+              {bulkMutation.isPending && bulkMutation.variables?.action === 'enable' ? (
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <UserCheck className="h-3.5 w-3.5" />
+              )}
+              Enable
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950 h-8 text-xs"
+              onClick={handleBulkDisable}
+              disabled={bulkMutation.isPending}
+            >
+              {bulkMutation.isPending && bulkMutation.variables?.action === 'disable' ? (
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <UserX className="h-3.5 w-3.5" />
+              )}
+              Disable
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-destructive border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-950 h-8 text-xs"
+              onClick={handleBulkDelete}
+              disabled={bulkMutation.isPending}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete
+            </Button>
+            <Separator orientation="vertical" className="h-6" />
+            <Button
+              size="sm"
+              variant="ghost"
+              className="gap-1.5 h-8 text-xs text-muted-foreground"
+              onClick={handleClearSelection}
+            >
+              <X className="h-3.5 w-3.5" />
+              Clear
+            </Button>
+          </div>
+        </div>
       </div>
     </TooltipProvider>
   )
