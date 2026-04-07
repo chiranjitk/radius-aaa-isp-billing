@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
 import { AppSidebar } from '@/components/aaa/app-sidebar'
 import { useAppStore } from '@/lib/store'
@@ -15,10 +14,11 @@ import { BillingView } from '@/components/aaa/billing-view'
 import { ReportsView } from '@/components/aaa/reports-view'
 import { SettingsView } from '@/components/aaa/settings-view'
 import { DictionaryView } from '@/components/aaa/dictionary-view'
+import { NotificationCenter } from '@/components/aaa/notification-center'
+import { CommandPalette, useCommandPaletteStore } from '@/components/aaa/command-palette'
 import { Toaster } from '@/components/ui/sonner'
-import { Bell, Search, Radio, Moon, Sun } from 'lucide-react'
+import { Search, Radio, Moon, Sun, Keyboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
@@ -46,14 +46,7 @@ interface FooterStats {
 export default function Home() {
   const activeView = useAppStore((s) => s.activeView)
   const { theme, setTheme } = useTheme()
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: 1,
-        refetchOnWindowFocus: false,
-      },
-    },
-  }))
+  const commandPaletteStore = useCommandPaletteStore()
 
   const currentView = viewTitles[activeView] || viewTitles.dashboard
 
@@ -76,8 +69,8 @@ export default function Home() {
   })
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <div className="flex h-screen overflow-hidden bg-muted/30">
+    <>
+    <div className="flex h-screen overflow-hidden bg-muted/30">
         <AppSidebar />
         <div className="flex flex-1 flex-col overflow-hidden">
           {/* Top Header Bar */}
@@ -93,15 +86,18 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Search */}
+            {/* Search - opens command palette */}
             <div className="hidden md:flex flex-1 max-w-sm mx-auto">
-              <div className="relative w-full">
-                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search users, NAS, sessions..."
-                  className="h-8 pl-8 text-xs bg-muted/50 border-0 focus-visible:ring-1"
-                />
-              </div>
+              <button
+                onClick={commandPaletteStore.open}
+                className="flex w-full items-center gap-2 rounded-md border border-border/50 bg-muted/50 h-8 px-3 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+              >
+                <Search className="h-3.5 w-3.5" />
+                <span className="flex-1 text-left">Search... ⌘K</span>
+                <kbd className="hidden lg:inline-flex items-center gap-0.5 rounded border bg-background px-1 py-0.5 font-mono text-[10px] text-muted-foreground">
+                  <Keyboard className="h-2.5 w-2.5" />K
+                </kbd>
+              </button>
             </div>
 
             {/* Right Actions */}
@@ -125,12 +121,7 @@ export default function Home() {
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 FreeRADIUS Online
               </Badge>
-              <Button variant="ghost" size="icon" className="h-8 w-8 relative">
-                <Bell className="h-4 w-4" />
-                <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-destructive text-[8px] font-bold text-destructive-foreground flex items-center justify-center">
-                  3
-                </span>
-              </Button>
+              <NotificationCenter />
               <Separator orientation="vertical" className="h-5 mx-1" />
               <div className="flex items-center gap-2">
                 <Avatar className="h-7 w-7">
@@ -191,6 +182,7 @@ export default function Home() {
         </div>
       </div>
       <Toaster position="top-right" richColors closeButton />
-    </QueryClientProvider>
+      <CommandPalette />
+    </>
   )
 }

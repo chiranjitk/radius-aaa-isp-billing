@@ -13,7 +13,8 @@ import {
   Copy,
   RotateCcw,
   Shield,
-  Server,
+  Loader2,
+  ShieldCheck,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -39,6 +40,17 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { toast } from 'sonner'
 
 // ============ Types ============
@@ -293,12 +305,53 @@ DEFAULT  Group == "vip-users"
     Session-Timeout = 86400,
     Idle-Timeout = 3600`
 
+// ============ Settings Loading Skeleton ============
+function SettingsSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-5 w-5 rounded" />
+          <Skeleton className="h-6 w-48" />
+        </div>
+        <Skeleton className="h-4 w-72 mt-1" />
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_2fr] sm:items-center">
+            <div className="space-y-1.5">
+              <Skeleton className="h-4 w-36" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  )
+}
+
+// ============ Tab Content Skeleton ============
+function TabContentSkeleton() {
+  return (
+    <div className="mt-4 space-y-4">
+      <SettingsSkeleton />
+    </div>
+  )
+}
+
 // ============ Component ============
 export function SettingsView() {
   const [settings, setSettings] = useState<Record<string, Setting[]>>(DEFAULT_SETTINGS)
   const [modifiedSettings, setModifiedSettings] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [discardDialogOpen, setDiscardDialogOpen] = useState(false)
+
+  // Tab switching loading state
+  const [activeTab, setActiveTab] = useState('general')
+  const [tabSwitching, setTabSwitching] = useState(false)
 
   // Audit log state
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
@@ -339,6 +392,7 @@ export function SettingsView() {
   // Save all settings
   const saveSettings = async () => {
     setSaving(true)
+    setSaveSuccess(false)
     try {
       const entries = Object.entries(modifiedSettings)
       for (const [key, value] of entries) {
@@ -361,11 +415,27 @@ export function SettingsView() {
       setModifiedSettings({})
       toast.success('Settings saved successfully')
       await fetchSettings()
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 2000)
     } catch {
       toast.error('Failed to save settings')
     } finally {
       setSaving(false)
     }
+  }
+
+  // Discard changes
+  const handleDiscard = () => {
+    setModifiedSettings({})
+    setDiscardDialogOpen(false)
+    toast.info('All unsaved changes have been discarded')
+  }
+
+  // Handle tab change with brief loading state
+  const handleTabChange = (value: string) => {
+    setActiveTab(value)
+    setTabSwitching(true)
+    setTimeout(() => setTabSwitching(false), 300)
   }
 
   // Get current value for a setting
@@ -415,25 +485,80 @@ export function SettingsView() {
 
   return (
     <div className="space-y-6">
+      {/* Loading Indicator at Top */}
+      {loading && (
+        <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-800 dark:bg-blue-950/30">
+          <Loader2 className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400" />
+          <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+            Loading settings...
+          </span>
+        </div>
+      )}
+
       {/* Action Bar */}
       {hasChanges && (
         <div className="flex items-center justify-end gap-2">
           <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800">
             Unsaved changes
           </Badge>
-          <Button variant="outline" size="sm" onClick={() => setModifiedSettings({})} className="gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setDiscardDialogOpen(true)}
+            className="gap-1.5"
+          >
             <RotateCcw className="h-3.5 w-3.5" />
             Discard
           </Button>
-          <Button size="sm" onClick={saveSettings} disabled={saving} className="gap-1.5">
-            <Save className="h-3.5 w-3.5" />
-            {saving ? 'Saving...' : 'Save All'}
+          <Button
+            size="sm"
+            onClick={saveSettings}
+            disabled={saving}
+            className="gap-1.5"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Saving...
+              </>
+            ) : saveSuccess ? (
+              <>
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Saved!
+              </>
+            ) : (
+              <>
+                <Save className="h-3.5 w-3.5" />
+                Save All
+              </>
+            )}
           </Button>
         </div>
       )}
 
+      {/* Discard Confirmation AlertDialog */}
+      <AlertDialog open={discardDialogOpen} onOpenChange={setDiscardDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to discard all unsaved changes? This action cannot be undone and your modifications will be permanently lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDiscard}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Discard Changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Settings Tabs */}
-      <Tabs defaultValue="general">
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="general" className="gap-1.5 text-xs">
             <Settings className="h-3.5 w-3.5 hidden sm:block" />
@@ -462,372 +587,432 @@ export function SettingsView() {
         </TabsList>
 
         {/* ===== GENERAL SETTINGS ===== */}
-        <TabsContent value="general" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                General Settings
-              </CardTitle>
-              <CardDescription>Core system configuration options.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {(settings.general || []).map((s) => (
-                <div key={s.key} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_2fr] sm:items-center">
-                  <div>
-                    <Label className="text-sm font-medium">{s.description || s.key}</Label>
-                    <p className="text-xs text-muted-foreground font-mono">{s.key}</p>
+        <TabsContent value="general">
+          {loading || tabSwitching ? (
+            <TabContentSkeleton />
+          ) : (
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  General Settings
+                </CardTitle>
+                <CardDescription>Core system configuration options.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {(settings.general || []).map((s) => (
+                  <div key={s.key} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_2fr] sm:items-center">
+                    <div>
+                      <Label className="text-sm font-medium">{s.description || s.key}</Label>
+                      <p className="text-xs text-muted-foreground font-mono">{s.key}</p>
+                    </div>
+                    <Input
+                      value={getValue(s.key)}
+                      onChange={(e) => updateSetting(s.key, e.target.value)}
+                      placeholder={s.description || s.key}
+                    />
                   </div>
-                  <Input
-                    value={getValue(s.key)}
-                    onChange={(e) => updateSetting(s.key, e.target.value)}
-                    placeholder={s.description || s.key}
-                  />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* ===== RADIUS SETTINGS ===== */}
-        <TabsContent value="radius" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Radio className="h-5 w-5" />
-                RADIUS Configuration
-              </CardTitle>
-              <CardDescription>FreeRADIUS server ports and connection settings.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {(settings.radius || []).map((s) => (
-                <div key={s.key} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_2fr] sm:items-center">
-                  <div>
-                    <Label className="text-sm font-medium">{s.description || s.key}</Label>
-                    <p className="text-xs text-muted-foreground font-mono">{s.key}</p>
+        <TabsContent value="radius">
+          {loading || tabSwitching ? (
+            <TabContentSkeleton />
+          ) : (
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Radio className="h-5 w-5" />
+                  RADIUS Configuration
+                </CardTitle>
+                <CardDescription>FreeRADIUS server ports and connection settings.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {(settings.radius || []).map((s) => (
+                  <div key={s.key} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_2fr] sm:items-center">
+                    <div>
+                      <Label className="text-sm font-medium">{s.description || s.key}</Label>
+                      <p className="text-xs text-muted-foreground font-mono">{s.key}</p>
+                    </div>
+                    {s.type === 'number' ? (
+                      <Input
+                        type="number"
+                        value={getValue(s.key)}
+                        onChange={(e) => updateSetting(s.key, e.target.value)}
+                      />
+                    ) : (
+                      <Input
+                        type={s.key === 'secret' ? 'password' : 'text'}
+                        value={getValue(s.key)}
+                        onChange={(e) => updateSetting(s.key, e.target.value)}
+                      />
+                    )}
                   </div>
-                  {s.type === 'number' ? (
-                    <Input
-                      type="number"
-                      value={getValue(s.key)}
-                      onChange={(e) => updateSetting(s.key, e.target.value)}
-                    />
-                  ) : (
-                    <Input
-                      type={s.key === 'secret' ? 'password' : 'text'}
-                      value={getValue(s.key)}
-                      onChange={(e) => updateSetting(s.key, e.target.value)}
-                    />
-                  )}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* ===== BILLING SETTINGS ===== */}
-        <TabsContent value="billing" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Billing Settings
-              </CardTitle>
-              <CardDescription>Configure billing behavior, currency, and payment options.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {(settings.billing || []).map((s) => (
-                <div key={s.key} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_2fr] sm:items-center">
-                  <div>
-                    <Label className="text-sm font-medium">{s.description || s.key}</Label>
-                    <p className="text-xs text-muted-foreground font-mono">{s.key}</p>
-                  </div>
-                  {s.type === 'boolean' ? (
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={getValue(s.key) === 'true'}
-                        onCheckedChange={(checked) => updateSetting(s.key, String(checked))}
-                      />
-                      <span className="text-sm text-muted-foreground">
-                        {getValue(s.key) === 'true' ? 'Enabled' : 'Disabled'}
-                      </span>
+        <TabsContent value="billing">
+          {loading || tabSwitching ? (
+            <TabContentSkeleton />
+          ) : (
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5" />
+                  Billing Settings
+                </CardTitle>
+                <CardDescription>Configure billing behavior, currency, and payment options.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {(settings.billing || []).map((s) => (
+                  <div key={s.key} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_2fr] sm:items-center">
+                    <div>
+                      <Label className="text-sm font-medium">{s.description || s.key}</Label>
+                      <p className="text-xs text-muted-foreground font-mono">{s.key}</p>
                     </div>
-                  ) : (
-                    <Input
-                      type={s.type === 'number' ? 'number' : 'text'}
-                      value={getValue(s.key)}
-                      onChange={(e) => updateSetting(s.key, e.target.value)}
-                    />
-                  )}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+                    {s.type === 'boolean' ? (
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={getValue(s.key) === 'true'}
+                          onCheckedChange={(checked) => updateSetting(s.key, String(checked))}
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          {getValue(s.key) === 'true' ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </div>
+                    ) : (
+                      <Input
+                        type={s.type === 'number' ? 'number' : 'text'}
+                        value={getValue(s.key)}
+                        onChange={(e) => updateSetting(s.key, e.target.value)}
+                      />
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* ===== EMAIL/SMS SETTINGS ===== */}
-        <TabsContent value="emailsms" className="mt-4 space-y-4">
-          {/* SMTP Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5" />
-                SMTP Configuration
-              </CardTitle>
-              <CardDescription>Email server settings for notifications and invoices.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {(settings.email || []).map((s) => (
-                <div key={s.key} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_2fr] sm:items-center">
-                  <div>
-                    <Label className="text-sm font-medium">{s.description || s.key}</Label>
-                    <p className="text-xs text-muted-foreground font-mono">{s.key}</p>
-                  </div>
-                  <Input
-                    type={s.key.includes('pass') || s.key.includes('secret') ? 'password' : s.type === 'number' ? 'number' : 'text'}
-                    value={getValue(s.key)}
-                    onChange={(e) => updateSetting(s.key, e.target.value)}
-                  />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* SMS Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                SMS Gateway
-              </CardTitle>
-              <CardDescription>Configure SMS notifications for alerts and OTP.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {(settings.sms || []).map((s) => (
-                <div key={s.key} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_2fr] sm:items-center">
-                  <div>
-                    <Label className="text-sm font-medium">{s.description || s.key}</Label>
-                    <p className="text-xs text-muted-foreground font-mono">{s.key}</p>
-                  </div>
-                  {s.type === 'boolean' ? (
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={getValue(s.key) === 'true'}
-                        onCheckedChange={(checked) => updateSetting(s.key, String(checked))}
+        <TabsContent value="emailsms">
+          {loading || tabSwitching ? (
+            <div className="mt-4 space-y-4">
+              <SettingsSkeleton />
+              <SettingsSkeleton />
+            </div>
+          ) : (
+            <div className="mt-4 space-y-4">
+              {/* SMTP Settings */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Mail className="h-5 w-5" />
+                    SMTP Configuration
+                  </CardTitle>
+                  <CardDescription>Email server settings for notifications and invoices.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {(settings.email || []).map((s) => (
+                    <div key={s.key} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_2fr] sm:items-center">
+                      <div>
+                        <Label className="text-sm font-medium">{s.description || s.key}</Label>
+                        <p className="text-xs text-muted-foreground font-mono">{s.key}</p>
+                      </div>
+                      <Input
+                        type={s.key.includes('pass') || s.key.includes('secret') ? 'password' : s.type === 'number' ? 'number' : 'text'}
+                        value={getValue(s.key)}
+                        onChange={(e) => updateSetting(s.key, e.target.value)}
                       />
-                      <span className="text-sm text-muted-foreground">
-                        {getValue(s.key) === 'true' ? 'Enabled' : 'Disabled'}
-                      </span>
                     </div>
-                  ) : (
-                    <Input
-                      type={s.key.includes('secret') || s.key.includes('key') ? 'password' : 'text'}
-                      value={getValue(s.key)}
-                      onChange={(e) => updateSetting(s.key, e.target.value)}
-                    />
-                  )}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* SMS Settings */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5" />
+                    SMS Gateway
+                  </CardTitle>
+                  <CardDescription>Configure SMS notifications for alerts and OTP.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {(settings.sms || []).map((s) => (
+                    <div key={s.key} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_2fr] sm:items-center">
+                      <div>
+                        <Label className="text-sm font-medium">{s.description || s.key}</Label>
+                        <p className="text-xs text-muted-foreground font-mono">{s.key}</p>
+                      </div>
+                      {s.type === 'boolean' ? (
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={getValue(s.key) === 'true'}
+                            onCheckedChange={(checked) => updateSetting(s.key, String(checked))}
+                          />
+                          <span className="text-sm text-muted-foreground">
+                            {getValue(s.key) === 'true' ? 'Enabled' : 'Disabled'}
+                          </span>
+                        </div>
+                      ) : (
+                        <Input
+                          type={s.key.includes('secret') || s.key.includes('key') ? 'password' : 'text'}
+                          value={getValue(s.key)}
+                          onChange={(e) => updateSetting(s.key, e.target.value)}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </TabsContent>
 
         {/* ===== FreeRADIUS CONFIG ===== */}
-        <TabsContent value="freeradius" className="mt-4 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileCode className="h-5 w-5" />
-                Generated FreeRADIUS Configuration
-              </CardTitle>
-              <CardDescription>
-                Auto-generated configuration files for integrating FreeRADIUS with this BSS via the rlm_rest module.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* REST Module Config */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-semibold">mods-available/rest</Label>
-                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(FREERADIUS_REST_CONFIG)} className="gap-1.5">
-                    <Copy className="h-3.5 w-3.5" />
-                    Copy
-                  </Button>
+        <TabsContent value="freeradius">
+          {loading || tabSwitching ? (
+            <div className="mt-4 space-y-4">
+              <SettingsSkeleton />
+            </div>
+          ) : (
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileCode className="h-5 w-5" />
+                  Generated FreeRADIUS Configuration
+                </CardTitle>
+                <CardDescription>
+                  Auto-generated configuration files for integrating FreeRADIUS with this BSS via the rlm_rest module.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* REST Module Config */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-semibold">mods-available/rest</Label>
+                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(FREERADIUS_REST_CONFIG)} className="gap-1.5">
+                      <Copy className="h-3.5 w-3.5" />
+                      Copy
+                    </Button>
+                  </div>
+                  <pre className="bg-muted rounded-lg p-4 text-xs overflow-x-auto max-h-[360px] overflow-y-auto font-mono leading-relaxed">
+                    <code>{FREERADIUS_REST_CONFIG}</code>
+                  </pre>
                 </div>
-                <pre className="bg-muted rounded-lg p-4 text-xs overflow-x-auto max-h-[360px] overflow-y-auto font-mono leading-relaxed">
-                  <code>{FREERADIUS_REST_CONFIG}</code>
-                </pre>
-              </div>
 
-              <Separator />
+                <Separator />
 
-              {/* sites-available/default */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-semibold">sites-available/default</Label>
-                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(FREERADIUS_SITES_AVAILABLE)} className="gap-1.5">
-                    <Copy className="h-3.5 w-3.5" />
-                    Copy
-                  </Button>
+                {/* sites-available/default */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-semibold">sites-available/default</Label>
+                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(FREERADIUS_SITES_AVAILABLE)} className="gap-1.5">
+                      <Copy className="h-3.5 w-3.5" />
+                      Copy
+                    </Button>
+                  </div>
+                  <pre className="bg-muted rounded-lg p-4 text-xs overflow-x-auto max-h-[360px] overflow-y-auto font-mono leading-relaxed">
+                    <code>{FREERADIUS_SITES_AVAILABLE}</code>
+                  </pre>
                 </div>
-                <pre className="bg-muted rounded-lg p-4 text-xs overflow-x-auto max-h-[360px] overflow-y-auto font-mono leading-relaxed">
-                  <code>{FREERADIUS_SITES_AVAILABLE}</code>
-                </pre>
-              </div>
 
-              <Separator />
+                <Separator />
 
-              {/* users file */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-semibold">users (fallback)</Label>
-                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(FREERADIUS_USERS_FILE)} className="gap-1.5">
-                    <Copy className="h-3.5 w-3.5" />
-                    Copy
-                  </Button>
+                {/* users file */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-semibold">users (fallback)</Label>
+                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(FREERADIUS_USERS_FILE)} className="gap-1.5">
+                      <Copy className="h-3.5 w-3.5" />
+                      Copy
+                    </Button>
+                  </div>
+                  <pre className="bg-muted rounded-lg p-4 text-xs overflow-x-auto max-h-[360px] overflow-y-auto font-mono leading-relaxed">
+                    <code>{FREERADIUS_USERS_FILE}</code>
+                  </pre>
                 </div>
-                <pre className="bg-muted rounded-lg p-4 text-xs overflow-x-auto max-h-[360px] overflow-y-auto font-mono leading-relaxed">
-                  <code>{FREERADIUS_USERS_FILE}</code>
-                </pre>
-              </div>
 
-              <Separator />
+                <Separator />
 
-              {/* Instructions */}
-              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                <h4 className="text-sm font-semibold">Setup Instructions</h4>
-                <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
-                  <li>Copy the <code className="bg-muted px-1 rounded">mods-available/rest</code> file to <code className="bg-muted px-1 rounded">/etc/freeradius/3.0/mods-enabled/rest</code></li>
-                  <li>Copy the <code className="bg-muted px-1 rounded">sites-available/default</code> file to <code className="bg-muted px-1 rounded">/etc/freeradius/3.0/sites-enabled/default</code></li>
-                  <li>Update the URI in the rest module to point to your BSS server&apos;s API endpoint</li>
-                  <li>Configure TLS certificates if using HTTPS</li>
-                  <li>Restart FreeRADIUS: <code className="bg-muted px-1 rounded">systemctl restart freeradius</code></li>
-                  <li>Test with: <code className="bg-muted px-1 rounded">radtest username password localhost 1812 testing123</code></li>
-                </ol>
-              </div>
-            </CardContent>
-          </Card>
+                {/* Instructions */}
+                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                  <h4 className="text-sm font-semibold">Setup Instructions</h4>
+                  <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                    <li>Copy the <code className="bg-muted px-1 rounded">mods-available/rest</code> file to <code className="bg-muted px-1 rounded">/etc/freeradius/3.0/mods-enabled/rest</code></li>
+                    <li>Copy the <code className="bg-muted px-1 rounded">sites-available/default</code> file to <code className="bg-muted px-1 rounded">/etc/freeradius/3.0/sites-enabled/default</code></li>
+                    <li>Update the URI in the rest module to point to your BSS server&apos;s API endpoint</li>
+                    <li>Configure TLS certificates if using HTTPS</li>
+                    <li>Restart FreeRADIUS: <code className="bg-muted px-1 rounded">systemctl restart freeradius</code></li>
+                    <li>Test with: <code className="bg-muted px-1 rounded">radtest username password localhost 1812 testing123</code></li>
+                  </ol>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* ===== AUDIT LOGS ===== */}
-        <TabsContent value="audit" className="mt-4 space-y-4">
-          {/* Filters */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by username..."
-                    value={auditSearch}
-                    onChange={(e) => { setAuditSearch(e.target.value); setAuditPage(1) }}
-                    className="pl-9"
-                  />
-                </div>
-                <Select value={auditModule} onValueChange={(v) => { setAuditModule(v === 'all' ? '' : v); setAuditPage(1) }}>
-                  <SelectTrigger className="w-full sm:w-40">
-                    <SelectValue placeholder="All Modules" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Modules</SelectItem>
-                    <SelectItem value="users">Users</SelectItem>
-                    <SelectItem value="nas">NAS</SelectItem>
-                    <SelectItem value="plans">Plans</SelectItem>
-                    <SelectItem value="policies">Policies</SelectItem>
-                    <SelectItem value="billing">Billing</SelectItem>
-                    <SelectItem value="sessions">Sessions</SelectItem>
-                    <SelectItem value="settings">Settings</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={auditAction} onValueChange={(v) => { setAuditAction(v === 'all' ? '' : v); setAuditPage(1) }}>
-                  <SelectTrigger className="w-full sm:w-40">
-                    <SelectValue placeholder="All Actions" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Actions</SelectItem>
-                    <SelectItem value="create">Create</SelectItem>
-                    <SelectItem value="update">Update</SelectItem>
-                    <SelectItem value="delete">Delete</SelectItem>
-                    <SelectItem value="login">Login</SelectItem>
-                    <SelectItem value="logout">Logout</SelectItem>
-                    <SelectItem value="export">Export</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Audit Logs Table */}
-          <Card>
-            <CardContent className="p-0">
-              <div className="max-h-[520px] overflow-y-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="sticky top-0 bg-card z-10">Timestamp</TableHead>
-                      <TableHead className="sticky top-0 bg-card z-10">User</TableHead>
-                      <TableHead className="sticky top-0 bg-card z-10">Action</TableHead>
-                      <TableHead className="sticky top-0 bg-card z-10">Module</TableHead>
-                      <TableHead className="sticky top-0 bg-card z-10">Details</TableHead>
-                      <TableHead className="sticky top-0 bg-card z-10">IP Address</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {auditLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                          Loading audit logs...
-                        </TableCell>
-                      </TableRow>
-                    ) : auditLogs.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                          No audit logs found
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      auditLogs.map((log) => (
-                        <TableRow key={log.id}>
-                          <TableCell className="text-xs whitespace-nowrap">
-                            {new Date(log.timestamp).toLocaleString()}
-                          </TableCell>
-                          <TableCell className="text-sm font-medium">{log.username || '—'}</TableCell>
-                          <TableCell>
-                            <ActionBadge action={log.action} />
-                          </TableCell>
-                          <TableCell>
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted">
-                              {log.module}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
-                            {log.details || '—'}
-                          </TableCell>
-                          <TableCell className="text-xs font-mono text-muted-foreground">
-                            {log.ipAddress || '—'}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {auditTotalPages > 1 && (
-                <div className="flex items-center justify-between border-t px-4 py-3">
-                  <p className="text-sm text-muted-foreground">Page {auditPage} of {auditTotalPages}</p>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setAuditPage(Math.max(1, auditPage - 1))} disabled={auditPage <= 1}>
-                      Previous
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => setAuditPage(Math.min(auditTotalPages, auditPage + 1))} disabled={auditPage >= auditTotalPages}>
-                      Next
-                    </Button>
+        <TabsContent value="audit">
+          {loading || tabSwitching ? (
+            <div className="mt-4 space-y-4">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex gap-3">
+                    <Skeleton className="h-10 flex-1" />
+                    <Skeleton className="h-10 w-40" />
+                    <Skeleton className="h-10 w-40" />
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-0">
+                  <div className="space-y-2 p-4">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <Skeleton key={i} className="h-10 w-full" />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <div className="mt-4 space-y-4">
+              {/* Filters */}
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Search by username..."
+                        value={auditSearch}
+                        onChange={(e) => { setAuditSearch(e.target.value); setAuditPage(1) }}
+                        className="pl-9"
+                      />
+                    </div>
+                    <Select value={auditModule} onValueChange={(v) => { setAuditModule(v === 'all' ? '' : v); setAuditPage(1) }}>
+                      <SelectTrigger className="w-full sm:w-40">
+                        <SelectValue placeholder="All Modules" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Modules</SelectItem>
+                        <SelectItem value="users">Users</SelectItem>
+                        <SelectItem value="nas">NAS</SelectItem>
+                        <SelectItem value="plans">Plans</SelectItem>
+                        <SelectItem value="policies">Policies</SelectItem>
+                        <SelectItem value="billing">Billing</SelectItem>
+                        <SelectItem value="sessions">Sessions</SelectItem>
+                        <SelectItem value="settings">Settings</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={auditAction} onValueChange={(v) => { setAuditAction(v === 'all' ? '' : v); setAuditPage(1) }}>
+                      <SelectTrigger className="w-full sm:w-40">
+                        <SelectValue placeholder="All Actions" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Actions</SelectItem>
+                        <SelectItem value="create">Create</SelectItem>
+                        <SelectItem value="update">Update</SelectItem>
+                        <SelectItem value="delete">Delete</SelectItem>
+                        <SelectItem value="login">Login</SelectItem>
+                        <SelectItem value="logout">Logout</SelectItem>
+                        <SelectItem value="export">Export</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Audit Logs Table */}
+              <Card>
+                <CardContent className="p-0">
+                  <div className="max-h-[520px] overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="sticky top-0 bg-card z-10">Timestamp</TableHead>
+                          <TableHead className="sticky top-0 bg-card z-10">User</TableHead>
+                          <TableHead className="sticky top-0 bg-card z-10">Action</TableHead>
+                          <TableHead className="sticky top-0 bg-card z-10">Module</TableHead>
+                          <TableHead className="sticky top-0 bg-card z-10">Details</TableHead>
+                          <TableHead className="sticky top-0 bg-card z-10">IP Address</TableHead>
+                          <TableHead className="sticky top-0 bg-card z-10">User Agent</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {auditLoading ? (
+                          <>
+                            {Array.from({ length: 8 }).map((_, i) => (
+                              <TableRow key={i}>
+                                <TableCell colSpan={7} className="p-2">
+                                  <Skeleton className="h-8 w-full" />
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </>
+                        ) : auditLogs.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                              No audit logs found
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          auditLogs.map((log) => (
+                            <TableRow key={log.id}>
+                              <TableCell className="text-xs whitespace-nowrap">
+                                {new Date(log.timestamp).toLocaleString()}
+                              </TableCell>
+                              <TableCell className="text-sm font-medium">{log.username || '—'}</TableCell>
+                              <TableCell>
+                                <ActionBadge action={log.action} />
+                              </TableCell>
+                              <TableCell>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted">
+                                  {log.module}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
+                                {log.details || '—'}
+                              </TableCell>
+                              <TableCell className="text-xs font-mono text-muted-foreground">
+                                {log.ipAddress || '—'}
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground max-w-[180px] truncate" title={log.userAgent || undefined}>
+                                {log.userAgent || '—'}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {auditTotalPages > 1 && (
+                    <div className="flex items-center justify-between border-t px-4 py-3">
+                      <p className="text-sm text-muted-foreground">Page {auditPage} of {auditTotalPages}</p>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setAuditPage(Math.max(1, auditPage - 1))} disabled={auditPage <= 1}>
+                          Previous
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setAuditPage(Math.min(auditTotalPages, auditPage + 1))} disabled={auditPage >= auditTotalPages}>
+                          Next
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

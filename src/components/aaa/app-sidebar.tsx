@@ -1,6 +1,7 @@
 'use client'
 
 import { useAppStore, type ViewId } from '@/lib/store'
+import { useQuery } from '@tanstack/react-query'
 import {
   LayoutDashboard,
   Users,
@@ -61,6 +62,22 @@ const groupedItems = {
 export function AppSidebar() {
   const { activeView, setActiveView, sidebarOpen, setSidebarOpen } = useAppStore()
 
+  const { data: quickStats } = useQuery({
+    queryKey: ['sidebar-stats'],
+    queryFn: async () => {
+      const res = await fetch('/api/dashboard')
+      if (!res.ok) throw new Error('Failed to fetch')
+      const data = await res.json()
+      return {
+        totalUsers: data.totalUsers ?? 0,
+        totalNas: data.totalNas ?? 0,
+        activeSessions: data.activeSessions ?? 0,
+      }
+    },
+    refetchInterval: 60000,
+    staleTime: 30000,
+  })
+
   return (
     <TooltipProvider delayDuration={0}>
       <aside
@@ -88,17 +105,17 @@ export function AppSidebar() {
             <div className="grid grid-cols-3 gap-1.5">
               <div className="flex flex-col items-center gap-0.5 rounded-lg bg-emerald-50 px-2 py-1.5 dark:bg-emerald-950/30">
                 <Zap className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">25</span>
+                <span className={cn("text-[10px] font-semibold text-emerald-700 dark:text-emerald-400", !quickStats && "animate-pulse")}>{quickStats?.totalUsers ?? '—'}</span>
                 <span className="text-[8px] text-muted-foreground">Users</span>
               </div>
               <div className="flex flex-col items-center gap-0.5 rounded-lg bg-sky-50 px-2 py-1.5 dark:bg-sky-950/30">
                 <Wifi className="h-3 w-3 text-sky-600 dark:text-sky-400" />
-                <span className="text-[10px] font-semibold text-sky-700 dark:text-sky-400">9</span>
+                <span className={cn("text-[10px] font-semibold text-sky-700 dark:text-sky-400", !quickStats && "animate-pulse")}>{quickStats?.totalNas ?? '—'}</span>
                 <span className="text-[8px] text-muted-foreground">NAS</span>
               </div>
               <div className="flex flex-col items-center gap-0.5 rounded-lg bg-purple-50 px-2 py-1.5 dark:bg-purple-950/30">
                 <Clock className="h-3 w-3 text-purple-600 dark:text-purple-400" />
-                <span className="text-[10px] font-semibold text-purple-700 dark:text-purple-400">5</span>
+                <span className={cn("text-[10px] font-semibold text-purple-700 dark:text-purple-400", !quickStats && "animate-pulse")}>{quickStats?.activeSessions ?? '—'}</span>
                 <span className="text-[8px] text-muted-foreground">Active</span>
               </div>
             </div>
