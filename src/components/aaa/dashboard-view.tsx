@@ -69,6 +69,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useAppStore } from '@/lib/store'
 import { SystemAlertsPanel } from '@/components/aaa/system-alerts-panel'
+import { LiveRadiusEventsPanel } from '@/components/aaa/live-radius-events'
 
 // =============================================
 // Types
@@ -1356,6 +1357,11 @@ export function DashboardView() {
       {/* System Alerts Panel */}
       {/* ============================================= */}
       <SystemAlertsPanel />
+
+      {/* ============================================= */}
+      {/* Live RADIUS Events (WebSocket) */}
+      {/* ============================================= */}
+      <LiveRadiusEventsPanel />
 
       {/* ============================================= */}
       {/* Quick Actions Grid */}

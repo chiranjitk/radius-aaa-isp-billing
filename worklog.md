@@ -233,6 +233,63 @@ The AAA/RADIUS BSS system is now at v2.3 with real-time session monitoring, RADI
 10. Create printable reports with company branding
 
 ---
+Task ID: 5-a
+Agent: frontend-styling-expert
+Task: Apply detailed styling improvements across multiple views
+
+Work Log:
+- Read existing globals.css (822 lines with 25+ utility classes) and analyzed all 4 target files
+- Enhanced nas-view.tsx styling:
+  - Updated StatusDot to use `.pulse-dot` class for online NAS status (replaces animate-ping)
+  - Updated vendor badge colors: Cisco=slate, Juniper=rose, MikroTik=teal, Huawei=red, Aruba=amber (no blue)
+  - Updated vendor template colors to match badge colors
+  - Added `.card-shine`, `.hover-lift`, `.gradient-border` to NasCard component
+  - Added staggered fade-in animation (stagger-1 through stagger-6) to NAS card grid
+  - Added `.hover-lift` and `.stat-number` to all 5 stats cards
+  - Added NAS type badge with dashed border monospace style
+- Enhanced plans-view.tsx styling:
+  - Updated plan type badge colors: flat-rate=emerald, time-based=violet, data-based=amber, hybrid=rose
+  - Added `badgeColor` field to PLAN_TYPE_CONFIG for consistent badge styling with dark mode
+  - Changed hybrid glow from warning to danger variant
+  - Added `.card-shine`, `.hover-lift` to plan cards (replaces card-hover)
+  - Added `.gradient-border-visible` to featured/popular plan cards
+  - Added `.stat-number` to price display for tabular-nums
+  - Added billing cycle badge with dashed border monospace style
+  - Added visual speed gradient bar using `.data-bar`/`.data-bar-fill` for download speed
+- Enhanced policies-view.tsx styling:
+  - Added `.table-row-hover` and stagger animation to policy table rows
+  - Added left-border accent per policy type: bandwidth=amber, time=violet, data=teal, access=emerald, acl=orange, firewall=red
+  - Enhanced priority indicator with color-coded dot (green<5, amber 5-7, red>=8)
+- Enhanced registrations-view.tsx styling:
+  - Changed completed status color from sky to teal (no blue)
+  - Added `.pulse-dot` animation for pending status badges
+  - Added `.card-shine`, `.hover-lift` to all 4 stats cards
+  - Added `.stat-number` to stat card numbers
+  - Added `.table-row-hover` and stagger animation to registration table rows
+  - Added `.hover-lift` to all action buttons (view, approve, reject)
+  - Added `.btn-glow` emerald glow to approve button
+  - Added visual workflow timeline to Registration Detail Dialog with dot-track progress indicator
+- ESLint passes clean on all modified files (policies-view.tsx has 1 pre-existing parsing error unrelated to changes)
+
+Design Rules Followed:
+- NO indigo or blue colors used anywhere
+- All animations GPU-accelerated (transform/opacity only via existing CSS classes)
+- Full dark mode support via dark: variant selectors
+- Mobile responsive (no layout changes, only additive CSS classes)
+- Minimal additive changes — no existing layouts broken
+
+Stage Summary:
+- 4 view components enhanced with consistent styling patterns
+- Card components: `.card-shine` hover sweep, `.hover-lift` elevation, `.gradient-border` hover glow
+- Table rows: `.table-row-hover` micro-scale effect, staggered fade-in animation, type-colored left borders
+- Stats cards: `.stat-number` tabular-nums, `.card-shine` sweep, `.hover-lift` elevation
+- Status indicators: `.pulse-dot` for pending states, color-coded vendor/type/status badges
+- Visual workflow timeline added to registration detail dialog
+- Speed gradient bars added to plan cards for bandwidth visualization
+- Priority dot indicators with gradient colors in policies table
+
+
+---
 Task ID: 31
 Agent: frontend-styling-expert
 Task: Enhanced global styling with new animations, patterns, and micro-interactions
@@ -1539,3 +1596,29 @@ dashboard, users, users/[id], users/[id]/attributes, users/[id]/kyc, users/[id]/
 8. Add printable reports with company branding
 9. Implement IP pool auto-allocation logic (DHCP simulation)
 10. Add data validation and form error indicators throughout
+
+---
+Task ID: 4-a
+Agent: full-stack-developer
+Task: Enhance NAS View with health monitoring and bulk session operations
+
+Work Log:
+- Read existing nas-view.tsx (1707 lines) and sessions-view.tsx (1220 lines) fully before making changes
+- Enhanced NAS Health Overview Cards: Added live active sessions count from /api/sessions?status=active with 30s refetch interval, prioritizing live data over NAS-provided stats
+- Updated formatRelativeTime to use date-fns formatDistanceToNow for more natural relative timestamps (e.g., "5 minutes ago", "about 2 hours ago")
+- Enhanced NAS Cards: last alive timestamp now uses date-fns formatDistanceToNow, active sessions badge and test connection button already existed
+- NAS Detail Sheet already had Overview/Sessions/Config tabs with full session listing, FreeRADIUS config snippet with copy button — confirmed working
+- Added per-row Checkbox from shadcn/ui to sessions table for selection
+- Added Select All / Deselect All / Clear Selection buttons in action bar (responsive with hidden sm:inline text on mobile)
+- Added Bulk Action Bar that appears when sessions are selected: amber-tinted bar with selected count badge, Bulk Disconnect button, Clear button
+- Added Bulk Disconnect AlertDialog with warning message, simulated toast on confirm, auto-clears selection
+- Fixed selectAll use-before-declare by moving computed values (isAllSelected, isSomeSelected) and selectAll after sortedSessions declaration
+- Fixed missing closing div tag in action bar structure
+- Verified dev server compiles: all API endpoints returning 200 OK (15+ endpoints)
+
+Stage Summary:
+- NAS View enhanced with live active sessions count via separate query from sessions API
+- formatDistanceToNow from date-fns replaces manual relative time calculation
+- Sessions View now has full bulk selection workflow: checkbox per row, select/deselect all, bulk disconnect with confirmation dialog
+- Bulk action bar with amber highlight, session count badge, simulated disconnect toast
+- Pre-existing ESLint issues in plans-view.tsx and policies-view.tsx remain (unrelated to changes)

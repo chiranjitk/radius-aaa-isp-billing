@@ -107,7 +107,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: Lucide
   },
   completed: {
     label: 'Completed',
-    color: 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border-sky-200 dark:border-sky-800',
+    color: 'bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300 border-teal-200 dark:border-teal-800',
     icon: ShieldCheck,
   },
 }
@@ -117,7 +117,8 @@ function StatusBadge({ status }: { status: string }) {
   const Icon = config.icon
 
   return (
-    <Badge variant="outline" className={`gap-1.5 text-xs font-medium ${config.color}`}>
+    <Badge variant="outline" className={cn('gap-1.5 text-xs font-medium', config.color)}>
+      {status === 'pending' && <span className="pulse-dot bg-amber-500" />}
       <Icon className="h-3 w-3" />
       {config.label}
     </Badge>
@@ -306,6 +307,45 @@ function RegistrationDetailDialog({
             <StatusBadge status={registration.status} />
           </div>
 
+          {/* Visual timeline */}
+          <div className="flex items-center gap-2 px-1">
+            <div className={cn(
+              'h-2.5 w-2.5 rounded-full border-2',
+              registration.status === 'pending' ? 'border-amber-500 bg-amber-500/30' : 'border-emerald-500 bg-emerald-500'
+            )} />
+            <div className={cn('flex-1 h-0.5 rounded-full', registration.status === 'pending' ? 'bg-amber-500/40' : 'bg-emerald-500/40')} />
+            <div className={cn(
+              'h-2.5 w-2.5 rounded-full border-2',
+              registration.status === 'approved' || registration.status === 'completed' ? 'border-emerald-500 bg-emerald-500' : registration.status === 'rejected' ? 'border-red-500 bg-red-500' : 'border-zinc-300 bg-transparent dark:border-zinc-600'
+            )} />
+            <div className={cn('flex-1 h-0.5 rounded-full', registration.status === 'completed' ? 'bg-emerald-500/40' : 'bg-zinc-200 dark:bg-zinc-700')} />
+            <div className={cn(
+              'h-2.5 w-2.5 rounded-full border-2',
+              registration.status === 'completed' ? 'border-teal-500 bg-teal-500' : 'border-zinc-300 bg-transparent dark:border-zinc-600'
+            )} />
+            <div className="flex items-center gap-1 ml-1 text-[10px] text-muted-foreground">
+              <span>Submitted</span>
+              {registration.approvedAt && (
+                <>
+                  <span>→</span>
+                  <span className="text-emerald-600">Approved</span>
+                </>
+              )}
+              {registration.status === 'completed' && (
+                <>
+                  <span>→</span>
+                  <span className="text-teal-600">Completed</span>
+                </>
+              )}
+              {registration.status === 'rejected' && (
+                <>
+                  <span>→</span>
+                  <span className="text-red-600">Rejected</span>
+                </>
+              )}
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-0.5">
               <p className="text-[11px] text-muted-foreground flex items-center gap-1">
@@ -489,46 +529,46 @@ export function RegistrationsView() {
     <div className="space-y-6 animate-fade-in-up">
       {/* Stats Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="card-hover p-4">
+        <Card className="card-shine hover-lift p-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center">
               <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold tabular-nums">{total}</p>
+              <p className="text-2xl font-bold stat-number">{total}</p>
               <p className="text-xs text-muted-foreground">Total</p>
             </div>
           </div>
         </Card>
-        <Card className="card-hover p-4">
+        <Card className="card-shine hover-lift p-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center">
               <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold tabular-nums">{registrations.filter((r) => r.status === 'pending').length}</p>
+              <p className="text-2xl font-bold stat-number">{registrations.filter((r) => r.status === 'pending').length}</p>
               <p className="text-xs text-muted-foreground">Pending</p>
             </div>
           </div>
         </Card>
-        <Card className="card-hover p-4">
+        <Card className="card-shine hover-lift p-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-lg bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center">
               <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold tabular-nums">{registrations.filter((r) => r.status === 'completed').length}</p>
+              <p className="text-2xl font-bold stat-number">{registrations.filter((r) => r.status === 'completed').length}</p>
               <p className="text-xs text-muted-foreground">Completed</p>
             </div>
           </div>
         </Card>
-        <Card className="card-hover p-4">
+        <Card className="card-shine hover-lift p-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-lg bg-red-100 dark:bg-red-950/40 flex items-center justify-center">
               <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold tabular-nums">{registrations.filter((r) => r.status === 'rejected').length}</p>
+              <p className="text-2xl font-bold stat-number">{registrations.filter((r) => r.status === 'rejected').length}</p>
               <p className="text-xs text-muted-foreground">Rejected</p>
             </div>
           </div>
@@ -632,8 +672,8 @@ export function RegistrationsView() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {registrations.map((reg) => (
-                  <TableRow key={reg.id} className="group">
+                {registrations.map((reg, regIdx) => (
+                  <TableRow key={reg.id} className={cn('table-row-hover group animate-fade-in-up', ['stagger-1','stagger-2','stagger-3','stagger-4','stagger-5','stagger-6'][regIdx % 6])}>
                     <TableCell className="font-mono text-sm font-medium">{reg.username}</TableCell>
                     <TableCell className="text-sm">{reg.fullName || '—'}</TableCell>
                     <TableCell className="text-sm hidden md:table-cell text-muted-foreground">{reg.email || '—'}</TableCell>
@@ -650,7 +690,7 @@ export function RegistrationsView() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8"
+                          className="h-8 w-8 hover-lift"
                           onClick={() => {
                             setDetailRegistration(reg)
                             setDetailDialogOpen(true)
@@ -663,7 +703,7 @@ export function RegistrationsView() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                              className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover-lift btn-glow"
                               onClick={() => approveMutation.mutate(reg.id)}
                               disabled={approveMutation.isPending}
                             >
@@ -676,7 +716,7 @@ export function RegistrationsView() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 hover-lift"
                               onClick={() => {
                                 setRejectTarget(reg)
                                 setRejectDialogOpen(true)

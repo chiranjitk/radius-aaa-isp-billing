@@ -31,6 +31,9 @@ import {
   FileSpreadsheet,
   FileJson,
   Radio,
+  CheckSquare,
+  Square,
+  Trash2,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -47,6 +50,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Sheet,
   SheetContent,
@@ -81,6 +85,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { exportToCSV, exportToJSON, type ExportOptions } from '@/lib/export-utils'
 import { RadiusTestDialog } from '@/components/aaa/radius-test-dialog'
+import { cn } from '@/lib/utils'
 
 // ==================== Utility Functions ====================
 
@@ -287,12 +292,16 @@ function SessionRow({
   onDisconnect,
   onKill,
   onRadiusTest,
+  selected,
+  onToggleSelect,
 }: {
   session: Session
   onViewDetails: (s: Session) => void
   onDisconnect: (s: Session) => void
   onKill: (s: Session) => void
   onRadiusTest: (s: Session) => void
+  selected: boolean
+  onToggleSelect: (id: string) => void
 }) {
   const isActive = session.status === 'active'
   const liveDuration = useLiveDuration(isActive ? session.acctStartTime : null, isActive)
@@ -304,7 +313,14 @@ function SessionRow({
   const liveTotalBytes = liveInputBytes + liveOutputBytes
 
   return (
-    <TableRow key={session.id} className="group table-row-hover">
+    <TableRow key={session.id} className={cn("group table-row-hover", selected && "bg-primary/5")}>
+      <TableCell className="w-10">
+        <Checkbox
+          checked={selected}
+          onCheckedChange={() => onToggleSelect(session.id)}
+          aria-label={`Select session ${session.username || session.sessionId}`}
+        />
+      </TableCell>
       <TableCell className="font-mono text-xs max-w-[200px]">
         <span className="block truncate" title={session.sessionId}>
           {truncateId(session.sessionId)}
@@ -669,6 +685,23 @@ export function SessionsView() {
   const [radiusTestOpen, setRadiusTestOpen] = useState(false)
   const [radiusTestUsername, setRadiusTestUsername] = useState('')
   const [radiusTestSessionId, setRadiusTestSessionId] = useState('')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkDisconnectOpen, setBulkDisconnectOpen] = useState(false)
+
+  // Toggle individual selection
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  // Clear all selections
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set())
+  }, [])
 
   // Fetch sessions
   const { data, isLoading, isFetching, refetch } = useQuery<SessionsResponse>({
@@ -751,6 +784,14 @@ export function SessionsView() {
       : (bVal as number) - (aVal as number)
   }) : []
 
+  // Selection computed values (after sortedSessions)
+  const isAllSelected = sortedSessions.length > 0 && selectedIds.size === sortedSessions.length
+  const isSomeSelected = selectedIds.size > 0
+
+  const selectAll = useCallback(() => {
+    setSelectedIds(new Set(sortedSessions.map(s => s.id)))
+  }, [sortedSessions])
+
   // Clear filters
   const clearFilters = () => {
     setSearch('')
@@ -769,14 +810,50 @@ export function SessionsView() {
   return (
     <div className="space-y-6">
       {/* Action Bar */}
-      <div className="flex items-center justify-end gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" disabled={isLoading || sortedSessions.length === 0} className="gap-2">
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
-          </DropdownMenuTrigger>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {sortedSessions.length > 0 && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 gap-1.5"
+                onClick={isAllSelected ? clearSelection : selectAll}
+              >
+                {isAllSelected ? (
+                  <>
+                    <Square className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Deselect All</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckSquare className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Select All</span>
+                  </>
+                )}
+              </Button>
+              {isSomeSelected && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 gap-1.5 text-muted-foreground"
+                  onClick={clearSelection}
+                >
+                  <X className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Clear</span>
+                </Button>
+              )}
+            </>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" disabled={isLoading || sortedSessions.length === 0} className="gap-2">
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Export</span>
+              </Button>
+            </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               onClick={() => {
@@ -840,6 +917,7 @@ export function SessionsView() {
           <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
+        </div>
       </div>
 
       {/* Live Stats */}
@@ -1003,6 +1081,37 @@ export function SessionsView() {
         </CardContent>
       </Card>
 
+      {/* Bulk Action Bar */}
+      {isSomeSelected && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900 p-3">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="bg-amber-100 dark:bg-amber-900/50 border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-400 text-xs font-medium">
+              {selectedIds.size} session{selectedIds.size > 1 ? 's' : ''} selected
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="destructive"
+              size="sm"
+              className="h-9 gap-1.5"
+              onClick={() => setBulkDisconnectOpen(true)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Bulk Disconnect</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 gap-1.5"
+              onClick={clearSelection}
+            >
+              <X className="h-3.5 w-3.5" />
+              Clear
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Sessions Table */}
       <Card>
         <CardContent className="p-0">
@@ -1010,6 +1119,13 @@ export function SessionsView() {
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-xs w-10">
+                    <Checkbox
+                      checked={isAllSelected}
+                      onCheckedChange={isAllSelected ? clearSelection : selectAll}
+                      aria-label="Select all sessions"
+                    />
+                  </TableHead>
                   <TableHead className="text-xs">Session ID</TableHead>
                   <TableHead className="text-xs">Username</TableHead>
                   <TableHead className="text-xs">NAS</TableHead>
@@ -1051,6 +1167,7 @@ export function SessionsView() {
                 {isLoading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-4" /></TableCell>
                       {Array.from({ length: 10 }).map((_, j) => (
                         <TableCell key={j}>
                           <Skeleton className="h-4 w-full" />
@@ -1060,7 +1177,7 @@ export function SessionsView() {
                   ))
                 ) : sortedSessions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={11} className="text-center py-12 text-muted-foreground">
                       <div className="flex flex-col items-center gap-2">
                         <Activity className="h-8 w-8 opacity-30" />
                         <p>No sessions found</p>
@@ -1077,6 +1194,8 @@ export function SessionsView() {
                     <SessionRow
                       key={session.id}
                       session={session}
+                      selected={selectedIds.has(session.id)}
+                      onToggleSelect={toggleSelect}
                       onViewDetails={(s) => { setSelectedSession(s); setSheetOpen(true) }}
                       onDisconnect={(s) => setDisconnectDialog({ open: true, session: s })}
                       onKill={(s) => setKillDialog({ open: true, session: s })}
@@ -1215,6 +1334,37 @@ export function SessionsView() {
         defaultUsername={radiusTestUsername}
         defaultSessionId={radiusTestSessionId}
       />
+
+      {/* Bulk Disconnect Dialog */}
+      <AlertDialog open={bulkDisconnectOpen} onOpenChange={setBulkDisconnectOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-600">Bulk Disconnect Sessions</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="font-semibold text-red-600">Warning:</span> This will forcefully terminate{' '}
+              <span className="font-bold">{selectedIds.size}</span> selected session{selectedIds.size > 1 ? 's' : ''} immediately.
+              <br />
+              All sessions will be terminated with cause &quot;Admin-Reset&quot;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={clearSelection}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                toast({
+                  title: `${selectedIds.size} Sessions Disconnected`,
+                  description: 'Bulk disconnect simulated successfully. In production, CoA-Disconnect requests would be sent to each NAS.',
+                })
+                setBulkDisconnectOpen(false)
+                clearSelection()
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Disconnect All
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

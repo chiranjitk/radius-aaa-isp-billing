@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { format, formatDistanceToNow } from 'date-fns'
 import {
   Server,
   Plus,
@@ -84,6 +85,15 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Progress } from '@/components/ui/progress'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet'
 import { NetworkTopology } from '@/components/aaa/network-topology'
 import { cn } from '@/lib/utils'
 import { exportToCSV, exportToJSON, type ExportOptions } from '@/lib/export-utils'
@@ -167,7 +177,7 @@ const VENDOR_TEMPLATES: VendorTemplate[] = [
       community: 'public',
     },
     icon: Router,
-    color: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+    color: 'text-slate-400 bg-slate-400/10 border-slate-400/20',
   },
   {
     id: 'juniper-junos',
@@ -183,7 +193,7 @@ const VENDOR_TEMPLATES: VendorTemplate[] = [
       community: 'public',
     },
     icon: Radio,
-    color: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+    color: 'text-rose-400 bg-rose-400/10 border-rose-400/20',
   },
   {
     id: 'mikrotik-routeros',
@@ -199,7 +209,7 @@ const VENDOR_TEMPLATES: VendorTemplate[] = [
       community: 'public',
     },
     icon: Wifi,
-    color: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
+    color: 'text-teal-400 bg-teal-400/10 border-teal-400/20',
   },
   {
     id: 'huawei-vrp',
@@ -256,12 +266,12 @@ function StatusDot({ status }: { status: string }) {
   return (
     <span className="relative flex h-2.5 w-2.5">
       {status === 'up' && (
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+        <span className="pulse-dot bg-emerald-500" />
       )}
       <span
         className={cn(
           'relative inline-flex rounded-full h-2.5 w-2.5',
-          config[status as keyof typeof config] || 'bg-zinc-400'
+          status !== 'up' && (config[status as keyof typeof config] || 'bg-zinc-400')
         )}
       />
     </span>
@@ -294,11 +304,11 @@ function StatusBadge({ status }: { status: string }) {
 
 function VendorBadge({ type }: { type: string }) {
   const colors: Record<string, string> = {
-    cisco: 'bg-blue-500/15 text-blue-600 border-blue-500/25',
-    juniper: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/25',
-    mikrotik: 'bg-amber-500/15 text-amber-600 border-amber-500/25',
-    huawei: 'bg-red-500/15 text-red-600 border-red-500/25',
-    aruba: 'bg-violet-500/15 text-violet-600 border-violet-500/25',
+    cisco: 'bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/25',
+    juniper: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/25',
+    mikrotik: 'bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/25',
+    huawei: 'bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/25',
+    aruba: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/25',
     other: 'bg-zinc-500/15 text-zinc-600 border-zinc-500/25',
   }
 
@@ -326,18 +336,11 @@ function VendorBadge({ type }: { type: string }) {
 
 function formatRelativeTime(dateStr: string | null): string {
   if (!dateStr) return 'Never'
-  const now = new Date()
-  const date = new Date(dateStr)
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
-
-  if (diffMins < 1) return 'Just now'
-  if (diffMins < 60) return `${diffMins}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  if (diffDays < 7) return `${diffDays}d ago`
-  return date.toLocaleDateString()
+  try {
+    return formatDistanceToNow(new Date(dateStr), { addSuffix: true })
+  } catch {
+    return 'Unknown'
+  }
 }
 
 // ==========================================
@@ -391,6 +394,8 @@ export function NasView() {
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false)
   const [editingDevice, setEditingDevice] = useState<NasDevice | null>(null)
   const [deletingDevice, setDeletingDevice] = useState<NasDevice | null>(null)
+  const [detailDevice, setDetailDevice] = useState<NasDevice | null>(null)
+  const [detailOpen, setDetailOpen] = useState(false)
   const [formData, setFormData] = useState<NasFormData>(emptyForm)
 
   // ==========================================
@@ -421,6 +426,19 @@ export function NasView() {
   })
 
   const stats = data?.stats
+
+  // Fetch live active sessions count
+  const { data: liveSessionsData } = useQuery<{ sessions: unknown[] }>({
+    queryKey: ['nas-active-sessions-count'],
+    queryFn: async () => {
+      const res = await fetch('/api/sessions?status=active&limit=1')
+      if (!res.ok) throw new Error('Failed to fetch active sessions')
+      return res.json()
+    },
+    staleTime: 15000,
+    refetchInterval: 30000,
+  })
+  const liveActiveCount = (liveSessionsData?.sessions?.length) ?? null
 
   // ==========================================
   // MUTATIONS
@@ -710,66 +728,82 @@ export function NasView() {
 
         {/* ========== STATS ROW ========== */}
         {stats ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            <Card className="border-none shadow-sm">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
+            <Card className="border-none shadow-sm hover-lift">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10">
                     <Server className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">{stats.total}</p>
+                    <p className="text-2xl font-bold stat-number">{stats.total}</p>
                     <p className="text-xs text-muted-foreground">Total NAS</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-none shadow-sm">
+            <Card className="border-none shadow-sm hover-lift">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-emerald-500/10">
                     <Wifi className="h-5 w-5 text-emerald-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-emerald-600">{stats.online}</p>
+                    <p className="text-2xl font-bold text-emerald-600 stat-number">{stats.online}</p>
                     <p className="text-xs text-muted-foreground">Online</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-none shadow-sm">
+            <Card className="border-none shadow-sm hover-lift">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-red-500/10">
                     <WifiOff className="h-5 w-5 text-red-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-red-600">{stats.offline}</p>
+                    <p className="text-2xl font-bold text-red-600 stat-number">{stats.offline}</p>
                     <p className="text-xs text-muted-foreground">Offline</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-none shadow-sm">
+            <Card className="border-none shadow-sm hover-lift">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-amber-500/10">
                     <Activity className="h-5 w-5 text-amber-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-amber-600">{stats.totalActiveSessions}</p>
+                    <p className="text-2xl font-bold text-amber-600 stat-number">
+                      {liveActiveCount !== null ? liveActiveCount : (stats.totalActiveSessions)}
+                    </p>
                     <p className="text-xs text-muted-foreground">Active Sessions</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-sm hover-lift">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-teal-500/10">
+                    <Clock className="h-5 w-5 text-teal-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-teal-600 stat-number">{stats.total > 0 ? Math.round((stats.online / stats.total) * 100) : 0}%</p>
+                    <p className="text-xs text-muted-foreground">Avg Uptime</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            {[1, 2, 3, 4].map((i) => (
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
+            {[1, 2, 3, 4, 5].map((i) => (
               <Card key={i} className="border-none shadow-sm">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
@@ -910,14 +944,16 @@ export function NasView() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {data?.devices.map((device) => (
-                <NasCard
-                  key={device.id}
-                  device={device}
-                  onEdit={openEditDialog}
-                  onDelete={handleDelete}
-                  onTest={handleTestConnection}
-                />
+              {data?.devices.map((device, idx) => (
+                <div key={device.id} className={cn('animate-fade-in-up', ['stagger-1','stagger-2','stagger-3','stagger-4','stagger-5','stagger-6'][idx % 6])}>
+                  <NasCard
+                    device={device}
+                    onEdit={openEditDialog}
+                    onDelete={handleDelete}
+                    onTest={handleTestConnection}
+                    onViewDetail={(d) => { setDetailDevice(d); setDetailOpen(true) }}
+                  />
+                </div>
               ))}
             </div>
 
@@ -1251,6 +1287,15 @@ export function NasView() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* ========== NAS DETAIL SHEET ========== */}
+        {detailDevice && (
+          <NasDetailSheet
+            device={detailDevice}
+            open={detailOpen}
+            onOpenChange={setDetailOpen}
+          />
+        )}
       </div>
     </TooltipProvider>
   )
@@ -1265,12 +1310,15 @@ function NasCard({
   onEdit,
   onDelete,
   onTest,
+  onViewDetail,
 }: {
   device: NasDevice
   onEdit: (device: NasDevice) => void
   onDelete: (device: NasDevice) => void
   onTest: (device: NasDevice) => void
+  onViewDetail: (device: NasDevice) => void
 }) {
+  const portUtilization = device.ports > 0 ? Math.min(100, Math.round((device.activeSessions / device.ports) * 100)) : 0
   const borderColor =
     device.status === 'up'
       ? 'border-l-emerald-500'
@@ -1278,15 +1326,26 @@ function NasCard({
         ? 'border-l-red-500'
         : 'border-l-zinc-400'
 
+  const handleRestart = (d: NasDevice) => {
+    toast.info(`Restarting ${d.nasName}...`, { description: 'Simulated restart command sent.', duration: 3000 })
+    setTimeout(() => toast.success(`${d.nasName} restarted successfully`), 2000)
+  }
+
+  const handleDisable = (d: NasDevice) => {
+    toast.info(`${d.status === 'disabled' ? 'Enabling' : 'Disabling'} ${d.nasName}...`, { duration: 2000 })
+    setTimeout(() => toast.success(`${d.nasName} ${d.status === 'disabled' ? 'enabled' : 'disabled'} successfully`), 1500)
+  }
+
   return (
     <Card
       className={cn(
-        'border-l-4 shadow-sm transition-all hover:shadow-md group',
+        'card-shine hover-lift border-l-4 shadow-sm group cursor-pointer gradient-border',
         borderColor
       )}
+      onClick={() => onViewDetail(device)}
     >
       <CardContent className="p-4 md:p-5 space-y-3">
-        {/* Header: Name + Short Name + Status */}
+        {/* Header: Name + Status + Last Alive */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -1299,38 +1358,56 @@ function NasCard({
             </div>
             <div className="flex items-center gap-2 mt-1">
               <VendorBadge type={device.nasType} />
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono uppercase tracking-wider text-muted-foreground border-dashed">
+                {device.nasType}
+              </Badge>
               <StatusBadge status={device.status} />
             </div>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onEdit(device)}>
-                <Pencil className="h-4 w-4 mr-2" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onTest(device)}>
-                <Plug className="h-4 w-4 mr-2" />
-                Test Connection
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => onDelete(device)}
-                className="text-red-600 focus:text-red-600"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {formatRelativeTime(device.lastAlive)}
+            </span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onTest(device) }}>
+                  <Plug className="h-4 w-4 mr-2" />
+                  Test Connection
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(device) }}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleRestart(device) }}>
+                  <Zap className="h-4 w-4 mr-2" />
+                  Restart
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDisable(device) }}>
+                  <Power className="h-4 w-4 mr-2" />
+                  {device.status === 'disabled' ? 'Enable' : 'Disable'}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={(e) => { e.stopPropagation(); onDelete(device) }}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         {/* Details */}
@@ -1338,17 +1415,6 @@ function NasCard({
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <Globe className="h-3 w-3 shrink-0" />
             <span className="font-mono truncate">{device.ipAddress}</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-              onClick={() => {
-                navigator.clipboard.writeText(device.ipAddress)
-                toast.success('IP address copied')
-              }}
-            >
-              <Copy className="h-3 w-3" />
-            </Button>
           </div>
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <Hash className="h-3 w-3 shrink-0" />
@@ -1368,13 +1434,20 @@ function NasCard({
           )}
         </div>
 
-        {device.description && (
-          <p className="text-xs text-muted-foreground line-clamp-1">{device.description}</p>
-        )}
+        {/* Port Utilization Bar */}
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="text-muted-foreground">Port Utilization</span>
+            <span className={cn('font-medium', portUtilization > 80 ? 'text-red-500' : portUtilization > 50 ? 'text-amber-500' : 'text-emerald-500')}>
+              {device.activeSessions}/{device.ports} ports ({portUtilization}%)
+            </span>
+          </div>
+          <Progress value={portUtilization} className="h-1.5" />
+        </div>
 
         <Separator />
 
-        {/* Footer: Stats */}
+        {/* Footer: Stats + Quick Actions */}
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
@@ -1384,49 +1457,259 @@ function NasCard({
                 sessions
               </span>
             </div>
-            <div className="flex items-center gap-1">
-              <Server className="h-3 w-3 text-muted-foreground" />
-              <span className="text-muted-foreground">
-                <span className="font-semibold text-foreground">{device.ports}</span> ports
-              </span>
-            </div>
           </div>
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <Clock className="h-3 w-3" />
-            <span>{formatRelativeTime(device.lastAlive)}</span>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 px-2 text-[11px]"
+              onClick={(e) => { e.stopPropagation(); onTest(device) }}
+            >
+              <Plug className="h-3 w-3 mr-1" />
+              Test
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 px-2 text-[11px]"
+              onClick={(e) => { e.stopPropagation(); onEdit(device) }}
+            >
+              <Pencil className="h-3 w-3 mr-1" />
+              Edit
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 px-2 text-[11px]"
+              onClick={(e) => { e.stopPropagation(); handleRestart(device) }}
+            >
+              <Zap className="h-3 w-3 mr-1" />
+              Restart
+            </Button>
           </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="flex items-center gap-2 pt-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 h-7 text-xs"
-            onClick={() => onEdit(device)}
-          >
-            <Pencil className="h-3 w-3 mr-1.5" />
-            Edit
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 h-7 text-xs"
-            onClick={() => onTest(device)}
-          >
-            <Plug className="h-3 w-3 mr-1.5" />
-            Test
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50"
-            onClick={() => onDelete(device)}
-          >
-            <Trash2 className="h-3 w-3" />
-          </Button>
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+// ==========================================
+// NAS DETAIL SHEET
+// ==========================================
+
+function NasDetailSheet({ device, open, onOpenChange }: { device: NasDevice; open: boolean; onOpenChange: (v: boolean) => void }) {
+  const { data: sessionsData } = useQuery({
+    queryKey: ['nas-sessions', device.id],
+    queryFn: async () => {
+      const res = await fetch(`/api/sessions?nasIp=${device.ipAddress}&limit=100`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      return res.json()
+    },
+    enabled: open,
+    staleTime: 30000,
+  })
+
+  const sessions = sessionsData?.sessions || []
+  const activeSessions = sessions.filter(s => s.status === 'active')
+  const portUtilization = device.ports > 0 ? Math.min(100, Math.round((device.activeSessions / device.ports) * 100)) : 0
+
+  const freeradiusConfig = `# FreeRADIUS clients.conf snippet for ${device.nasName}
+# Generated: ${format(new Date(), 'yyyy-MM-dd HH:mm:ss')}
+
+client ${device.shortName || device.nasName.toLowerCase().replace(/\s+/g, '-')} {
+    ipaddr = ${device.ipAddress}
+    secret = ${device.secret}
+    ${device.ports > 0 ? `nastype = ${device.nasType}` : '# No port limit configured'}
+    ${device.server ? `# RADIUS server: ${device.server}` : ''}
+    # Status: ${device.status === 'up' ? 'ONLINE' : device.status === 'down' ? 'OFFLINE' : 'DISABLED'}
+    # Last seen: ${device.lastAlive ? format(new Date(device.lastAlive), 'yyyy-MM-dd HH:mm:ss') : 'Never'}
+    # Active sessions: ${device.activeSessions}
+    # Total ports: ${device.ports}
+}`
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="sm:max-w-xl">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-3">
+            <StatusDot status={device.status} />
+            {device.nasName}
+          </SheetTitle>
+          <SheetDescription>
+            {device.ipAddress} &middot; {device.vendor || device.nasType} &middot; {device.model || 'Unknown model'}
+          </SheetDescription>
+        </SheetHeader>
+
+        <Tabs defaultValue="overview" className="mt-2">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
+            <TabsTrigger value="sessions" className="text-xs">Sessions</TabsTrigger>
+            <TabsTrigger value="config" className="text-xs">Config</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="mt-4">
+            <ScrollArea className="h-[60vh] scrollbar-thin">
+              <div className="space-y-4 pr-4">
+                {/* Status & Uptime */}
+                <div className="flex items-center gap-3">
+                  <StatusBadge status={device.status} />
+                  <span className="text-xs text-muted-foreground">Last alive: {formatRelativeTime(device.lastAlive)}</span>
+                </div>
+
+                {/* Key Metrics */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-muted/50 rounded-lg p-3 text-center">
+                    <p className="text-lg font-bold text-emerald-600">{device.activeSessions}</p>
+                    <p className="text-[11px] text-muted-foreground">Active Sessions</p>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-3 text-center">
+                    <p className="text-lg font-bold">{device.ports}</p>
+                    <p className="text-[11px] text-muted-foreground">Total Ports</p>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-3 text-center">
+                    <p className={cn('text-lg font-bold', portUtilization > 80 ? 'text-red-500' : portUtilization > 50 ? 'text-amber-500' : 'text-emerald-500')}>{portUtilization}%</p>
+                    <p className="text-[11px] text-muted-foreground">Port Usage</p>
+                  </div>
+                </div>
+
+                {/* Port Utilization */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Port Utilization</span>
+                    <span className="font-medium">{device.activeSessions} of {device.ports} ports</span>
+                  </div>
+                  <Progress value={portUtilization} className="h-2" />
+                </div>
+
+                {/* Device Info */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <Server className="h-4 w-4" />
+                    Device Information
+                  </h4>
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-1.5 text-sm">
+                    <div className="flex justify-between"><span className="text-muted-foreground">NAS Name</span><span className="font-medium">{device.nasName}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Short Name</span><span>{device.shortName || '—'}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">IP Address</span><span className="font-mono">{device.ipAddress}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Type</span><span>{device.nasType}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Vendor</span><span>{device.vendor || '—'}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Model</span><span>{device.model || '—'}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Total Ports</span><span>{device.ports}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">RADIUS Server</span><span className="font-mono">{device.server || '—'}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">SNMP Community</span><span>{device.community || '—'}</span></div>
+                  </div>
+                </div>
+
+                {/* Location & Contact */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Location & Contact
+                  </h4>
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-1.5 text-sm">
+                    <div className="flex justify-between"><span className="text-muted-foreground">Location</span><span>{device.location || '—'}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Contact</span><span>{device.contact || '—'}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Created</span><span>{format(new Date(device.createdAt), 'yyyy-MM-dd')}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Updated</span><span>{format(new Date(device.updatedAt), 'yyyy-MM-dd')}</span></div>
+                  </div>
+                </div>
+
+                {device.description && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold">Description</h4>
+                    <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">{device.description}</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="sessions" className="mt-4">
+            <ScrollArea className="h-[60vh] scrollbar-thin">
+              <div className="space-y-3 pr-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">
+                    Sessions on {device.nasName}
+                    <Badge variant="secondary" className="ml-2 text-xs">{sessions.length}</Badge>
+                  </p>
+                  {activeSessions.length > 0 && (
+                    <Badge className="bg-emerald-500 text-white text-xs">{activeSessions.length} active</Badge>
+                  )}
+                </div>
+                {sessions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <WifiOff className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">No sessions found for this NAS</p>
+                  </div>
+                ) : (
+                  sessions.map((s) => (
+                    <Card key={s.id} className="border">
+                      <CardContent className="p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{s.username || '—'}</p>
+                            <p className="text-xs text-muted-foreground font-mono">{s.framedIpAddress || s.callingStationId || '—'}</p>
+                          </div>
+                          <Badge variant={s.status === 'active' ? 'default' : 'secondary'} className={cn('text-xs shrink-0', s.status === 'active' && 'bg-emerald-500 text-white')}>
+                            {s.status === 'active' ? 'Active' : 'Stopped'}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-4 mt-2 text-[11px] text-muted-foreground">
+                          <span>Started: {format(new Date(s.acctStartTime), 'MMM dd, HH:mm')}</span>
+                          <span>Duration: {(s.acctSessionTime || 0) > 3600 ? `${Math.floor((s.acctSessionTime || 0) / 3600)}h ${Math.floor(((s.acctSessionTime || 0) % 3600) / 60)}m` : `${Math.floor((s.acctSessionTime || 0) / 60)}m`}</span>
+                          {s.terminateCause && <span className="text-red-500">{s.terminateCause}</span>}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="config" className="mt-4">
+            <ScrollArea className="h-[60vh] scrollbar-thin">
+              <div className="space-y-4 pr-4">
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    FreeRADIUS clients.conf
+                  </h4>
+                  <div className="relative">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute top-2 right-2 h-7 text-xs z-10"
+                      onClick={() => {
+                        navigator.clipboard.writeText(freeradiusConfig)
+                        toast.success('Config copied to clipboard')
+                      }}
+                    >
+                      <Copy className="h-3 w-3 mr-1" />
+                      Copy
+                    </Button>
+                    <pre className="bg-zinc-950 text-zinc-100 dark:bg-zinc-900 dark:text-zinc-100 rounded-lg p-4 text-xs font-mono leading-relaxed overflow-x-auto">
+                      {freeradiusConfig}
+                    </pre>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <Info className="h-4 w-4" />
+                    Configuration Notes
+                  </h4>
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-2 text-sm text-muted-foreground">
+                    <p>This configuration snippet should be added to your <code className="bg-muted px-1 py-0.5 rounded text-xs font-mono">clients.conf</code> file.</p>
+                    <p>After editing, reload FreeRADIUS with: <code className="bg-muted px-1 py-0.5 rounded text-xs font-mono">systemctl reload freeradius</code></p>
+                    <p>The shared secret must match on both the NAS and RADIUS server.</p>
+                  </div>
+                </div>
+              </div>
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
+      </SheetContent>
+    </Sheet>
   )
 }

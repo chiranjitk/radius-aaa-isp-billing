@@ -284,7 +284,7 @@ export default function Home() {
             <div className="flex items-center gap-2.5">
               <span className="font-semibold text-foreground/80">FreeRADIUS AAA/BSS</span>
               <Badge variant="outline" className="text-[9px] font-mono px-1.5 h-4 rounded bg-primary/5 border-primary/10 text-primary">
-                v2.5.0
+                v2.7.0
               </Badge>
               <Separator orientation="vertical" className="h-3" />
               <span className="hidden sm:inline">{new Date().toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>

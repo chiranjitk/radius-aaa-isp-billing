@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import {
@@ -26,13 +26,12 @@ import {
   Sparkles,
   CheckCircle2,
   AlertTriangle,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
+  Clipboard,
   Download,
   FileSpreadsheet,
   FileJson,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -84,7 +83,9 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Checkbox } from '@/components/ui/checkbox'
 import { exportToCSV, exportToJSON, type ExportOptions } from '@/lib/export-utils'
+import { toast } from 'sonner'
 
 // ==================== Constants ====================
 
@@ -522,6 +523,21 @@ export function PoliciesView() {
   const stats = data?.stats
   const getTypeInfo = (type: string) => POLICY_TYPES.find(t => t.value === type) || POLICY_TYPES[0]
 
+  // Computed type distribution data
+  const typeDistribution = useMemo(() => {
+    if (!stats) return []
+    return POLICY_TYPES.map(t => ({
+      type: t.value,
+      label: t.label,
+      count: (stats as Record<string, number>)[`${t.value}Count`] || 0,
+    })).filter(t => t.count > 0)
+  }, [stats])
+
+  const mostUsedType = typeDistribution.length > 0
+    ? typeDistribution.reduce((best, t) => t.count > best.count ? t : best, typeDistribution[0])
+    : null
+  const maxTypeCount = typeDistribution.length > 0 ? Math.max(...typeDistribution.map(t => t.count)) : 1
+
   return (
     <div className="space-y-6">
       {/* Action Bar */}
@@ -586,12 +602,67 @@ export function PoliciesView() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setTemplateDialogOpen(true)}
-          className="gap-2"
-        >
+        {/* Quick Policy Templates */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2">
+              <Zap className="h-4 w-4" />
+              Quick Create
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => applyTemplate(POLICY_TEMPLATES[0])} className="gap-2">
+              <Zap className="h-3.5 w-3.5 text-amber-500" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Bandwidth Limit</span>
+                <span className="text-[10px] text-muted-foreground">1 Mbps download/upload cap</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => applyTemplate(POLICY_TEMPLATES[2])} className="gap-2">
+              <Clock className="h-3.5 w-3.5 text-violet-500" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Time Limit</span>
+                <span className="text-[10px] text-muted-foreground">2h max session, 15m idle</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => applyTemplate(POLICY_TEMPLATES[4])} className="gap-2">
+              <Database className="h-3.5 w-3.5 text-teal-500" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Data Cap</span>
+                <span className="text-[10px] text-muted-foreground">5 GB monthly data limit</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => applyTemplate(POLICY_TEMPLATES[6])} className="gap-2">
+              <Lock className="h-3.5 w-3.5 text-emerald-500" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Access Control</span>
+                <span className="text-[10px] text-muted-foreground">Hotspot access with limits</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {
+              resetForm()
+              setFormName('ACL Firewall Policy')
+              setFormDescription('Firewall rules for network access control')
+              setFormType('firewall')
+              setFormPriority(8)
+              setFormStatus('active')
+              setFormRules([
+                { name: 'Filter Id', attribute: 'Filter-Id', operator: ':=', value: 'firewall-block', description: 'Apply firewall filter', priority: 10 },
+                { name: 'Framed Filter Id', attribute: 'Framed-Filter-Id', operator: ':=', value: 'acl-restrict', description: 'Restrict frame access', priority: 8 },
+                { name: 'NAS Port Type', attribute: 'NAS-Port-Type', operator: ':=', value: 'Ethernet', description: 'Restrict to Ethernet', priority: 5 },
+              ])
+              setDialogOpen(true)
+            }} className="gap-2">
+              <Flame className="h-3.5 w-3.5 text-red-500" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">ACL Firewall</span>
+                <span className="text-[10px] text-muted-foreground">Filter and firewall rules</span>
+              </div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Button variant="outline" size="sm" onClick={() => setTemplateDialogOpen(true)} className="gap-2">
           <Sparkles className="h-4 w-4" />
           Templates
         </Button>
@@ -603,7 +674,7 @@ export function PoliciesView() {
 
       {/* Stats Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+        <Card className="hover-lift">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
@@ -619,11 +690,27 @@ export function PoliciesView() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover-lift">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Rules</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Policies</p>
+                <p className="text-2xl font-bold text-emerald-600">
+                  {isLoading ? <Skeleton className="h-8 w-12" /> : (stats?.activePolicies || 0)}
+                </p>
+              </div>
+              <div className="h-10 w-10 rounded-lg bg-teal-50 dark:bg-teal-950 flex items-center justify-center">
+                <CheckCircle2 className="h-5 w-5 text-teal-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover-lift">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Rules</p>
                 <p className="text-2xl font-bold">
                   {isLoading ? <Skeleton className="h-8 w-12" /> : (stats?.totalRules || 0)}
                 </p>
@@ -635,14 +722,18 @@ export function PoliciesView() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover-lift">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Bandwidth Policies</p>
-                <p className="text-2xl font-bold">
-                  {isLoading ? <Skeleton className="h-8 w-12" /> : (stats?.bandwidthCount || 0)}
-                </p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Most Used Type</p>
+                {isLoading ? (
+                  <Skeleton className="h-8 w-20" />
+                ) : (
+                  <p className="text-lg font-bold truncate max-w-[120px]">
+                    {mostUsedType ? mostUsedType.label : '\u2014'}
+                  </p>
+                )}
               </div>
               <div className="h-10 w-10 rounded-lg bg-amber-50 dark:bg-amber-950 flex items-center justify-center">
                 <Zap className="h-5 w-5 text-amber-600" />
@@ -650,23 +741,55 @@ export function PoliciesView() {
             </div>
           </CardContent>
         </Card>
+      </div>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Access Control</p>
-                <p className="text-2xl font-bold">
-                  {isLoading ? <Skeleton className="h-8 w-12" /> : ((stats?.accessCount || 0) + (stats?.aclCount || 0) + (stats?.firewallCount || 0))}
-                </p>
-              </div>
-              <div className="h-10 w-10 rounded-lg bg-red-50 dark:bg-red-950 flex items-center justify-center">
-                <Lock className="h-5 w-5 text-red-600" />
-              </div>
-            </div>
+      {/* Policy Type Distribution */}
+      {!isLoading && typeDistribution.length > 0 && (
+        <Card className="hover-lift">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm font-medium">Policy Type Distribution</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0 space-y-2">
+            {typeDistribution.map((td) => {
+              const typeInfo = POLICY_TYPES.find(t => t.value === td.type)
+              const Icon = typeInfo?.icon || Shield
+              const pct = (td.count / maxTypeCount) * 100
+              const barColors: Record<string, string> = {
+                bandwidth: 'bg-amber-500',
+                time: 'bg-violet-500',
+                data: 'bg-teal-500',
+                access: 'bg-emerald-500',
+                acl: 'bg-orange-500',
+                firewall: 'bg-red-500',
+              }
+              return (
+                <div key={td.type} className="flex items-center gap-3">
+                  <div className={cn('flex items-center justify-center w-6 h-6 rounded shrink-0', typeInfo?.color)}>
+                    <Icon className="h-3.5 w-3.5" />
+                  </div>
+                  <span className="text-xs w-20 shrink-0 truncate">{td.label}</span>
+                  <div className="flex-1 h-2.5 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={cn('h-full rounded-full transition-all duration-500', barColors[td.type] || 'bg-primary')}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-mono w-6 text-right">{td.count}</span>
+                </div>
+              )
+            })}
           </CardContent>
         </Card>
-      </div>
+      )}
+      {isLoading && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-6 w-full" />
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filter Bar */}
       <Card>
@@ -825,12 +948,41 @@ export function PoliciesView() {
                           {format(new Date(policy.updatedAt), 'MMM dd, HH:mm')}
                         </TableCell>
                         <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7">
-                                <MoreHorizontal className="h-3.5 w-3.5" />
-                              </Button>
-                            </DropdownMenuTrigger>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-7 w-7 shrink-0"
+                              title="Copy policy config"
+                              onClick={() => {
+                                const config = JSON.stringify(
+                                  {
+                                    name: policy.name,
+                                    description: policy.description,
+                                    type: policy.type,
+                                    priority: policy.priority,
+                                    status: policy.status,
+                                    rules: policy.rules.map((r) => ({
+                                      attribute: r.attribute,
+                                      operator: r.operator,
+                                      value: r.value,
+                                    })),
+                                  },
+                                  null,
+                                  2,
+                                )
+                                navigator.clipboard.writeText(config)
+                                toast({ title: 'Copied', description: 'Policy config copied to clipboard' })
+                              }}
+                            >
+                              <Clipboard className="h-3.5 w-3.5" />
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7">
+                                  <MoreHorizontal className="h-3.5 w-3.5" />
+                                </Button>
+                              </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => openEditDialog(policy)} className="gap-2">
                                 <Pencil className="h-3.5 w-3.5" />
@@ -854,6 +1006,7 @@ export function PoliciesView() {
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
+                          </div>
                         </TableCell>
                       </TableRow>
                     )
