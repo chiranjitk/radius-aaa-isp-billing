@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
@@ -131,6 +131,7 @@ export function LiveRadiusEventsPanel() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const shouldProcessRef = useRef(true)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const connectRef = useRef<() => void>(() => {})
 
   const connect = useCallback(() => {
     // Clean up existing connection
@@ -165,7 +166,7 @@ export function LiveRadiusEventsPanel() {
         setConnected(false)
         // Reconnect after 3s
         if (shouldProcessRef.current) {
-          reconnectTimeoutRef.current = setTimeout(connect, 3000)
+          reconnectTimeoutRef.current = setTimeout(() => connectRef.current(), 3000)
         }
       }
 
@@ -174,6 +175,10 @@ export function LiveRadiusEventsPanel() {
       }
     } catch {}
   }, [paused, maxEvents])
+
+  useEffect(() => {
+    connectRef.current = connect
+  }, [connect])
 
   useEffect(() => {
     connect()

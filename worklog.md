@@ -1622,3 +1622,140 @@ Stage Summary:
 - Sessions View now has full bulk selection workflow: checkbox per row, select/deselect all, bulk disconnect with confirmation dialog
 - Bulk action bar with amber highlight, session count badge, simulated disconnect toast
 - Pre-existing ESLint issues in plans-view.tsx and policies-view.tsx remain (unrelated to changes)
+---
+Task ID: 11
+Agent: full-stack-developer
+Task: Add Login Page with Authentication Flow
+
+Work Log:
+- Updated Zustand store (`src/lib/store.ts`): Added `isAuthenticated`, `user`, `setAuthenticated`, `setUser` state fields; added `login` to ViewId type
+- Created Login Page component (`src/components/aaa/login-view.tsx`):
+  - Full-screen centered login form with professional FreeRADIUS branding
+  - Animated shimmer-text logo, gradient icon, "AAA/BSS Management Platform" subtitle
+  - "All Systems Operational" status badge with pulsing green dot
+  - "Secure Connection" badge with Shield icon
+  - Username/Password fields with icon prefixes and show/hide toggle
+  - "Remember me" checkbox
+  - Sign In button with loading state (Loader2 spinner + "Authenticating...")
+  - Error message display for invalid credentials
+  - Demo Login button (pre-fills admin/admin)
+  - Dark mode toggle, footer copyright
+  - Simulated auth: accepts any non-empty credentials, 1.2s delay
+  - Responsive: full-screen on mobile, centered card on desktop
+- Updated `src/app/page.tsx`:
+  - Conditionally renders LoginView when NOT authenticated (no sidebar/header/footer)
+  - Renders existing app layout when authenticated
+  - Added Logout button in header (LogOut icon, destructive hover)
+  - Dynamic avatar fallback shows user's initials
+  - Dynamic username display
+
+Stage Summary:
+- Login page with simulated authentication implemented
+- All 13 existing views continue to work after login
+- ESLint passes clean, page compiles 200 OK
+
+---
+Task ID: 12
+Agent: full-stack-developer
+Task: Add Bulk Operations (Batch User Actions & Batch Session Disconnect)
+
+Work Log:
+- Created `/api/users/batch` POST endpoint:
+  - Actions: enable, disable, delete, changeGroup
+  - Delete uses Prisma transaction to clean up all associated data
+  - Returns { success, affected, errors? } with graceful error handling
+- Created `/api/sessions/batch` POST endpoint:
+  - Action: disconnect (sets terminateCause to "Admin-Reset")
+  - Skips already-stopped sessions with warnings
+  - Returns { success, affected, errors? }
+- Enhanced Users View (`users-view.tsx`):
+  - Row selection with checkboxes + "Select All" header checkbox
+  - Selection counter badge
+  - Batch actions: Enable, Disable, Change Group (with dialog), Delete (with confirmation), Export Selected
+  - Escape key clears selection
+  - Export selected users to CSV/JSON
+- Enhanced Sessions View (`sessions-view.tsx`):
+  - Row selection with checkboxes + "Select All" header checkbox
+  - Selection counter badge
+  - Batch Disconnect with confirmation dialog and progress indicator
+  - Export selected sessions to CSV/JSON
+  - Escape key clears selection
+
+Stage Summary:
+- 2 new batch API endpoints created
+- Bulk operations for users (enable/disable/delete/change group/export)
+- Bulk operations for sessions (disconnect/export)
+- ESLint passes clean, all APIs returning correct responses
+
+---
+Task ID: 13
+Agent: frontend-styling-expert
+Task: Enhanced Styling Improvements Across Views
+
+Work Log:
+- Added 1 new CSS utility class to globals.css: `.accordion-smooth` (smooth max-height/opacity transition)
+- Enhanced Sessions View: Added `skeleton-shimmer` to 4 stat card Skeletons and table loading Skeletons
+- Enhanced Billing View: Added `chip` class to invoice status badges (paid/pending/overdue)
+- Enhanced Reports View: Changed stat cards from `card-hover` to `stat-card hover-lift card-shine`, changed SummaryCard to use `stat-card hover-lift card-shine`, added `inset-card` to 19 remaining chart/table Cards
+- Enhanced Dictionary View: Added `hover-lift card-shine inset-card` to 4 stat cards, Quick Reference card, and Operators Reference card
+- Enhanced Settings View: Added `inset-card` to 6 main setting Cards, added `table-row-hover` to audit log rows, added `chip` class to ActionBadge component
+
+Stage Summary:
+- 1 new CSS utility class added
+- 5 view components enhanced with consistent styling patterns
+- ESLint passes clean with zero errors
+
+---
+## Current Project Status (Post-Phase 8)
+
+### Assessment
+The AAA/RADIUS BSS system is now at v2.8 with authentication, bulk operations, and enhanced styling. This round added a professional login page, batch user/session management, and polished styling across all remaining views.
+
+### Completed
+- 24-model database schema with full RADIUS + BSS + KYC + Registration coverage
+- 14 REST API endpoints (including batch operations)
+- 13 client modules + Login page (14 total views)
+- Professional login page with simulated authentication
+- Bulk operations: enable/disable/delete users, change groups, disconnect sessions
+- Row selection with checkboxes, selection counter, batch action toolbar
+- Export selected rows to CSV/JSON
+- Global app shell with mobile-responsive header, collapsible sidebar, dynamic footer
+- Dark mode toggle with next-themes
+- Command Palette (Cmd+K) with keyboard navigation
+- Notification Center with simulated AAA/RADIUS events
+- CSV/JSON data export for ALL 6 data tables + selected rows
+- Interactive RADIUS attribute editor (37 attributes, 13 operators)
+- RADIUS Test Dialog with Auth/CoA/Disconnect simulation
+- Live session duration counter with pulsing indicators
+- IP Pool Management (24online-style: static/dynamic/pool binding)
+- Self-Care Portal (6-tab customer-facing interface)
+- User Registration management with KYC verification
+- 30+ CSS utility classes with animations, effects, and micro-interactions
+- Professional sidebar with active indicators, category badges, gradient branding
+- WebSocket live RADIUS events panel (with reconnect)
+- Keyboard shortcuts dialog
+- CSV user import dialog
+
+### Bug Fixes This Round
+- Fixed critical parse error in `live-radius-events.tsx`: duplicate `@/components/` in Button import path
+- Fixed `react-hooks/immutability` lint error: `connect` accessed before declaration in useCallback - resolved using `connectRef` pattern
+- Fixed `react-hooks/refs` lint error: ref assignment during render - moved to useEffect
+
+### Known Issues / Risks
+1. No real FreeRADIUS backend (simulated auth and RADIUS operations)
+2. KYC document upload is UI-only without actual file upload backend
+3. Notification data is static (simulated events)
+4. Live bandwidth is simulated
+5. WebSocket events service requires mini-service on port 3003
+
+### Priority Recommendations for Next Phase
+1. Add WebSocket mini-service for live RADIUS events (port 3003)
+2. Implement real file upload for KYC documents and profile photos
+3. Add automated billing cycle (cron-based invoice generation)
+4. Add invoice PDF generation
+5. Add user import from CSV (frontend exists, needs backend)
+6. Implement real-time WebSocket updates for live session monitoring
+7. Add network topology/map visualization
+8. Add SMS/Email notification integration
+9. Create printable reports with company branding
+10. Add audit log filtering and export

@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format, formatDistanceToNow, isToday, isYesterday, subDays, startOfDay } from 'date-fns'
+import { toast as sonnerToast } from 'sonner'
 import {
   Activity,
   RefreshCw,
@@ -687,6 +688,7 @@ export function SessionsView() {
   const [radiusTestSessionId, setRadiusTestSessionId] = useState('')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkDisconnectOpen, setBulkDisconnectOpen] = useState(false)
+  const [bulkDisconnectPending, setBulkDisconnectPending] = useState(false)
 
   // Toggle individual selection
   const toggleSelect = useCallback((id: string) => {
@@ -802,6 +804,77 @@ export function SessionsView() {
     setEndDate('')
     setPage(1)
   }
+
+  // Bulk disconnect mutation
+  const bulkDisconnectMutation = useMutation({
+    mutationFn: async ({ sessionIds }: { sessionIds: string[] }) => {
+      const res = await fetch('/api/sessions/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'disconnect', sessionIds }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Batch disconnect failed')
+      }
+      return res.json()
+    },
+    onSuccess: (data) => {
+      const count = data.affected ?? selectedIds.size
+      sonnerToast.success(`Disconnected ${count} session${count !== 1 ? 's' : ''}`)
+      if (data.errors?.length) {
+        data.errors.forEach((e: string) => sonnerToast.warning(e))
+      }
+      queryClient.invalidateQueries({ queryKey: ['sessions'] })
+      clearSelection()
+      setBulkDisconnectOpen(false)
+      setBulkDisconnectPending(false)
+    },
+    onError: (error: Error) => {
+      sonnerToast.error(error.message)
+      setBulkDisconnectPending(false)
+    },
+  })
+
+  // Bulk export selected sessions
+  const handleBulkExportSelected = (exportFormat: 'csv' | 'json') => {
+    const selectedSessions = sortedSessions.filter((s) => selectedIds.has(s.id))
+    if (selectedSessions.length === 0) return
+    const opts: ExportOptions = {
+      title: 'Sessions Export',
+      headers: ['Session ID', 'Username', 'NAS IP', 'Start Time', 'Duration', 'Input Octets', 'Output Octets', 'Status'],
+      filename: `sessions-selected-export-${new Date().toISOString().slice(0, 10)}`,
+      rows: selectedSessions.map((s) => [
+        s.sessionId,
+        s.username || '',
+        s.nasIpAddress || '',
+        format(new Date(s.acctStartTime), 'yyyy-MM-dd HH:mm:ss'),
+        formatDuration(s.calculatedDuration),
+        (s.acctInputGigawords || 0) * 4294967296 + (s.acctInputOctets || 0),
+        (s.acctOutputGigawords || 0) * 4294967296 + (s.acctOutputOctets || 0),
+        s.status === 'active' ? 'Active' : 'Stopped',
+      ]),
+    }
+    if (exportFormat === 'csv') {
+      exportToCSV(opts)
+      sonnerToast.success(`${selectedSessions.length} sessions exported as CSV`)
+    } else {
+      exportToJSON(opts)
+      sonnerToast.success(`${selectedSessions.length} sessions exported as JSON`)
+    }
+  }
+
+  // Escape key to clear selection
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedIds.size > 0) {
+        clearSelection()
+        setBulkDisconnectOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedIds.size, clearSelection])
 
   const hasFilters = search || statusFilter !== 'all' || nasFilter !== 'all' || userFilter !== 'all' || startDate || endDate
 
@@ -922,13 +995,13 @@ export function SessionsView() {
 
       {/* Live Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="relative overflow-hidden">
+        <Card className="stat-card hover-lift card-shine animate-fade-in-up stagger-1 inset-card relative overflow-hidden">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Sessions</p>
-                <div className="text-2xl font-bold text-emerald-600">
-                  {isLoading ? <Skeleton className="h-8 w-12" /> : (stats?.activeCount || 0)}
+                <div className="text-2xl font-bold text-emerald-600 counter-animate">
+                  {isLoading ? <Skeleton className="h-8 w-12 skeleton-shimmer" /> : (stats?.activeCount || 0)}
                 </div>
               </div>
               <div className="h-10 w-10 rounded-lg bg-emerald-50 dark:bg-emerald-950 flex items-center justify-center">
@@ -939,13 +1012,13 @@ export function SessionsView() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="stat-card hover-lift card-shine animate-fade-in-up stagger-2 inset-card">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Today&apos;s Total</p>
-                <div className="text-2xl font-bold">
-                  {isLoading ? <Skeleton className="h-8 w-12" /> : (stats?.todayCount || 0)}
+                <div className="text-2xl font-bold counter-animate">
+                  {isLoading ? <Skeleton className="h-8 w-12 skeleton-shimmer" /> : (stats?.todayCount || 0)}
                 </div>
               </div>
               <div className="h-10 w-10 rounded-lg bg-violet-50 dark:bg-violet-950 flex items-center justify-center">
@@ -955,13 +1028,13 @@ export function SessionsView() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="stat-card hover-lift card-shine animate-fade-in-up stagger-3 inset-card">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Avg Duration</p>
-                <div className="text-2xl font-bold">
-                  {isLoading ? <Skeleton className="h-8 w-16" /> : formatDuration(stats?.avgDuration || 0)}
+                <div className="text-2xl font-bold counter-animate">
+                  {isLoading ? <Skeleton className="h-8 w-16 skeleton-shimmer" /> : formatDuration(stats?.avgDuration || 0)}
                 </div>
               </div>
               <div className="h-10 w-10 rounded-lg bg-amber-50 dark:bg-amber-950 flex items-center justify-center">
@@ -971,13 +1044,13 @@ export function SessionsView() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="stat-card hover-lift card-shine animate-fade-in-up stagger-4 inset-card">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Bandwidth</p>
-                <div className="text-2xl font-bold">
-                  {isLoading ? <Skeleton className="h-8 w-16" /> : formatBytes(stats?.totalBandwidth || 0)}
+                <div className="text-2xl font-bold counter-animate">
+                  {isLoading ? <Skeleton className="h-8 w-16 skeleton-shimmer" /> : formatBytes(stats?.totalBandwidth || 0)}
                 </div>
               </div>
               <div className="h-10 w-10 rounded-lg bg-teal-50 dark:bg-teal-950 flex items-center justify-center">
@@ -989,7 +1062,7 @@ export function SessionsView() {
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="inset-card">
         <CardContent className="p-4">
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
@@ -1095,10 +1168,33 @@ export function SessionsView() {
               size="sm"
               className="h-9 gap-1.5"
               onClick={() => setBulkDisconnectOpen(true)}
+              disabled={bulkDisconnectPending}
             >
-              <Trash2 className="h-3.5 w-3.5" />
+              {bulkDisconnectPending ? (
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="h-3.5 w-3.5" />
+              )}
               <span className="hidden sm:inline">Bulk Disconnect</span>
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 gap-1.5">
+                  <Download className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Export Selected</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleBulkExportSelected('csv')}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Export Selected CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleBulkExportSelected('json')}>
+                  <FileJson className="h-4 w-4 mr-2" />
+                  Export Selected JSON
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="ghost"
               size="sm"
@@ -1166,11 +1262,11 @@ export function SessionsView() {
               <TableBody>
                 {isLoading ? (
                   Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                    <TableRow key={i} className="table-row-hover">
+                      <TableCell><Skeleton className="h-4 w-4 skeleton-shimmer" /></TableCell>
                       {Array.from({ length: 10 }).map((_, j) => (
                         <TableCell key={j}>
-                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-4 w-full skeleton-shimmer" />
                         </TableCell>
                       ))}
                     </TableRow>
@@ -1351,15 +1447,16 @@ export function SessionsView() {
             <AlertDialogCancel onClick={clearSelection}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                toast({
-                  title: `${selectedIds.size} Sessions Disconnected`,
-                  description: 'Bulk disconnect simulated successfully. In production, CoA-Disconnect requests would be sent to each NAS.',
-                })
-                setBulkDisconnectOpen(false)
-                clearSelection()
+                setBulkDisconnectPending(true)
+                const sessionIds = sortedSessions
+                  .filter((s) => selectedIds.has(s.id))
+                  .map((s) => s.sessionId)
+                bulkDisconnectMutation.mutate({ sessionIds })
               }}
               className="bg-red-600 hover:bg-red-700"
+              disabled={bulkDisconnectPending}
             >
+              {bulkDisconnectPending && <RefreshCw className="h-4 w-4 mr-2 animate-spin" />}
               Disconnect All
             </AlertDialogAction>
           </AlertDialogFooter>

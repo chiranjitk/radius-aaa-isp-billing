@@ -591,7 +591,7 @@ export function SettingsView() {
           {loading || tabSwitching ? (
             <TabContentSkeleton />
           ) : (
-            <Card className="mt-4">
+            <Card className="mt-4 inset-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Settings className="h-5 w-5" />
@@ -623,7 +623,7 @@ export function SettingsView() {
           {loading || tabSwitching ? (
             <TabContentSkeleton />
           ) : (
-            <Card className="mt-4">
+            <Card className="mt-4 inset-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Radio className="h-5 w-5" />
@@ -663,7 +663,7 @@ export function SettingsView() {
           {loading || tabSwitching ? (
             <TabContentSkeleton />
           ) : (
-            <Card className="mt-4">
+            <Card className="mt-4 inset-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="h-5 w-5" />
@@ -712,7 +712,7 @@ export function SettingsView() {
           ) : (
             <div className="mt-4 space-y-4">
               {/* SMTP Settings */}
-              <Card>
+              <Card className="inset-card">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Mail className="h-5 w-5" />
@@ -738,7 +738,7 @@ export function SettingsView() {
               </Card>
 
               {/* SMS Settings */}
-              <Card>
+              <Card className="inset-card">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Shield className="h-5 w-5" />
@@ -785,7 +785,7 @@ export function SettingsView() {
               <SettingsSkeleton />
             </div>
           ) : (
-            <Card className="mt-4">
+            <Card className="mt-4 inset-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileCode className="h-5 w-5" />
@@ -967,7 +967,7 @@ export function SettingsView() {
                           </TableRow>
                         ) : (
                           auditLogs.map((log) => (
-                            <TableRow key={log.id}>
+                            <TableRow key={log.id} className="table-row-hover">
                               <TableCell className="text-xs whitespace-nowrap">
                                 {new Date(log.timestamp).toLocaleString()}
                               </TableCell>
@@ -1031,7 +1031,7 @@ function ActionBadge({ action }: { action: string }) {
     export: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400',
   }
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${styles[action] || 'bg-gray-100 text-gray-600'}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize chip ${styles[action] || 'bg-gray-100 text-gray-600'}`}>
       {action}
     </span>
   )

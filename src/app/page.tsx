@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
 import { AppSidebar } from '@/components/aaa/app-sidebar'
 import { useAppStore } from '@/lib/store'
+import { LoginView } from '@/components/aaa/login-view'
 import { DashboardView } from '@/components/aaa/dashboard-view'
 import UsersView from '@/components/aaa/users-view'
 import { NasView } from '@/components/aaa/nas-view'
@@ -20,9 +21,10 @@ import { NotificationCenter } from '@/components/aaa/notification-center'
 import { CommandPalette, useCommandPaletteStore } from '@/components/aaa/command-palette'
 import { UserProfileDialog } from '@/components/aaa/user-profile-dialog'
 import { Toaster } from '@/components/ui/sonner'
+import { toast } from 'sonner'
 import { RegistrationsView } from '@/components/aaa/registrations-view'
 import { SelfcarePortal } from '@/components/aaa/selfcare-portal'
-import { Search, Radio, Moon, Sun, Shield, Clock, Activity, Keyboard, UserCircle } from 'lucide-react'
+import { Search, Radio, Moon, Sun, Shield, Clock, Activity, Keyboard, UserCircle, LogOut } from 'lucide-react'
 import { KeyboardShortcutsDialog } from '@/components/aaa/keyboard-shortcuts-dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -83,6 +85,10 @@ export default function Home() {
   const setActiveView = useAppStore((s) => s.setActiveView)
   const sidebarOpen = useAppStore((s) => s.sidebarOpen)
   const setSidebarOpen = useAppStore((s) => s.setSidebarOpen)
+  const isAuthenticated = useAppStore((s) => s.isAuthenticated)
+  const user = useAppStore((s) => s.user)
+  const setAuthenticated = useAppStore((s) => s.setAuthenticated)
+  const setUser = useAppStore((s) => s.setUser)
   const { theme, setTheme } = useTheme()
   const commandPaletteStore = useCommandPaletteStore()
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
@@ -151,6 +157,18 @@ export default function Home() {
     refetchInterval: 60000,
     staleTime: 30000,
   })
+
+  const handleLogout = useCallback(() => {
+    setAuthenticated(false)
+    setUser(null)
+    setActiveView('dashboard')
+    toast.success('Logged out successfully')
+  }, [setAuthenticated, setUser, setActiveView])
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <LoginView />
+  }
 
   return (
     <>
@@ -232,16 +250,23 @@ export default function Home() {
               <NotificationCenter />
               <Separator orientation="vertical" className="h-5 mx-0.5" />
               <button
+                onClick={handleLogout}
+                className="h-10 w-10 md:h-8 md:w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                title="Logout"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+              <button
                 onClick={() => setProfileOpen(true)}
                 className="flex items-center gap-2.5 rounded-lg px-1.5 py-1 transition-colors hover:bg-muted/60 cursor-pointer"
               >
                 <Avatar className="h-9 w-9 md:h-8 md:w-8 ring-2 ring-primary/10">
                   <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-[10px] font-bold">
-                    AD
+                    {user?.username ? user.username.slice(0, 2).toUpperCase() : 'AD'}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden lg:block">
-                  <p className="text-xs font-semibold leading-none">Admin</p>
+                  <p className="text-xs font-semibold leading-none">{user?.username ?? 'Admin'}</p>
                   <p className="text-[10px] text-muted-foreground mt-0.5">System Administrator</p>
                 </div>
               </button>

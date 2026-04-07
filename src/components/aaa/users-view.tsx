@@ -41,6 +41,7 @@ import {
   Minus,
   UserCheck,
   UserX,
+  UsersRound,
   Upload,
   Mail,
   ShieldCheck,
@@ -1858,6 +1859,8 @@ export default function UsersView() {
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
+  const [changeGroupDialogOpen, setChangeGroupDialogOpen] = useState(false)
+  const [changeGroupTarget, setChangeGroupTarget] = useState<string | null>(null)
 
   // Fetch users
   const {
@@ -1975,30 +1978,38 @@ export default function UsersView() {
 
   // Bulk operation mutation
   const bulkMutation = useMutation({
-    mutationFn: async ({ action, userIds }: { action: 'enable' | 'disable' | 'delete'; userIds: string[] }) => {
-      const res = await fetch('/api/users/bulk', {
+    mutationFn: async ({ action, userIds, groupId }: { action: 'enable' | 'disable' | 'delete' | 'changeGroup'; userIds: string[]; groupId?: string }) => {
+      const res = await fetch('/api/users/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, userIds }),
+        body: JSON.stringify({ action, userIds, groupId }),
       })
       if (!res.ok) {
         const err = await res.json()
-        throw new Error(err.error || 'Bulk operation failed')
+        throw new Error(err.error || 'Batch operation failed')
       }
       return res.json()
     },
-    onSuccess: (_, variables) => {
-      const count = selectedIds.size
+    onSuccess: (data, variables) => {
+      const count = data.affected ?? selectedIds.size
       const actionLabel =
         variables.action === 'enable'
           ? 'Enabled'
           : variables.action === 'disable'
             ? 'Disabled'
-            : 'Deleted'
+            : variables.action === 'delete'
+              ? 'Deleted'
+              : 'Moved'
       toast.success(`${actionLabel} ${count} user${count !== 1 ? 's' : ''}`)
+      if (data.errors?.length) {
+        data.errors.forEach((e: string) => toast.warning(e))
+      }
       queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['groups-filter'] })
       setSelectedIds(new Set())
       setBulkDeleteDialogOpen(false)
+      setChangeGroupDialogOpen(false)
+      setChangeGroupTarget(null)
     },
     onError: (error: Error) => {
       toast.error(error.message)
@@ -2019,6 +2030,38 @@ export default function UsersView() {
 
   const confirmBulkDelete = () => {
     bulkMutation.mutate({ action: 'delete', userIds: Array.from(selectedIds) })
+  }
+
+  const handleBulkChangeGroup = (groupId: string) => {
+    setChangeGroupTarget(groupId)
+    setChangeGroupDialogOpen(true)
+  }
+
+  const confirmChangeGroup = () => {
+    if (changeGroupTarget) {
+      bulkMutation.mutate({ action: 'changeGroup', userIds: Array.from(selectedIds), groupId: changeGroupTarget })
+    }
+  }
+
+  const handleBulkExportSelected = (format: 'csv' | 'json') => {
+    const selectedUsers = users.filter((u) => selectedIds.has(u.id))
+    if (selectedUsers.length === 0) return
+    const opts: ExportOptions = {
+      headers: ['Username', 'Full Name', 'Email', 'Groups', 'Status', 'Auth Type', 'Created At'],
+      rows: selectedUsers.map((u) => [
+        u.username, u.fullName || '', u.email || '',
+        u.groups?.map((g) => g.groupName).join('; ') || '',
+        u.status, u.authType, u.createdAt ? format(new Date(u.createdAt), 'yyyy-MM-dd HH:mm') : '',
+      ]),
+      filename: `users-selected-export-${new Date().toISOString().slice(0, 10)}`,
+    }
+    if (format === 'csv') {
+      exportToCSV(opts)
+      toast.success(`${selectedUsers.length} users exported as CSV`)
+    } else {
+      exportToJSON(opts)
+      toast.success(`${selectedUsers.length} users exported as JSON`)
+    }
   }
 
   // Handlers
@@ -2057,6 +2100,19 @@ export default function UsersView() {
   const handleToggleStatus = (user: UserListItem) => {
     toggleStatusMutation.mutate({ userId: user.id, currentStatus: user.status })
   }
+
+  // Escape key to clear selection
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedIds.size > 0) {
+        handleClearSelection()
+        setBulkDeleteDialogOpen(false)
+        setChangeGroupDialogOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedIds.size, handleClearSelection])
 
   return (
     <TooltipProvider>
@@ -2502,6 +2558,36 @@ export default function UsersView() {
           </AlertDialogContent>
         </AlertDialog>
 
+        {/* Change Group Confirmation */}
+        <AlertDialog open={changeGroupDialogOpen} onOpenChange={setChangeGroupDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <UsersRound className="h-5 w-5 text-primary" />
+                Change Group for {selectedIds.size} Users
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to move{' '}
+                <strong className="text-foreground">{selectedIds.size} user{selectedIds.size !== 1 ? 's' : ''}</strong> to group{' '}
+                <strong className="text-foreground">{groups.find(g => g.id === changeGroupTarget)?.name || 'Unknown'}</strong>?
+                Their existing group assignments will be replaced.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmChangeGroup}
+                disabled={bulkMutation.isPending}
+              >
+                {bulkMutation.isPending && (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                )}
+                Change Group
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* Bulk Action Bar */}
         <div
           className={`
@@ -2559,6 +2645,55 @@ export default function UsersView() {
               <Trash2 className="h-3.5 w-3.5" />
               Delete
             </Button>
+            <Separator orientation="vertical" className="h-6" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 text-primary border-primary/30 hover:bg-primary/5 dark:hover:bg-primary/10 h-8 text-xs"
+                  disabled={bulkMutation.isPending}
+                >
+                  <UsersRound className="h-3.5 w-3.5" />
+                  Change Group
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="max-h-60 overflow-y-auto">
+                {groups.length === 0 ? (
+                  <DropdownMenuItem disabled>No groups available</DropdownMenuItem>
+                ) : (
+                  groups.map((g) => (
+                    <DropdownMenuItem key={g.id} onClick={() => handleBulkChangeGroup(g.id)}>
+                      <UsersRound className="h-4 w-4 mr-2" />
+                      {g.name}
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 h-8 text-xs"
+                  disabled={bulkMutation.isPending}
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleBulkExportSelected('csv')}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Export Selected CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleBulkExportSelected('json')}>
+                  <FileJson className="h-4 w-4 mr-2" />
+                  Export Selected JSON
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Separator orientation="vertical" className="h-6" />
             <Button
               size="sm"

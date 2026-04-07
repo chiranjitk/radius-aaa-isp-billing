@@ -520,7 +520,7 @@ export function BillingView() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="card-hover relative overflow-hidden card-shine">
+          <Card className="stat-card hover-lift card-shine animate-fade-in-up stagger-1 inset-card relative overflow-hidden">
             <div className="h-1 bg-gradient-to-r from-emerald-400 to-teal-500" />
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -535,7 +535,7 @@ export function BillingView() {
               </div>
             </CardContent>
           </Card>
-          <Card className="card-hover relative overflow-hidden card-shine">
+          <Card className="stat-card hover-lift card-shine animate-fade-in-up stagger-2 inset-card relative overflow-hidden">
             <div className="h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -550,7 +550,7 @@ export function BillingView() {
               </div>
             </CardContent>
           </Card>
-          <Card className="card-hover relative overflow-hidden card-shine">
+          <Card className="stat-card hover-lift card-shine animate-fade-in-up stagger-3 inset-card relative overflow-hidden">
             <div className="h-1 bg-gradient-to-r from-red-400 to-rose-500" />
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -565,7 +565,7 @@ export function BillingView() {
               </div>
             </CardContent>
           </Card>
-          <Card className="card-hover relative overflow-hidden card-shine">
+          <Card className="stat-card hover-lift card-shine animate-fade-in-up stagger-4 inset-card relative overflow-hidden">
             <div className="h-1 bg-gradient-to-r from-teal-400 to-cyan-500" />
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -693,7 +693,7 @@ export function BillingView() {
                         <TableCell className="text-right text-sm">{formatCurrency(inv.tax)}</TableCell>
                         <TableCell className="text-right text-sm font-medium">{formatCurrency(inv.total)}</TableCell>
                         <TableCell>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${getStatusBadge(inv.status)} ${getStatusGlow(inv.status)}`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize chip ${getStatusBadge(inv.status)} ${getStatusGlow(inv.status)}`}>
                             {inv.status}
                           </span>
                         </TableCell>

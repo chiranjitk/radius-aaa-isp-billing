@@ -123,7 +123,7 @@ export function ReportsView() {
           const Icon = stat.icon
           const staggerClasses = ['stagger-1', 'stagger-2', 'stagger-3', 'stagger-4']
           return (
-            <Card key={stat.label} className={`card-hover animate-fade-in-up ${staggerClasses[i] || ''}`}>
+            <Card key={stat.label} className={`stat-card hover-lift card-shine animate-fade-in-up ${staggerClasses[i] || ''}`}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${stat.color}`}>
@@ -228,7 +228,7 @@ function renderUsageTab(data: ReportData | undefined, loading: boolean) {
 
       {/* Charts */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card className="card-hover">
+        <Card className="card-hover inset-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Daily Sessions</CardTitle>
           </CardHeader>
@@ -247,7 +247,7 @@ function renderUsageTab(data: ReportData | undefined, loading: boolean) {
           </CardContent>
         </Card>
 
-        <Card className="card-hover">
+        <Card className="card-hover inset-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Top Users by Bandwidth</CardTitle>
           </CardHeader>
@@ -268,7 +268,7 @@ function renderUsageTab(data: ReportData | undefined, loading: boolean) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card className="card-hover">
+        <Card className="card-hover inset-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Data Usage by Group</CardTitle>
           </CardHeader>
@@ -288,7 +288,7 @@ function renderUsageTab(data: ReportData | undefined, loading: boolean) {
           </CardContent>
         </Card>
 
-        <Card className="card-hover">
+        <Card className="card-hover inset-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Bandwidth Details</CardTitle>
           </CardHeader>
@@ -339,7 +339,7 @@ function renderRevenueTab(data: ReportData | undefined, loading: boolean) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card className="card-hover">
+        <Card className="card-hover inset-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
           </CardHeader>
@@ -358,7 +358,7 @@ function renderRevenueTab(data: ReportData | undefined, loading: boolean) {
           </CardContent>
         </Card>
 
-        <Card className="card-hover">
+        <Card className="card-hover inset-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Revenue by Plan</CardTitle>
           </CardHeader>
@@ -379,7 +379,7 @@ function renderRevenueTab(data: ReportData | undefined, loading: boolean) {
         </Card>
       </div>
 
-      <Card className="card-hover">
+      <Card className="card-hover inset-card">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">Revenue Trend & Payment Methods</CardTitle>
         </CardHeader>
@@ -398,7 +398,7 @@ function renderRevenueTab(data: ReportData | undefined, loading: boolean) {
         </CardContent>
       </Card>
 
-      <Card className="card-hover">
+      <Card className="card-hover inset-card">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">Payment Methods</CardTitle>
         </CardHeader>
@@ -440,7 +440,7 @@ function renderSessionsTab(data: ReportData | undefined, loading: boolean) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card className="card-hover">
+        <Card className="card-hover inset-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Sessions by NAS</CardTitle>
           </CardHeader>
@@ -459,7 +459,7 @@ function renderSessionsTab(data: ReportData | undefined, loading: boolean) {
           </CardContent>
         </Card>
 
-        <Card className="card-hover">
+        <Card className="card-hover inset-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Avg Session Duration</CardTitle>
           </CardHeader>
@@ -479,7 +479,7 @@ function renderSessionsTab(data: ReportData | undefined, loading: boolean) {
         </Card>
       </div>
 
-      <Card className="card-hover">
+      <Card className="card-hover inset-card">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">Authentication Methods</CardTitle>
         </CardHeader>
@@ -520,7 +520,7 @@ function renderUsersTab(data: ReportData | undefined, loading: boolean) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card className="card-hover">
+        <Card className="card-hover inset-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Registration Trend</CardTitle>
           </CardHeader>
@@ -539,7 +539,7 @@ function renderUsersTab(data: ReportData | undefined, loading: boolean) {
           </CardContent>
         </Card>
 
-        <Card className="card-hover">
+        <Card className="card-hover inset-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">User Status Distribution</CardTitle>
           </CardHeader>
@@ -560,7 +560,7 @@ function renderUsersTab(data: ReportData | undefined, loading: boolean) {
         </Card>
       </div>
 
-      <Card className="card-hover">
+      <Card className="card-hover inset-card">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">Users by Group</CardTitle>
         </CardHeader>
@@ -600,7 +600,7 @@ function renderNasTab(data: ReportData | undefined, loading: boolean) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card className="card-hover">
+        <Card className="card-hover inset-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">NAS Utilization</CardTitle>
           </CardHeader>
@@ -619,7 +619,7 @@ function renderNasTab(data: ReportData | undefined, loading: boolean) {
           </CardContent>
         </Card>
 
-        <Card className="card-hover">
+        <Card className="card-hover inset-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">NAS by Type</CardTitle>
           </CardHeader>
@@ -641,7 +641,7 @@ function renderNasTab(data: ReportData | undefined, loading: boolean) {
       </div>
 
       {/* NAS Performance Table */}
-      <Card className="card-hover">
+      <Card className="card-hover inset-card">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">NAS Performance Details</CardTitle>
         </CardHeader>
@@ -689,7 +689,7 @@ function SummaryCard({ title, value, icon: Icon, color }: { title: string; value
     red: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
   }
   return (
-    <Card className="card-hover">
+    <Card className="stat-card hover-lift card-shine">
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
           <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${colorMap[color] || colorMap.emerald}`}>
@@ -729,13 +729,13 @@ function LoadingState() {
         ))}
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card className="card-hover">
+        <Card className="card-hover inset-card">
           <CardContent className="p-4 space-y-3">
             <Skeleton className="h-4 w-36 shimmer" />
             <Skeleton className="h-[260px] w-full shimmer rounded-lg" />
           </CardContent>
         </Card>
-        <Card className="card-hover">
+        <Card className="card-hover inset-card">
           <CardContent className="p-4 space-y-3">
             <Skeleton className="h-4 w-40 shimmer" />
             <Skeleton className="h-[260px] w-full shimmer rounded-lg" />

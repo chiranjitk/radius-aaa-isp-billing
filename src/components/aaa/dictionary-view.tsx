@@ -1655,7 +1655,7 @@ export function DictionaryView() {
       <div className="space-y-6">
         {/* Stats Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
+          <Card className="hover-lift card-shine inset-card">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
@@ -1669,7 +1669,7 @@ export function DictionaryView() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="hover-lift card-shine inset-card">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
@@ -1683,7 +1683,7 @@ export function DictionaryView() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="hover-lift card-shine inset-card">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
@@ -1697,7 +1697,7 @@ export function DictionaryView() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="hover-lift card-shine inset-card">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
@@ -1866,7 +1866,7 @@ export function DictionaryView() {
 
         {/* Commonly Used Quick Reference */}
         {activeTab !== 'common' && (
-          <Card>
+          <Card className="hover-lift card-shine inset-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-4">
                 <Star className="h-4 w-4 text-amber-500" />
@@ -1908,7 +1908,7 @@ export function DictionaryView() {
         )}
 
         {/* Operators Reference */}
-        <Card>
+        <Card className="hover-lift card-shine inset-card">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-4">
               <Info className="h-4 w-4 text-sky-500" />
