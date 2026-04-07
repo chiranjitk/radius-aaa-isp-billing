@@ -154,7 +154,7 @@ function getStatusBadge(status: string) {
     pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
     overdue: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
     cancelled: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
-    refunded: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400',
+    refunded: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400',
   }
   return variants[status] || 'bg-gray-100 text-gray-600'
 }
@@ -494,7 +494,7 @@ export function BillingView() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Button onClick={() => { setCreateDialogOpen(true); setCreateStep(1) }} className="gap-2">
+        <Button onClick={() => { setCreateDialogOpen(true); setCreateStep(1) }} className="gap-2 btn-glow">
           <Plus className="h-4 w-4" />
           Create Invoice
         </Button>
@@ -520,61 +520,61 @@ export function BillingView() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="card-hover relative overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-emerald-400 to-emerald-600" />
+          <Card className="card-hover relative overflow-hidden card-shine">
+            <div className="h-1 bg-gradient-to-r from-emerald-400 to-teal-500" />
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-900/40 dark:to-emerald-800/30">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-100 to-teal-200 dark:from-emerald-900/40 dark:to-teal-800/30">
                   <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">Total Revenue</p>
-                  <p className="text-lg font-bold">{formatCurrency(summary.totalRevenue)}</p>
+                  <p className="text-lg font-bold stat-number">{formatCurrency(summary.totalRevenue)}</p>
                 </div>
                 <MiniSparkline color="#10b981" />
               </div>
             </CardContent>
           </Card>
-          <Card className="card-hover relative overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-amber-400 to-amber-600" />
+          <Card className="card-hover relative overflow-hidden card-shine">
+            <div className="h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/40 dark:to-amber-800/30">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 dark:from-amber-900/40 dark:to-orange-800/30">
                   <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">Pending Amount</p>
-                  <p className="text-lg font-bold">{formatCurrency(summary.pendingAmount)}</p>
+                  <p className="text-lg font-bold stat-number">{formatCurrency(summary.pendingAmount)}</p>
                 </div>
                 <MiniSparkline color="#f59e0b" />
               </div>
             </CardContent>
           </Card>
-          <Card className="card-hover relative overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-red-400 to-red-600" />
+          <Card className="card-hover relative overflow-hidden card-shine">
+            <div className="h-1 bg-gradient-to-r from-red-400 to-rose-500" />
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/40 dark:to-red-800/30">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-red-100 to-rose-200 dark:from-red-900/40 dark:to-rose-800/30">
                   <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">Overdue Invoices</p>
-                  <p className="text-lg font-bold">{summary.overdueCount}</p>
+                  <p className="text-lg font-bold stat-number">{summary.overdueCount}</p>
                 </div>
                 <MiniSparkline color="#ef4444" />
               </div>
             </CardContent>
           </Card>
-          <Card className="card-hover relative overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-cyan-400 to-cyan-600" />
+          <Card className="card-hover relative overflow-hidden card-shine">
+            <div className="h-1 bg-gradient-to-r from-teal-400 to-cyan-500" />
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-100 to-cyan-200 dark:from-cyan-900/40 dark:to-cyan-800/30">
-                  <TrendingUp className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-teal-100 to-cyan-200 dark:from-teal-900/40 dark:to-cyan-800/30">
+                  <TrendingUp className="h-5 w-5 text-teal-600 dark:text-teal-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">This Month Collections</p>
-                  <p className="text-lg font-bold">{formatCurrency(summary.thisMonthCollections)}</p>
+                  <p className="text-lg font-bold stat-number">{formatCurrency(summary.thisMonthCollections)}</p>
                 </div>
                 <MiniSparkline color="#06b6d4" />
               </div>
@@ -651,11 +651,11 @@ export function BillingView() {
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
                 <FileText className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-semibold mb-1">No invoices found</h3>
+              <h3 className="text-lg font-semibold mb-1 text-balance">No invoices found</h3>
               <p className="text-sm text-muted-foreground mb-4 max-w-sm">
                 Get started by creating your first invoice for a user.
               </p>
-              <Button onClick={() => { setCreateDialogOpen(true); setCreateStep(1) }} className="gap-2">
+              <Button onClick={() => { setCreateDialogOpen(true); setCreateStep(1) }} className="gap-2 btn-glow">
                 <Plus className="h-4 w-4" />
                 Create Invoice
               </Button>
@@ -791,7 +791,7 @@ export function BillingView() {
         setCreateDialogOpen(open)
         if (!open) setCreateStep(1)
       }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg gradient-border-visible">
           <DialogHeader>
             <DialogTitle>Create Invoice</DialogTitle>
             <DialogDescription>Create a new invoice for a user.</DialogDescription>

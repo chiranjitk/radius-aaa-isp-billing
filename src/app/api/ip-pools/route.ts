@@ -67,6 +67,7 @@ export async function GET(request: NextRequest) {
     // Enrich pools with stats
     let globalTotalIps = 0
     let globalAssignedIps = 0
+    let globalReservedIps = 0
 
     const enrichedPools = pools.map((pool) => {
       const counts = poolStatusCounts[pool.id] || {}
@@ -79,6 +80,7 @@ export async function GET(request: NextRequest) {
 
       globalTotalIps += totalIps
       globalAssignedIps += assignedIps
+      globalReservedIps += reservedIps
 
       return {
         id: pool.id,
@@ -111,8 +113,9 @@ export async function GET(request: NextRequest) {
       stats: {
         totalPools: pools.length,
         totalIps: globalTotalIps,
-        availableIps: globalTotalIps - globalAssignedIps,
+        availableIps: globalTotalIps - globalAssignedIps - globalReservedIps,
         assignedIps: globalAssignedIps,
+        reservedIps: globalReservedIps,
         utilizationPercent: globalTotalIps > 0 ? Math.round((globalAssignedIps / globalTotalIps) * 100) : 0,
       },
     })

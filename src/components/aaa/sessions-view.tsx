@@ -304,7 +304,7 @@ function SessionRow({
   const liveTotalBytes = liveInputBytes + liveOutputBytes
 
   return (
-    <TableRow key={session.id} className="group">
+    <TableRow key={session.id} className="group table-row-hover">
       <TableCell className="font-mono text-xs max-w-[200px]">
         <span className="block truncate" title={session.sessionId}>
           {truncateId(session.sessionId)}
@@ -330,7 +330,7 @@ function SessionRow({
       <TableCell className="text-xs font-mono">
         {isActive ? (
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="pulse-dot bg-emerald-500" />
             {liveDuration}
           </span>
         ) : (
@@ -340,7 +340,7 @@ function SessionRow({
       <TableCell className="text-xs font-mono">
         <span className="inline-flex items-center gap-1" title={`↓ ${formatBytes(liveInputBytes)} / ↑ ${formatBytes(liveOutputBytes)}`}>
           {isActive && (
-            <span className="h-1 w-1 rounded-full bg-teal-500 animate-pulse" />
+            <span className="pulse-dot bg-teal-500" />
           )}
           {formatBytes(liveTotalBytes)}
         </span>
@@ -353,8 +353,8 @@ function SessionRow({
       </TableCell>
       <TableCell>
         {isActive ? (
-          <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs gap-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+          <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs gap-1.5 shadow-sm shadow-emerald-500/20">
+            <span className="pulse-dot bg-white" />
             Active
           </Badge>
         ) : (
@@ -423,13 +423,13 @@ function SessionDetailContent({ session }: { session: Session }) {
   const liveOutputBytes = useLiveBandwidth(baseOutputBytes, isActive)
 
   return (
-    <ScrollArea className="mt-6">
+    <ScrollArea className="mt-6 scrollbar-thin">
       <div className="space-y-6 pr-4">
         {/* Status & Duration */}
         <div className="flex items-center gap-3">
           {isActive ? (
-            <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 text-white gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+            <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 text-white gap-1.5 shadow-sm shadow-emerald-500/20">
+              <span className="pulse-dot bg-white" />
               Active
             </Badge>
           ) : (
@@ -534,7 +534,7 @@ function SessionDetailContent({ session }: { session: Session }) {
             <div className="flex justify-between">
               <span className="text-muted-foreground">Session Time</span>
               <span className="inline-flex items-center gap-1.5">
-                {isActive && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+                {isActive && <span className="pulse-dot bg-emerald-500" />}
                 <span className="font-mono">
                   {isActive ? liveDuration : formatDuration(session.calculatedDuration)}
                 </span>

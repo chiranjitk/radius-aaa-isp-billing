@@ -695,14 +695,25 @@ function QuickAttributeEditor({
 function UserFormDialog({
   open,
   onOpenChange,
-  editUser,
+  editUserId,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
-  editUser: UserDetail | null
+  editUserId: string | null
 }) {
   const queryClient = useQueryClient()
-  const isEdit = !!editUser
+  const isEdit = !!editUserId
+
+  // Fetch full user data for editing (dialog handles its own loading)
+  const { data: editUserData, isLoading: isLoadingUser } = useQuery<UserDetail>({
+    queryKey: ['edit-user', editUserId],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${editUserId}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      return res.json()
+    },
+    enabled: open && !!editUserId,
+  })
 
   const [formData, setFormData] = useState({
     username: '',
@@ -740,7 +751,7 @@ function UserFormDialog({
 
   const groups = groupsData?.groups || []
 
-  // Populate form when editing
+  // Populate form from fetched user data
   const populateForm = useCallback((user: UserDetail) => {
     setFormData({
       username: user.username,
@@ -783,7 +794,7 @@ function UserFormDialog({
     )
   }, [])
 
-  // Reset form
+  // Reset form for new user creation
   const resetForm = useCallback(() => {
     setFormData({
       username: '',
@@ -812,14 +823,22 @@ function UserFormDialog({
     setReplyAttrs([])
   }, [])
 
-  // Populate form when dialog opens with editUser data
+  // Populate form when dialog opens
   useEffect(() => {
-    if (open && editUser) {
-      populateForm(editUser)
-    } else if (open && !editUser) {
+    if (!open) return
+    if (editUserId && editUserData) {
+      populateForm(editUserData)
+    } else if (!editUserId) {
       resetForm()
     }
-  }, [open, editUser])
+  }, [open, editUserId, editUserData])
+
+  // Reset on dialog close
+  useEffect(() => {
+    if (!open) {
+      resetForm()
+    }
+  }, [open])
 
   // Handle open change
   const handleOpenChange = (val: boolean) => {
@@ -854,7 +873,7 @@ function UserFormDialog({
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
-      const res = await fetch(`/api/users/${editUser?.id}`, {
+      const res = await fetch(`/api/users/${editUserId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -868,7 +887,8 @@ function UserFormDialog({
     onSuccess: () => {
       toast.success('User updated successfully')
       queryClient.invalidateQueries({ queryKey: ['users'] })
-      queryClient.invalidateQueries({ queryKey: ['user-detail', editUser?.id] })
+      queryClient.invalidateQueries({ queryKey: ['user-detail', editUserId] })
+      queryClient.invalidateQueries({ queryKey: ['edit-user', editUserId] })
       onOpenChange(false)
     },
     onError: (error: Error) => {
@@ -960,6 +980,45 @@ function UserFormDialog({
   const toggleGroup = (groupId: string) => {
     setSelectedGroupIds((prev) =>
       prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]
+    )
+  }
+
+  // Show loading skeleton while fetching user data for editing
+  if (isEdit && isLoadingUser) {
+    return (
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCircle className="h-5 w-5" />
+              Edit User
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-9 w-full rounded-md" />
+                </div>
+              ))}
+            </div>
+            <Separator />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-9 w-full rounded-md" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Skeleton className="h-9 w-20 rounded-md" />
+            <Skeleton className="h-9 w-28 rounded-md" />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     )
   }
 
@@ -1787,7 +1846,7 @@ export default function UsersView() {
 
   // Dialog & sheet state
   const [formDialogOpen, setFormDialogOpen] = useState(false)
-  const [editUser, setEditUser] = useState<UserDetail | null>(null)
+  const [editUserId, setEditUserId] = useState<string | null>(null)
   const [detailSheetOpen, setDetailSheetOpen] = useState(false)
   const [detailUserId, setDetailUserId] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -1964,38 +2023,19 @@ export default function UsersView() {
 
   // Handlers
   const handleAddUser = () => {
-    setEditUser(null)
+    setEditUserId(null)
     setFormDialogOpen(true)
   }
 
   const handleEditUser = (user: UserListItem) => {
-    // Fetch full user details for editing
-    ;(async () => {
-      try {
-        const res = await fetch(`/api/users/${user.id}`)
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        const data: UserDetail = await res.json()
-        setEditUser(data)
-        setFormDialogOpen(true)
-      } catch {
-        toast.error('Failed to load user details')
-      }
-    })()
+    setEditUserId(user.id)
+    setFormDialogOpen(true)
   }
 
-  // Handle edit from detail sheet - fetch full user then open edit dialog
+  // Handle edit from detail sheet
   const handleEditFromSheet = (userId: string) => {
-    ;(async () => {
-      try {
-        const res = await fetch(`/api/users/${userId}`)
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        const data: UserDetail = await res.json()
-        setEditUser(data)
-        setFormDialogOpen(true)
-      } catch {
-        toast.error('Failed to load user details')
-      }
-    })()
+    setEditUserId(userId)
+    setFormDialogOpen(true)
   }
 
   const handleViewUser = (userId: string) => {
@@ -2382,7 +2422,7 @@ export default function UsersView() {
         <UserFormDialog
           open={formDialogOpen}
           onOpenChange={setFormDialogOpen}
-          editUser={editUser}
+          editUserId={editUserId}
         />
 
         {/* RADIUS Test Dialog */}

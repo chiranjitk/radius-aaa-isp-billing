@@ -307,11 +307,13 @@ function SystemHealthBar({ data }: { data: DashboardData }) {
                   <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">CPU</span>
                   <span className="text-xs font-bold">{cpuVal}%</span>
                 </div>
-                <div className="h-1.5 w-full rounded-full bg-slate-700 overflow-hidden">
+                <div className="h-2 w-full rounded-full bg-slate-700/80 overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 transition-all duration-1000"
+                    className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-teal-400 transition-all duration-1000 relative"
                     style={{ width: `${cpuVal}%` }}
-                  />
+                  >
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-3 rounded-full bg-white/25 blur-[1px]" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -324,11 +326,13 @@ function SystemHealthBar({ data }: { data: DashboardData }) {
                   <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Memory</span>
                   <span className="text-xs font-bold">{memVal}%</span>
                 </div>
-                <div className="h-1.5 w-full rounded-full bg-slate-700 overflow-hidden">
+                <div className="h-2 w-full rounded-full bg-slate-700/80 overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all duration-1000"
+                    className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-400 transition-all duration-1000 relative"
                     style={{ width: `${memVal}%` }}
-                  />
+                  >
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-3 rounded-full bg-white/25 blur-[1px]" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -341,11 +345,13 @@ function SystemHealthBar({ data }: { data: DashboardData }) {
                   <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Disk</span>
                   <span className="text-xs font-bold">{diskVal}%</span>
                 </div>
-                <div className="h-1.5 w-full rounded-full bg-slate-700 overflow-hidden">
+                <div className="h-2 w-full rounded-full bg-slate-700/80 overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-violet-400 transition-all duration-1000"
+                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-rose-400 transition-all duration-1000 relative"
                     style={{ width: `${diskVal}%` }}
-                  />
+                  >
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-3 rounded-full bg-white/25 blur-[1px]" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -400,7 +406,7 @@ function StatCard({
 }) {
   return (
     <FadeIn delay={delay}>
-      <Card className={`relative overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 group`}>
+      <Card className={`relative overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 group card-shine`}>
         {/* Gradient Background */}
         <div className={`absolute inset-0 ${gradient} opacity-[0.07] group-hover:opacity-[0.12] transition-opacity duration-300`} />
 
@@ -412,7 +418,7 @@ function StatCard({
           <div className="flex items-start justify-between">
             <div className="space-y-1.5">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</p>
-              <p className="text-2xl font-extrabold tracking-tight md:text-3xl">{value}</p>
+              <p className="text-2xl font-extrabold tracking-tight md:text-3xl stat-number">{value}</p>
               <div className="flex items-center gap-2">
                 {trend && (
                   <span
@@ -650,7 +656,7 @@ function LiveActivityFeed({ sessions }: { sessions: DashboardData['recentSession
     switch (type) {
       case 'login': return <LogIn className="h-3.5 w-3.5 text-emerald-500" />
       case 'logout': return <LogOut className="h-3.5 w-3.5 text-slate-400" />
-      case 'user_change': return <UserPlus className="h-3.5 w-3.5 text-blue-500" />
+      case 'user_change': return <UserPlus className="h-3.5 w-3.5 text-teal-500" />
       case 'nas_alert': return <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
       case 'payment': return <DollarSign className="h-3.5 w-3.5 text-emerald-500" />
       default: return <Activity className="h-3.5 w-3.5 text-muted-foreground" />
@@ -661,7 +667,7 @@ function LiveActivityFeed({ sessions }: { sessions: DashboardData['recentSession
     switch (type) {
       case 'login': return 'bg-emerald-100 dark:bg-emerald-900/30'
       case 'logout': return 'bg-slate-100 dark:bg-slate-800'
-      case 'user_change': return 'bg-blue-100 dark:bg-blue-900/30'
+      case 'user_change': return 'bg-teal-100 dark:bg-teal-900/30'
       case 'nas_alert': return 'bg-amber-100 dark:bg-amber-900/30'
       case 'payment': return 'bg-emerald-100 dark:bg-emerald-900/30'
       default: return 'bg-muted'
@@ -673,14 +679,14 @@ function LiveActivityFeed({ sessions }: { sessions: DashboardData['recentSession
       <Card className="border-0 shadow-md">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-              <Activity className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <div className="h-8 w-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+              <Activity className="h-4 w-4 text-violet-600 dark:text-violet-400" />
             </div>
             <div>
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 Live Activity
                 <span className="inline-flex items-center gap-1 text-[10px] font-normal text-muted-foreground">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="pulse-dot bg-emerald-500" />
                   Live
                 </span>
               </CardTitle>
@@ -689,7 +695,7 @@ function LiveActivityFeed({ sessions }: { sessions: DashboardData['recentSession
           </div>
         </CardHeader>
         <CardContent>
-          <div className="max-h-[280px] overflow-y-auto space-y-1">
+          <div className="max-h-[280px] overflow-y-auto scrollbar-thin space-y-0">
             {events.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center mb-2">
@@ -699,16 +705,18 @@ function LiveActivityFeed({ sessions }: { sessions: DashboardData['recentSession
               </div>
             ) : (
               events.map((event, idx) => (
-                <div
-                  key={event.id}
-                  className={`flex items-center gap-3 rounded-lg p-2.5 hover:bg-muted/50 transition-colors duration-200 ${
-                    idx === 0 ? 'bg-muted/30' : ''
-                  }`}
-                >
-                  <div className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 ${getEventBg(event.type)}`}>
-                    {getEventIcon(event.type)}
+                <div key={event.id} className="relative flex items-start gap-3">
+                  {/* Timeline connector */}
+                  <div className="flex flex-col items-center pt-3">
+                    <div className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 z-10 transition-transform duration-200 hover:scale-110 ${getEventBg(event.type)}`}>
+                      {getEventIcon(event.type)}
+                    </div>
+                    {idx < events.length - 1 && (
+                      <div className="w-px flex-1 min-h-[16px] bg-border" />
+                    )}
                   </div>
-                  <div className="flex-1 min-w-0">
+                  {/* Event content */}
+                  <div className={`flex-1 min-w-0 rounded-lg px-2 py-2.5 -ml-1 mr-1 hover:bg-muted/50 transition-colors duration-200 ${idx === 0 ? 'bg-muted/30' : ''}`}>
                     <p className="text-[11px] font-medium truncate">{event.message}</p>
                     <p className="text-[10px] text-muted-foreground">
                       {formatDistanceToNow(new Date(event.time), { addSuffix: true })}
@@ -729,7 +737,7 @@ function LiveActivityFeed({ sessions }: { sessions: DashboardData['recentSession
 // =============================================
 function ChartCard({ title, description, children, className = '' }: { title: string; description: string; children: React.ReactNode; className?: string }) {
   return (
-    <Card className={`border-0 shadow-md ${className}`}>
+    <Card className={`border-0 shadow-md gradient-border-visible ${className}`}>
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-semibold">{title}</CardTitle>
         <CardDescription className="text-xs">{description}</CardDescription>
@@ -879,11 +887,12 @@ function WelcomeBanner({ uptime }: { uptime: string }) {
 
   return (
     <FadeIn delay={0}>
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/5 via-primary/[0.02] to-transparent border border-primary/10">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/5 via-primary/[0.02] to-transparent border border-primary/10 card-shine">
         <div className="absolute inset-0 dot-pattern opacity-40" />
+        <div className="absolute inset-0 grid-pattern opacity-20" />
         <div className="relative p-5 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="space-y-1.5">
-            <h1 className="text-2xl md:text-3xl font-bold shimmer-text">
+            <h1 className="text-2xl md:text-3xl font-bold shimmer-text text-balance">
               Welcome back, Admin
             </h1>
             <p className="text-sm text-muted-foreground">
