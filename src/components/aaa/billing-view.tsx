@@ -208,16 +208,16 @@ export function BillingView() {
   const fetchDropdownData = useCallback(async () => {
     try {
       const [usersRes, plansRes] = await Promise.all([
-        fetch('/api/route?model=RadUser&select=username,fullName&limit=1000'),
-        fetch('/api/route?model=Plan&select=id,name,price&status=active&limit=100'),
+        fetch('/api/users?limit=1000'),
+        fetch('/api/plans?limit=100'),
       ])
       if (usersRes.ok) {
         const uData = await usersRes.json()
-        setUsers(uData.data || [])
+        setUsers((uData.users || []).map((u: { username: string; fullName: string | null }) => ({ username: u.username, fullName: u.fullName })))
       }
       if (plansRes.ok) {
         const pData = await plansRes.json()
-        setPlans(pData.data || [])
+        setPlans((pData.plans || []).map((p: { id: string; name: string; price: number }) => ({ id: p.id, name: p.name, price: p.price })))
       }
     } catch {
       // Silently fail — dropdowns will be empty

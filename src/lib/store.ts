@@ -9,6 +9,7 @@ export type ViewId =
   | 'sessions'
   | 'billing'
   | 'reports'
+  | 'dictionary'
   | 'settings'
 
 interface AppState {

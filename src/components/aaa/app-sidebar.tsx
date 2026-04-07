@@ -12,6 +12,7 @@ import {
   BarChart3,
   Settings,
   Radio,
+  BookOpen,
   ChevronLeft,
   ChevronRight,
   Zap,
@@ -46,6 +47,7 @@ const navItems: NavItem[] = [
   { id: 'plans', label: 'Billing Plans', icon: CreditCard, badge: 'BSS', badgeColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' },
   { id: 'billing', label: 'Invoices & Payments', icon: FileText, badge: 'BSS', badgeColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' },
   { id: 'reports', label: 'Reports & Analytics', icon: BarChart3, badge: 'BSS', badgeColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' },
+  { id: 'dictionary', label: 'RADIUS Dictionary', icon: BookOpen },
   { id: 'settings', label: 'System Settings', icon: Settings },
 ]
 
@@ -53,7 +55,7 @@ const groupedItems = {
   'Overview': ['dashboard'] as ViewId[],
   'AAA': ['users', 'nas', 'policies', 'sessions'] as ViewId[],
   'BSS': ['plans', 'billing', 'reports'] as ViewId[],
-  'System': ['settings'] as ViewId[],
+  'System': ['dictionary', 'settings'] as ViewId[],
 }
 
 export function AppSidebar() {

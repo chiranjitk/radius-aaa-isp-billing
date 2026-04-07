@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
+import { useTheme } from 'next-themes'
 import { AppSidebar } from '@/components/aaa/app-sidebar'
 import { useAppStore } from '@/lib/store'
 import { DashboardView } from '@/components/aaa/dashboard-view'
@@ -13,6 +14,7 @@ import { SessionsView } from '@/components/aaa/sessions-view'
 import { BillingView } from '@/components/aaa/billing-view'
 import { ReportsView } from '@/components/aaa/reports-view'
 import { SettingsView } from '@/components/aaa/settings-view'
+import { DictionaryView } from '@/components/aaa/dictionary-view'
 import { Toaster } from '@/components/ui/sonner'
 import { Bell, Search, Radio, Moon, Sun } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -31,10 +33,19 @@ const viewTitles: Record<string, { title: string; description: string }> = {
   billing: { title: 'Invoices & Payments', description: 'Billing and revenue management' },
   reports: { title: 'Reports & Analytics', description: 'Usage statistics and insights' },
   settings: { title: 'System Settings', description: 'Configuration and maintenance' },
+  dictionary: { title: 'RADIUS Dictionary', description: 'Attribute reference and vendor dictionaries' },
+}
+
+interface FooterStats {
+  totalUsers: number
+  totalNas: number
+  onlineNas: number
+  activeSessions: number
 }
 
 export default function Home() {
   const activeView = useAppStore((s) => s.activeView)
+  const { theme, setTheme } = useTheme()
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
@@ -45,6 +56,24 @@ export default function Home() {
   }))
 
   const currentView = viewTitles[activeView] || viewTitles.dashboard
+
+  // Fetch footer stats from dashboard API
+  const { data: footerStats } = useQuery<FooterStats>({
+    queryKey: ['footer-stats'],
+    queryFn: async () => {
+      const res = await fetch('/api/dashboard')
+      if (!res.ok) throw new Error('Failed to fetch')
+      const data = await res.json()
+      return {
+        totalUsers: data.totalUsers ?? 0,
+        totalNas: data.totalNas ?? 0,
+        onlineNas: data.onlineNas ?? 0,
+        activeSessions: data.activeSessions ?? 0,
+      }
+    },
+    refetchInterval: 60000,
+    staleTime: 30000,
+  })
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -77,6 +106,21 @@ export default function Home() {
 
             {/* Right Actions */}
             <div className="flex items-center gap-1.5 ml-auto shrink-0">
+              {/* Dark Mode Toggle */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+              >
+                {theme === 'dark' ? (
+                  <Sun className="h-4 w-4 text-amber-400" />
+                ) : (
+                  <Moon className="h-4 w-4 text-muted-foreground" />
+                )}
+              </Button>
+
               <Badge variant="outline" className="hidden sm:flex items-center gap-1.5 text-[10px] font-normal px-2 h-6 border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 FreeRADIUS Online
@@ -114,20 +158,29 @@ export default function Home() {
               {activeView === 'billing' && <BillingView />}
               {activeView === 'reports' && <ReportsView />}
               {activeView === 'settings' && <SettingsView />}
+              {activeView === 'dictionary' && <DictionaryView />}
             </div>
           </main>
 
-          {/* Status Footer */}
+          {/* Status Footer - Dynamic */}
           <footer className="flex h-8 shrink-0 items-center justify-between border-t bg-background px-4 text-[10px] text-muted-foreground">
             <div className="flex items-center gap-3">
-              <span>FreeRADIUS AAA/BSS v1.0.0</span>
+              <span className="font-medium">FreeRADIUS AAA/BSS v2.0.0</span>
               <Separator orientation="vertical" className="h-3" />
               <span>{new Date().toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
             </div>
             <div className="flex items-center gap-3">
-              <span>Users: 25</span>
+              <span>
+                Users: <span className="font-medium text-foreground">{footerStats?.totalUsers ?? '—'}</span>
+              </span>
               <Separator orientation="vertical" className="h-3" />
-              <span>NAS: 9/9</span>
+              <span>
+                Active: <span className="font-medium text-emerald-600 dark:text-emerald-400">{footerStats?.activeSessions ?? '—'}</span>
+              </span>
+              <Separator orientation="vertical" className="h-3" />
+              <span>
+                NAS: <span className="font-medium text-foreground">{footerStats?.onlineNas ?? '—'}/{footerStats?.totalNas ?? '—'}</span>
+              </span>
               <Separator orientation="vertical" className="h-3" />
               <span className="flex items-center gap-1">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />

@@ -78,29 +78,90 @@ Stage Summary:
 ## Current Project Status
 
 ### Assessment
-The AAA/RADIUS BSS system is fully functional with all 9 modules working correctly. The UI has been polished to enterprise-grade quality with a proper app shell (header, sidebar, footer). All API endpoints return valid data. The application handles errors gracefully with proper loading skeletons and error states.
+The AAA/RADIUS BSS system is now at v2.0 with 10 fully functional modules, dark mode support, dynamic stats, and enterprise-grade styling. The dashboard features real-time monitoring with live user tracking, system health bars, and activity feeds. The new RADIUS Dictionary browser provides a comprehensive attribute reference with 90+ attributes across 5 categories.
 
 ### Completed
 - 18-model database schema with full RADIUS + BSS coverage
 - 10 REST API endpoints with proper error handling
-- 9 client modules with CRUD operations
-- Global app shell (header, collapsible sidebar, status footer)
+- 10 client modules with CRUD operations (Dashboard, Users, NAS, Plans, Policies, Sessions, Billing, Reports, Settings, Dictionary)
+- Global app shell (header, collapsible sidebar, dynamic status footer)
+- Dark mode toggle with next-themes
+- Dynamic footer stats from dashboard API (auto-refresh every 60s)
 - Custom scrollbars, smooth transitions, responsive design
+- RADIUS Dictionary Browser with 90+ attributes, search, filter, copy, and quick reference
+- Dashboard with System Health Bar, Online Users Live Panel, Live Activity Feed
 - Comprehensive seed data (25 users, 9 NAS, 8 plans, 5 policies, 22 invoices)
 - FreeRADIUS config export in Settings module
+- Gradient-enhanced stat cards with count-up animations and sparklines
+- Improved charts with time range toggles and gradient fills
 
 ### Known Issues / Risks
-1. **Cross-origin warning**: The preview iframe from `space.z.ai` triggers cross-origin warnings. `allowedDevOrigins` is configured but wildcard `["*"]` isn't supported - need specific origin. This is cosmetic only and doesn't affect functionality.
+1. **Cross-origin warning**: The preview iframe from `space.z.ai` triggers cross-origin warnings. This is cosmetic only and doesn't affect functionality.
 2. **No real FreeRADIUS backend**: The app manages the database that a real FreeRADIUS server would read via rlm_rest. The Settings module shows sample config for integration but actual FreeRADIUS isn't running.
 3. **Date seed data**: Demo sessions use dates from 2024-03, which may show "0 sessions" in the 7-day dashboard chart (depends on current date).
-4. **Footer stats are static**: The footer shows hardcoded "Users: 25, NAS: 9/9" - should ideally be dynamic from an API.
+4. **Session data is mock**: Active session durations don't increment in real-time since there's no real RADIUS backend feeding data.
 
 ### Priority Recommendations for Next Phase
-1. Make footer stats dynamic (fetch from dashboard API)
-2. Add dark mode toggle in the header
-3. Add real-time WebSocket updates for live session monitoring
-4. Implement user import/export (CSV)
-5. Add RADIUS test authentication endpoint (CoA/Disconnect)
-6. Create a proper login page and role-based access
-7. Add invoice PDF generation
-8. Implement automated billing cycle (cron job)
+1. Add real-time WebSocket updates for live session monitoring
+2. Implement user import/export (CSV)
+3. Add RADIUS test authentication endpoint (CoA/Disconnect)
+4. Create a proper login page and role-based access
+5. Add invoice PDF generation
+6. Implement automated billing cycle (cron job)
+7. Add network topology/map visualization
+8. Add SMS/Email notification testing in Settings
+
+---
+Task ID: 3
+Agent: Main Orchestrator (Phase 3)
+Task: QA testing, bug fixes, styling improvements, new features
+
+Work Log:
+- Reviewed worklog.md and assessed full project status
+- Verified dev server running and all API endpoints responding with valid JSON
+- Dashboard API confirmed: 25 users, 9 NAS, 14 sessions, 5 active
+- ESLint passes clean with zero errors
+
+Bugs Fixed:
+- Fixed billing-view.tsx: dropdown fetch was using non-existent `/api/route` endpoints → changed to `/api/users` and `/api/plans` with proper response mapping
+
+Features Added:
+1. **Dark Mode Toggle** (next-themes v0.4.6)
+   - Created ThemeProvider component wrapping the app
+   - Added useTheme hook in header with Sun/Moon icon toggle button
+   - Smooth theme switching with no flash (disableTransitionOnChange)
+   - Full dark mode support across all components
+
+2. **Dynamic Footer Stats**
+   - Footer now fetches live data from `/api/dashboard` every 60s
+   - Shows: total users, active sessions, NAS online/total
+   - Active sessions highlighted in emerald green
+   - Values show "—" while loading
+
+3. **RADIUS Dictionary Browser** (new module)
+   - 90+ RADIUS attributes across 5 categories (Auth, Authorization, Accounting, Vendor-Specific, CoA/Disconnect)
+   - Stats cards: total attributes, commonly used count, vendor count, data type count
+   - Debounced search (250ms), data type filter, vendor filter, sort toggle
+   - Category tabs with count badges
+   - Each row: colored left border, monospace name, star for common, type badge, vendor badge, description
+   - Copy button on each row + detail dialog with full info
+   - Quick Reference grid for 12 most-used attributes
+   - Operators Reference card showing all RADIUS operators
+   - Added 'dictionary' to store ViewId, sidebar System group, and page.tsx rendering
+
+4. **Dashboard Styling Overhaul**
+   - System Health Bar: CPU/Memory/Disk usage with gradient fills
+   - Online Users Live Panel: real-time grid of active sessions (10s refresh), user avatars, duration, bandwidth
+   - Live Activity Feed: color-coded login/logout events with timestamps
+   - Stat Cards: gradient backgrounds, count-up animations, mini sparkline charts, decorative patterns
+   - Charts: time range toggle (7d/30d), gradient fills, improved tooltips, animationDuration
+   - Tables: alternating rows, hover highlights, "View All" buttons, better badges
+   - FadeIn wrapper for staggered entrance animations
+
+Stage Summary:
+- 1 bug fixed (billing dropdown URLs)
+- 4 major features added (dark mode, dynamic footer, dictionary browser, dashboard overhaul)
+- ESLint clean, page compiles (200 OK, 31KB)
+- All 10 API endpoints verified working
+- Now 10 functional modules (was 9)
+- Version bumped to v2.0.0
