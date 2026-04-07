@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format, formatDistanceToNow, isToday, isYesterday, subDays, startOfDay } from 'date-fns'
 import {
@@ -30,6 +30,7 @@ import {
   Download,
   FileSpreadsheet,
   FileJson,
+  Radio,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -79,6 +80,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { exportToCSV, exportToJSON, type ExportOptions } from '@/lib/export-utils'
+import { RadiusTestDialog } from '@/components/aaa/radius-test-dialog'
 
 // ==================== Utility Functions ====================
 
@@ -128,6 +130,69 @@ function truncateId(id: string, maxLen = 24): string {
   if (!id) return '-'
   if (id.length <= maxLen) return id
   return `${id.slice(0, maxLen - 3)}...`
+}
+
+// ==================== Custom Hooks ====================
+
+/**
+ * useLiveDuration - Real-time ticking duration counter for active sessions.
+ * Calculates elapsed seconds from acctStartTime, updates every 1s.
+ * Returns formatted duration string using formatDuration.
+ */
+function useLiveDuration(acctStartTime: string | null | undefined, isActive: boolean): string {
+  const [startMs, setStartMs] = useState<number | null>(null)
+  // tick drives re-renders every second
+  const [, setTick] = useState(0)
+
+  useEffect(() => {
+    if (!isActive || !acctStartTime) {
+      setStartMs(null)
+      return
+    }
+    const ms = new Date(acctStartTime).getTime()
+    setStartMs(isNaN(ms) ? null : ms)
+  }, [isActive, acctStartTime])
+
+  useEffect(() => {
+    if (startMs === null) return
+
+    const id = setInterval(() => {
+      setTick(t => t + 1)
+    }, 1000)
+
+    return () => clearInterval(id)
+  }, [startMs])
+
+  if (startMs === null) return formatDuration(0)
+  return formatDuration(Math.max(0, (Date.now() - startMs) / 1000))
+}
+
+/**
+ * useLiveBandwidth - Simulated live bandwidth counter for active sessions.
+ * Starts from the base value and adds small random increments every 3 seconds.
+ * Returns the current simulated total bytes.
+ */
+function useLiveBandwidth(baseBytes: number, isActive: boolean): number {
+  const [total, setTotal] = useState(baseBytes)
+
+  useEffect(() => {
+    // Reset when base changes
+    setTotal(baseBytes)
+  }, [baseBytes])
+
+  useEffect(() => {
+    if (!isActive || baseBytes === 0) return
+
+    const id = setInterval(() => {
+      // Simulate a small incremental bandwidth growth: random 1KB–500KB per tick
+      const increment = Math.floor(Math.random() * 512000) + 1024
+      setTotal(t => t + increment)
+    }, 3000)
+
+    return () => clearInterval(id)
+  }, [isActive, baseBytes])
+
+  return total
 }
 
 // ==================== Types ====================
@@ -213,6 +278,374 @@ interface UserOption {
   fullName: string | null
 }
 
+// ==================== Session Row Component ====================
+// Extracted so hooks (useLiveDuration, useLiveBandwidth) can be used per-row
+
+function SessionRow({
+  session,
+  onViewDetails,
+  onDisconnect,
+  onKill,
+  onRadiusTest,
+}: {
+  session: Session
+  onViewDetails: (s: Session) => void
+  onDisconnect: (s: Session) => void
+  onKill: (s: Session) => void
+  onRadiusTest: (s: Session) => void
+}) {
+  const isActive = session.status === 'active'
+  const liveDuration = useLiveDuration(isActive ? session.acctStartTime : null, isActive)
+
+  const baseInputBytes = (session.acctInputGigawords || 0) * 4294967296 + (session.acctInputOctets || 0)
+  const baseOutputBytes = (session.acctOutputGigawords || 0) * 4294967296 + (session.acctOutputOctets || 0)
+  const liveInputBytes = useLiveBandwidth(baseInputBytes, isActive)
+  const liveOutputBytes = useLiveBandwidth(baseOutputBytes, isActive)
+  const liveTotalBytes = liveInputBytes + liveOutputBytes
+
+  return (
+    <TableRow key={session.id} className="group">
+      <TableCell className="font-mono text-xs max-w-[200px]">
+        <span className="block truncate" title={session.sessionId}>
+          {truncateId(session.sessionId)}
+        </span>
+      </TableCell>
+      <TableCell>
+        <div>
+          <p className="text-sm font-medium">{session.username || '-'}</p>
+          {session.user?.company && (
+            <p className="text-xs text-muted-foreground">{session.user.company}</p>
+          )}
+        </div>
+      </TableCell>
+      <TableCell>
+        <div>
+          <p className="text-sm">{session.nas?.shortName || session.calledStationId || '-'}</p>
+          <p className="text-xs text-muted-foreground">{session.nasIpAddress || '-'}</p>
+        </div>
+      </TableCell>
+      <TableCell className="text-xs">
+        {format(new Date(session.acctStartTime), 'MMM dd, HH:mm')}
+      </TableCell>
+      <TableCell className="text-xs font-mono">
+        {isActive ? (
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            {liveDuration}
+          </span>
+        ) : (
+          formatDuration(session.calculatedDuration)
+        )}
+      </TableCell>
+      <TableCell className="text-xs font-mono">
+        <span className="inline-flex items-center gap-1" title={`↓ ${formatBytes(liveInputBytes)} / ↑ ${formatBytes(liveOutputBytes)}`}>
+          {isActive && (
+            <span className="h-1 w-1 rounded-full bg-teal-500 animate-pulse" />
+          )}
+          {formatBytes(liveTotalBytes)}
+        </span>
+      </TableCell>
+      <TableCell className="text-xs font-mono">
+        {session.callingStationId || '-'}
+      </TableCell>
+      <TableCell className="text-xs font-mono">
+        {session.framedIpAddress || '-'}
+      </TableCell>
+      <TableCell>
+        {isActive ? (
+          <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs gap-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+            Active
+          </Badge>
+        ) : (
+          <Badge variant="secondary" className="text-xs">
+            Stopped
+          </Badge>
+        )}
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => onViewDetails(session)}
+            title="View Details"
+          >
+            <Eye className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-violet-600 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-950"
+            onClick={() => onRadiusTest(session)}
+            title="RADIUS Test"
+          >
+            <Radio className="h-3.5 w-3.5" />
+          </Button>
+          {isActive && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950"
+                onClick={() => onDisconnect(session)}
+                title="Disconnect"
+              >
+                <Unplug className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                onClick={() => onKill(session)}
+                title="Kill Session"
+              >
+                <Skull className="h-3.5 w-3.5" />
+              </Button>
+            </>
+          )}
+        </div>
+      </TableCell>
+    </TableRow>
+  )
+}
+
+// ==================== Session Detail Sheet Content ====================
+
+function SessionDetailContent({ session }: { session: Session }) {
+  const isActive = session.status === 'active'
+  const liveDuration = useLiveDuration(isActive ? session.acctStartTime : null, isActive)
+
+  const baseInputBytes = (session.acctInputGigawords || 0) * 4294967296 + (session.acctInputOctets || 0)
+  const baseOutputBytes = (session.acctOutputGigawords || 0) * 4294967296 + (session.acctOutputOctets || 0)
+  const liveInputBytes = useLiveBandwidth(baseInputBytes, isActive)
+  const liveOutputBytes = useLiveBandwidth(baseOutputBytes, isActive)
+
+  return (
+    <ScrollArea className="mt-6">
+      <div className="space-y-6 pr-4">
+        {/* Status & Duration */}
+        <div className="flex items-center gap-3">
+          {isActive ? (
+            <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 text-white gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+              Active
+            </Badge>
+          ) : (
+            <Badge variant="secondary">Stopped</Badge>
+          )}
+          <span className="text-sm text-muted-foreground inline-flex items-center gap-1.5">
+            Duration:
+            {isActive ? (
+              <>
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-mono">{liveDuration}</span>
+              </>
+            ) : (
+              <span className="font-mono">{formatDuration(session.calculatedDuration)}</span>
+            )}
+          </span>
+        </div>
+
+        {/* User Info */}
+        <div className="space-y-2">
+          <h4 className="text-sm font-semibold flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            User Information
+          </h4>
+          <div className="bg-muted/50 rounded-lg p-3 space-y-1.5 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Username</span>
+              <span className="font-medium">{session.username || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Full Name</span>
+              <span>{session.user?.fullName || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Email</span>
+              <span>{session.user?.email || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Company</span>
+              <span>{session.user?.company || '-'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* NAS Info */}
+        <div className="space-y-2">
+          <h4 className="text-sm font-semibold flex items-center gap-2">
+            <Server className="h-4 w-4" />
+            Network Access Server
+          </h4>
+          <div className="bg-muted/50 rounded-lg p-3 space-y-1.5 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Name</span>
+              <span className="font-medium">{session.nas?.nasName || session.calledStationId || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">IP Address</span>
+              <span className="font-mono">{session.nasIpAddress || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Type</span>
+              <span>{session.nas?.nasType || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Vendor / Model</span>
+              <span>{session.nas?.vendor || '-'} {session.nas?.model || ''}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Port</span>
+              <span>{session.nasPortId || session.nasPort || '-'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Session Info */}
+        <div className="space-y-2">
+          <h4 className="text-sm font-semibold flex items-center gap-2">
+            <Activity className="h-4 w-4" />
+            Session Information
+          </h4>
+          <div className="bg-muted/50 rounded-lg p-3 space-y-1.5 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Session ID</span>
+              <span className="font-mono text-xs max-w-[200px] truncate" title={session.sessionId}>
+                {session.sessionId}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Acct Session ID</span>
+              <span className="font-mono text-xs max-w-[200px] truncate" title={session.acctSessionId || ''}>
+                {session.acctSessionId || '-'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Start Time</span>
+              <span>{format(new Date(session.acctStartTime), 'yyyy-MM-dd HH:mm:ss')}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Stop Time</span>
+              <span>{session.acctStopTime ? format(new Date(session.acctStopTime), 'yyyy-MM-dd HH:mm:ss') : 'Still active'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Session Time</span>
+              <span className="inline-flex items-center gap-1.5">
+                {isActive && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+                <span className="font-mono">
+                  {isActive ? liveDuration : formatDuration(session.calculatedDuration)}
+                </span>
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Auth Type</span>
+              <span>{session.acctAuthentic || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Service Type</span>
+              <span>{session.serviceType || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Updates</span>
+              <span>{session.updateCount}</span>
+            </div>
+            {session.terminateCause && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Terminate Cause</span>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTerminateCauseColor(session.terminateCause)}`}>
+                  {session.terminateCause}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Network Info */}
+        <div className="space-y-2">
+          <h4 className="text-sm font-semibold flex items-center gap-2">
+            <Globe className="h-4 w-4" />
+            Network Details
+          </h4>
+          <div className="bg-muted/50 rounded-lg p-3 space-y-1.5 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Framed IP</span>
+              <span className="font-mono">{session.framedIpAddress || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Netmask</span>
+              <span className="font-mono">{session.framedNetmask || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">IP Assignment</span>
+              <span>{session.assignIpType || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Protocol</span>
+              <span>{session.framedProtocol || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Port Type</span>
+              <span>{session.nasPortType || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Called Station</span>
+              <span className="font-mono text-xs">{session.calledStationId || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Calling Station (MAC)</span>
+              <span className="font-mono text-xs">{session.callingStationId || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Connect Info</span>
+              <span>{session.connectInfo || '-'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bandwidth */}
+        <div className="space-y-2">
+          <h4 className="text-sm font-semibold flex items-center gap-2">
+            <Signal className="h-4 w-4" />
+            Bandwidth Usage
+            {isActive && (
+              <span className="ml-1 inline-flex items-center gap-1 text-[10px] text-emerald-600 font-normal">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live
+              </span>
+            )}
+          </h4>
+          <div className="bg-muted/50 rounded-lg p-3 space-y-1.5 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Download (Input)</span>
+              <span className="font-mono">{formatBytes(liveInputBytes)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Upload (Output)</span>
+              <span className="font-mono">{formatBytes(liveOutputBytes)}</span>
+            </div>
+            <Separator className="my-1" />
+            <div className="flex justify-between font-semibold">
+              <span>Total</span>
+              <span className="font-mono">{formatBytes(liveInputBytes + liveOutputBytes)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Input Packets</span>
+              <span className="font-mono">{(session.acctInputPackets || 0).toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Output Packets</span>
+              <span className="font-mono">{(session.acctOutputPackets || 0).toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ScrollArea>
+  )
+}
+
 // ==================== Component ====================
 
 export function SessionsView() {
@@ -233,6 +666,9 @@ export function SessionsView() {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [disconnectDialog, setDisconnectDialog] = useState<{ open: boolean; session: Session | null }>({ open: false, session: null })
   const [killDialog, setKillDialog] = useState<{ open: boolean; session: Session | null }>({ open: false, session: null })
+  const [radiusTestOpen, setRadiusTestOpen] = useState(false)
+  const [radiusTestUsername, setRadiusTestUsername] = useState('')
+  const [radiusTestSessionId, setRadiusTestSessionId] = useState('')
 
   // Fetch sessions
   const { data, isLoading, isFetching, refetch } = useQuery<SessionsResponse>({
@@ -637,99 +1073,20 @@ export function SessionsView() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  sortedSessions.map((session) => {
-                    const inputBytes = (session.acctInputGigawords || 0) * 4294967296 + (session.acctInputOctets || 0)
-                    const outputBytes = (session.acctOutputGigawords || 0) * 4294967296 + (session.acctOutputOctets || 0)
-                    const isActive = session.status === 'active'
-
-                    return (
-                      <TableRow key={session.id} className="group">
-                        <TableCell className="font-mono text-xs max-w-[200px]">
-                          <span className="block truncate" title={session.sessionId}>
-                            {truncateId(session.sessionId)}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="text-sm font-medium">{session.username || '-'}</p>
-                            {session.user?.company && (
-                              <p className="text-xs text-muted-foreground">{session.user.company}</p>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="text-sm">{session.nas?.shortName || session.calledStationId || '-'}</p>
-                            <p className="text-xs text-muted-foreground">{session.nasIpAddress || '-'}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-xs">
-                          {format(new Date(session.acctStartTime), 'MMM dd, HH:mm')}
-                        </TableCell>
-                        <TableCell className="text-xs font-mono">
-                          {formatDuration(session.calculatedDuration)}
-                        </TableCell>
-                        <TableCell className="text-xs font-mono">
-                          <span title={`↓ ${formatBytes(inputBytes)} / ↑ ${formatBytes(outputBytes)}`}>
-                            {formatBytes(inputBytes)}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-xs font-mono">
-                          {session.callingStationId || '-'}
-                        </TableCell>
-                        <TableCell className="text-xs font-mono">
-                          {session.framedIpAddress || '-'}
-                        </TableCell>
-                        <TableCell>
-                          {isActive ? (
-                            <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs gap-1">
-                              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-                              Active
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary" className="text-xs">
-                              Stopped
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => { setSelectedSession(session); setSheetOpen(true) }}
-                              title="View Details"
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                            </Button>
-                            {isActive && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950"
-                                  onClick={() => setDisconnectDialog({ open: true, session })}
-                                  title="Disconnect"
-                                >
-                                  <Unplug className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
-                                  onClick={() => setKillDialog({ open: true, session })}
-                                  title="Kill Session"
-                                >
-                                  <Skull className="h-3.5 w-3.5" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })
+                  sortedSessions.map((session) => (
+                    <SessionRow
+                      key={session.id}
+                      session={session}
+                      onViewDetails={(s) => { setSelectedSession(s); setSheetOpen(true) }}
+                      onDisconnect={(s) => setDisconnectDialog({ open: true, session: s })}
+                      onKill={(s) => setKillDialog({ open: true, session: s })}
+                      onRadiusTest={(s) => {
+                        setRadiusTestUsername(s.username || '')
+                        setRadiusTestSessionId(s.sessionId || '')
+                        setRadiusTestOpen(true)
+                      }}
+                    />
+                  ))
                 )}
               </TableBody>
             </Table>
@@ -782,212 +1139,7 @@ export function SessionsView() {
           </SheetHeader>
 
           {selectedSession && (
-            <ScrollArea className="mt-6">
-              <div className="space-y-6 pr-4">
-                {/* Status & Duration */}
-                <div className="flex items-center gap-3">
-                  {selectedSession.status === 'active' ? (
-                    <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 text-white gap-1">
-                      <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-                      Active
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary">Stopped</Badge>
-                  )}
-                  <span className="text-sm text-muted-foreground">
-                    Duration: {formatDuration(selectedSession.calculatedDuration)}
-                  </span>
-                </div>
-
-                {/* User Info */}
-                <div className="space-y-2">
-                  <h4 className="text-sm font-semibold flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    User Information
-                  </h4>
-                  <div className="bg-muted/50 rounded-lg p-3 space-y-1.5 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Username</span>
-                      <span className="font-medium">{selectedSession.username || '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Full Name</span>
-                      <span>{selectedSession.user?.fullName || '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Email</span>
-                      <span>{selectedSession.user?.email || '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Company</span>
-                      <span>{selectedSession.user?.company || '-'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* NAS Info */}
-                <div className="space-y-2">
-                  <h4 className="text-sm font-semibold flex items-center gap-2">
-                    <Server className="h-4 w-4" />
-                    Network Access Server
-                  </h4>
-                  <div className="bg-muted/50 rounded-lg p-3 space-y-1.5 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Name</span>
-                      <span className="font-medium">{selectedSession.nas?.nasName || selectedSession.calledStationId || '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">IP Address</span>
-                      <span className="font-mono">{selectedSession.nasIpAddress || '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Type</span>
-                      <span>{selectedSession.nas?.nasType || '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Vendor / Model</span>
-                      <span>{selectedSession.nas?.vendor || '-'} {selectedSession.nas?.model || ''}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Port</span>
-                      <span>{selectedSession.nasPortId || selectedSession.nasPort || '-'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Session Info */}
-                <div className="space-y-2">
-                  <h4 className="text-sm font-semibold flex items-center gap-2">
-                    <Activity className="h-4 w-4" />
-                    Session Information
-                  </h4>
-                  <div className="bg-muted/50 rounded-lg p-3 space-y-1.5 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Session ID</span>
-                      <span className="font-mono text-xs max-w-[200px] truncate" title={selectedSession.sessionId}>
-                        {selectedSession.sessionId}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Acct Session ID</span>
-                      <span className="font-mono text-xs max-w-[200px] truncate" title={selectedSession.acctSessionId || ''}>
-                        {selectedSession.acctSessionId || '-'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Start Time</span>
-                      <span>{format(new Date(selectedSession.acctStartTime), 'yyyy-MM-dd HH:mm:ss')}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Stop Time</span>
-                      <span>{selectedSession.acctStopTime ? format(new Date(selectedSession.acctStopTime), 'yyyy-MM-dd HH:mm:ss') : 'Still active'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Session Time</span>
-                      <span>{formatDuration(selectedSession.calculatedDuration)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Auth Type</span>
-                      <span>{selectedSession.acctAuthentic || '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Service Type</span>
-                      <span>{selectedSession.serviceType || '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Updates</span>
-                      <span>{selectedSession.updateCount}</span>
-                    </div>
-                    {selectedSession.terminateCause && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Terminate Cause</span>
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTerminateCauseColor(selectedSession.terminateCause)}`}>
-                          {selectedSession.terminateCause}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Network Info */}
-                <div className="space-y-2">
-                  <h4 className="text-sm font-semibold flex items-center gap-2">
-                    <Globe className="h-4 w-4" />
-                    Network Details
-                  </h4>
-                  <div className="bg-muted/50 rounded-lg p-3 space-y-1.5 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Framed IP</span>
-                      <span className="font-mono">{selectedSession.framedIpAddress || '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Netmask</span>
-                      <span className="font-mono">{selectedSession.framedNetmask || '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">IP Assignment</span>
-                      <span>{selectedSession.assignIpType || '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Protocol</span>
-                      <span>{selectedSession.framedProtocol || '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Port Type</span>
-                      <span>{selectedSession.nasPortType || '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Called Station</span>
-                      <span className="font-mono text-xs">{selectedSession.calledStationId || '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Calling Station (MAC)</span>
-                      <span className="font-mono text-xs">{selectedSession.callingStationId || '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Connect Info</span>
-                      <span>{selectedSession.connectInfo || '-'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bandwidth */}
-                <div className="space-y-2">
-                  <h4 className="text-sm font-semibold flex items-center gap-2">
-                    <Signal className="h-4 w-4" />
-                    Bandwidth Usage
-                  </h4>
-                  <div className="bg-muted/50 rounded-lg p-3 space-y-1.5 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Download (Input)</span>
-                      <span className="font-mono">{formatBytes((selectedSession.acctInputGigawords || 0) * 4294967296 + (selectedSession.acctInputOctets || 0))}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Upload (Output)</span>
-                      <span className="font-mono">{formatBytes((selectedSession.acctOutputGigawords || 0) * 4294967296 + (selectedSession.acctOutputOctets || 0))}</span>
-                    </div>
-                    <Separator className="my-1" />
-                    <div className="flex justify-between font-semibold">
-                      <span>Total</span>
-                      <span className="font-mono">
-                        {formatBytes(
-                          ((selectedSession.acctInputGigawords || 0) * 4294967296 + (selectedSession.acctInputOctets || 0)) +
-                          ((selectedSession.acctOutputGigawords || 0) * 4294967296 + (selectedSession.acctOutputOctets || 0))
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Input Packets</span>
-                      <span className="font-mono">{(selectedSession.acctInputPackets || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Output Packets</span>
-                      <span className="font-mono">{(selectedSession.acctOutputPackets || 0).toLocaleString()}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </ScrollArea>
+            <SessionDetailContent session={selectedSession} />
           )}
         </SheetContent>
       </Sheet>
@@ -1055,6 +1207,14 @@ export function SessionsView() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* RADIUS Test Dialog */}
+      <RadiusTestDialog
+        open={radiusTestOpen}
+        onOpenChange={setRadiusTestOpen}
+        defaultUsername={radiusTestUsername}
+        defaultSessionId={radiusTestSessionId}
+      />
     </div>
   )
 }

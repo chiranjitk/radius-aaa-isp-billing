@@ -37,6 +37,7 @@ import {
   Download,
   FileSpreadsheet,
   FileJson,
+  Radio,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -99,6 +100,7 @@ import { Switch } from '@/components/ui/switch'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { exportToCSV, exportToJSON, type ExportOptions } from '@/lib/export-utils'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { RadiusTestDialog } from '@/components/aaa/radius-test-dialog'
 
 // ==========================================
 // Types
@@ -1594,6 +1596,8 @@ export default function UsersView() {
   const [detailUserId, setDetailUserId] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<UserListItem | null>(null)
+  const [radiusTestOpen, setRadiusTestOpen] = useState(false)
+  const [radiusTestUsername, setRadiusTestUsername] = useState('')
 
   // Fetch users
   const {
@@ -1982,6 +1986,16 @@ export default function UsersView() {
                                   <Edit2 className="h-4 w-4" />
                                   Edit User
                                 </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setRadiusTestUsername(user.username)
+                                    setRadiusTestOpen(true)
+                                  }}
+                                  className="gap-2"
+                                >
+                                  <Radio className="h-4 w-4" />
+                                  RADIUS Test
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => handleToggleStatus(user)}
@@ -2067,6 +2081,13 @@ export default function UsersView() {
           open={formDialogOpen}
           onOpenChange={setFormDialogOpen}
           editUser={editUser}
+        />
+
+        {/* RADIUS Test Dialog */}
+        <RadiusTestDialog
+          open={radiusTestOpen}
+          onOpenChange={setRadiusTestOpen}
+          defaultUsername={radiusTestUsername}
         />
 
         {/* User Details Sheet */}

@@ -74,14 +74,14 @@ export default function Home() {
         <AppSidebar />
         <div className="flex flex-1 flex-col overflow-hidden">
           {/* Top Header Bar */}
-          <header className="flex h-14 shrink-0 items-center gap-4 border-b bg-background px-4 md:px-6">
+          <header className="flex h-14 shrink-0 items-center gap-4 border-b bg-gradient-to-r from-background to-background/95 px-4 md:px-6">
             {/* Breadcrumb / View Title */}
             <div className="flex items-center gap-2 min-w-0">
-              <div className="flex items-center justify-center w-7 h-7 rounded-md bg-primary/10">
-                <Radio className="h-3.5 w-3.5 text-primary" />
+              <div className="flex items-center justify-center w-11 h-11 md:w-7 md:h-7 rounded-md bg-primary/10">
+                <Radio className="h-3.5 w-3.5 md:h-3.5 md:w-3.5 text-primary" />
               </div>
-              <Separator orientation="vertical" className="h-5" />
-              <div className="min-w-0">
+              <Separator orientation="vertical" className="h-5 hidden md:block" />
+              <div className="min-w-0 hidden md:block">
                 <h2 className="text-sm font-semibold truncate">{currentView.title}</h2>
               </div>
             </div>
@@ -90,7 +90,7 @@ export default function Home() {
             <div className="hidden md:flex flex-1 max-w-sm mx-auto">
               <button
                 onClick={commandPaletteStore.open}
-                className="flex w-full items-center gap-2 rounded-md border border-border/50 bg-muted/50 h-8 px-3 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+                className="flex w-full items-center gap-2 rounded-md border border-border/50 bg-muted/50 h-9 px-3 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
               >
                 <Search className="h-3.5 w-3.5" />
                 <span className="flex-1 text-left">Search...</span>
@@ -102,11 +102,21 @@ export default function Home() {
 
             {/* Right Actions */}
             <div className="flex items-center gap-1.5 ml-auto shrink-0">
+              {/* Mobile Search Button - icon only */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 md:hidden"
+                onClick={commandPaletteStore.open}
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+
               {/* Dark Mode Toggle */}
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-11 w-11 md:h-8 md:w-8"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
               >
@@ -117,15 +127,15 @@ export default function Home() {
                 )}
               </Button>
 
-              <Badge variant="outline" className="hidden sm:flex items-center gap-1.5 text-[10px] font-normal px-2 h-6 border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
+              <Badge variant="outline" className="hidden md:flex items-center gap-1.5 text-[10px] font-normal px-2 h-6 border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 FreeRADIUS Online
               </Badge>
               <NotificationCenter />
               <Separator orientation="vertical" className="h-5 mx-1" />
               <div className="flex items-center gap-2">
-                <Avatar className="h-7 w-7">
-                  <AvatarFallback className="bg-primary text-primary-foreground text-[10px] font-bold">
+                <Avatar className="h-11 w-11 md:h-7 md:w-7">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xs md:text-[10px] font-bold">
                     AD
                   </AvatarFallback>
                 </Avatar>

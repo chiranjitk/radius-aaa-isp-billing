@@ -32,6 +32,9 @@ import {
   ExternalLink,
   Shield,
   Info,
+  Download,
+  FileSpreadsheet,
+  FileJson,
 } from 'lucide-react'
 import {
   Card,
@@ -81,6 +84,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
+import { exportToCSV, exportToJSON, type ExportOptions } from '@/lib/export-utils'
 
 // ==========================================
 // TYPES
@@ -604,6 +608,70 @@ export function NasView() {
       <div className="space-y-6">
         {/* ========== ACTION BAR ========== */}
         <div className="flex items-center justify-end gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" disabled={!data?.devices.length} className="gap-2">
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => {
+                  const opts: ExportOptions = {
+                    title: 'NAS Devices Export',
+                    headers: ['Name', 'Short Name', 'IP Address', 'Type', 'Vendor', 'Model', 'Secret', 'Status', 'Ports', 'Community'],
+                    filename: `nas-devices-export-${new Date().toISOString().slice(0, 10)}`,
+                    rows: (data?.devices || []).map((d) => [
+                      d.nasName,
+                      d.shortName || '',
+                      d.ipAddress,
+                      d.nasType,
+                      d.vendor || '',
+                      d.model || '',
+                      '********',
+                      d.status === 'up' ? 'Online' : d.status === 'down' ? 'Offline' : d.status,
+                      d.ports,
+                      d.community || '',
+                    ]),
+                  }
+                  exportToCSV(opts)
+                  toast.success(`${data?.devices.length || 0} NAS devices exported as CSV`)
+                }}
+                className="gap-2"
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                Export CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  const opts: ExportOptions = {
+                    title: 'NAS Devices Export',
+                    headers: ['Name', 'Short Name', 'IP Address', 'Type', 'Vendor', 'Model', 'Secret', 'Status', 'Ports', 'Community'],
+                    filename: `nas-devices-export-${new Date().toISOString().slice(0, 10)}`,
+                    rows: (data?.devices || []).map((d) => [
+                      d.nasName,
+                      d.shortName || '',
+                      d.ipAddress,
+                      d.nasType,
+                      d.vendor || '',
+                      d.model || '',
+                      '********',
+                      d.status === 'up' ? 'Online' : d.status === 'down' ? 'Offline' : d.status,
+                      d.ports,
+                      d.community || '',
+                    ]),
+                  }
+                  exportToJSON(opts)
+                  toast.success(`${data?.devices.length || 0} NAS devices exported as JSON`)
+                }}
+                className="gap-2"
+              >
+                <FileJson className="h-4 w-4" />
+                Export JSON
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="outline"
             size="sm"

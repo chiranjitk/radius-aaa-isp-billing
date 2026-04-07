@@ -12,6 +12,8 @@ import {
   CreditCard,
   Send,
   Download,
+  FileSpreadsheet,
+  FileJson,
   X,
   MoreHorizontal,
   Trash2,
@@ -74,6 +76,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
+import { exportToCSV, exportToJSON, type ExportOptions } from '@/lib/export-utils'
 
 // ============ Types ============
 interface InvoiceUser {
@@ -353,6 +356,70 @@ export function BillingView() {
     <div className="space-y-6">
       {/* Action Bar */}
       <div className="flex items-center justify-end gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" disabled={!invoices.length || loading} className="gap-2">
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => {
+                const opts: ExportOptions = {
+                  title: 'Invoices Export',
+                  headers: ['Invoice #', 'Username', 'Plan', 'Amount', 'Tax', 'Total', 'Status', 'Due Date', 'Paid Date', 'Created At'],
+                  filename: `invoices-export-${new Date().toISOString().slice(0, 10)}`,
+                  rows: invoices.map((inv) => [
+                    inv.invoiceNo,
+                    inv.username,
+                    inv.plan?.name || '',
+                    inv.amount,
+                    inv.tax,
+                    inv.total,
+                    inv.status,
+                    formatDate(inv.dueDate),
+                    formatDate(inv.paidDate),
+                    formatDate(inv.createdAt),
+                  ]),
+                }
+                exportToCSV(opts)
+                toast.success(`${invoices.length} invoices exported as CSV`)
+              }}
+              className="gap-2"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              Export CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                const opts: ExportOptions = {
+                  title: 'Invoices Export',
+                  headers: ['Invoice #', 'Username', 'Plan', 'Amount', 'Tax', 'Total', 'Status', 'Due Date', 'Paid Date', 'Created At'],
+                  filename: `invoices-export-${new Date().toISOString().slice(0, 10)}`,
+                  rows: invoices.map((inv) => [
+                    inv.invoiceNo,
+                    inv.username,
+                    inv.plan?.name || '',
+                    inv.amount,
+                    inv.tax,
+                    inv.total,
+                    inv.status,
+                    formatDate(inv.dueDate),
+                    formatDate(inv.paidDate),
+                    formatDate(inv.createdAt),
+                  ]),
+                }
+                exportToJSON(opts)
+                toast.success(`${invoices.length} invoices exported as JSON`)
+              }}
+              className="gap-2"
+            >
+              <FileJson className="h-4 w-4" />
+              Export JSON
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
           <Plus className="h-4 w-4" />
           Create Invoice

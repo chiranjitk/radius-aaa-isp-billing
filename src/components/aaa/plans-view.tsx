@@ -29,6 +29,9 @@ import {
   GitCompareArrows,
   Crown,
   Check,
+  Download,
+  FileSpreadsheet,
+  FileJson,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -70,6 +73,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { exportToCSV, exportToJSON, type ExportOptions } from '@/lib/export-utils'
 
 // ─── Types ───────────────────────────────────────────────────────────
 interface Plan {
@@ -399,6 +409,72 @@ export function PlansView() {
     <div className="space-y-6">
       {/* Action Bar */}
       <div className="flex items-center justify-end gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" disabled={!data?.plans?.length} className="gap-2">
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => {
+                const opts: ExportOptions = {
+                  title: 'Billing Plans Export',
+                  headers: ['Plan Name', 'Type', 'Billing Cycle', 'Price', 'Currency', 'Data Cap', 'Speed Up', 'Speed Down', 'Simultaneous', 'Status', 'Active Subs'],
+                  filename: `billing-plans-export-${new Date().toISOString().slice(0, 10)}`,
+                  rows: (data?.plans || []).map((p) => [
+                    p.name,
+                    PLAN_TYPE_CONFIG[p.planType]?.label || p.planType,
+                    p.billingCycle,
+                    p.price,
+                    p.currency,
+                    formatData(p.dataLimit),
+                    formatSpeed(p.speedUp),
+                    formatSpeed(p.speedDown),
+                    p.simultaneous,
+                    p.status,
+                    p._count.subscriptions,
+                  ]),
+                }
+                exportToCSV(opts)
+                toast.success(`${data?.plans.length || 0} plans exported as CSV`)
+              }}
+              className="gap-2"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              Export CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                const opts: ExportOptions = {
+                  title: 'Billing Plans Export',
+                  headers: ['Plan Name', 'Type', 'Billing Cycle', 'Price', 'Currency', 'Data Cap', 'Speed Up', 'Speed Down', 'Simultaneous', 'Status', 'Active Subs'],
+                  filename: `billing-plans-export-${new Date().toISOString().slice(0, 10)}`,
+                  rows: (data?.plans || []).map((p) => [
+                    p.name,
+                    PLAN_TYPE_CONFIG[p.planType]?.label || p.planType,
+                    p.billingCycle,
+                    p.price,
+                    p.currency,
+                    formatData(p.dataLimit),
+                    formatSpeed(p.speedUp),
+                    formatSpeed(p.speedDown),
+                    p.simultaneous,
+                    p.status,
+                    p._count.subscriptions,
+                  ]),
+                }
+                exportToJSON(opts)
+                toast.success(`${data?.plans.length || 0} plans exported as JSON`)
+              }}
+              className="gap-2"
+            >
+              <FileJson className="h-4 w-4" />
+              Export JSON
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button
           variant={comparisonMode ? 'default' : 'outline'}
           size="sm"

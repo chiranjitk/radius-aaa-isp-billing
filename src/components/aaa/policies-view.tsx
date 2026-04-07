@@ -29,6 +29,9 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Download,
+  FileSpreadsheet,
+  FileJson,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -81,6 +84,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { exportToCSV, exportToJSON, type ExportOptions } from '@/lib/export-utils'
 
 // ==================== Constants ====================
 
@@ -522,6 +526,66 @@ export function PoliciesView() {
     <div className="space-y-6">
       {/* Action Bar */}
       <div className="flex items-center justify-end gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" disabled={!data?.policies?.length} className="gap-2">
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => {
+                const opts: ExportOptions = {
+                  title: 'Policies Export',
+                  headers: ['Name', 'Type', 'Status', 'Priority', 'Rules Count', 'Linked Plans', 'Created At', 'Updated At'],
+                  filename: `policies-export-${new Date().toISOString().slice(0, 10)}`,
+                  rows: (data?.policies || []).map((p) => [
+                    p.name,
+                    POLICY_TYPES.find(t => t.value === p.type)?.label || p.type,
+                    p.status,
+                    p.priority,
+                    p._count.rules,
+                    p._count.planGroups,
+                    format(new Date(p.createdAt), 'yyyy-MM-dd HH:mm'),
+                    format(new Date(p.updatedAt), 'yyyy-MM-dd HH:mm'),
+                  ]),
+                }
+                exportToCSV(opts)
+                toast({ title: 'Exported', description: `${data?.policies.length || 0} policies exported as CSV` })
+              }}
+              className="gap-2"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              Export CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                const opts: ExportOptions = {
+                  title: 'Policies Export',
+                  headers: ['Name', 'Type', 'Status', 'Priority', 'Rules Count', 'Linked Plans', 'Created At', 'Updated At'],
+                  filename: `policies-export-${new Date().toISOString().slice(0, 10)}`,
+                  rows: (data?.policies || []).map((p) => [
+                    p.name,
+                    POLICY_TYPES.find(t => t.value === p.type)?.label || p.type,
+                    p.status,
+                    p.priority,
+                    p._count.rules,
+                    p._count.planGroups,
+                    format(new Date(p.createdAt), 'yyyy-MM-dd HH:mm'),
+                    format(new Date(p.updatedAt), 'yyyy-MM-dd HH:mm'),
+                  ]),
+                }
+                exportToJSON(opts)
+                toast({ title: 'Exported', description: `${data?.policies.length || 0} policies exported as JSON` })
+              }}
+              className="gap-2"
+            >
+              <FileJson className="h-4 w-4" />
+              Export JSON
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button
           variant="outline"
           size="sm"

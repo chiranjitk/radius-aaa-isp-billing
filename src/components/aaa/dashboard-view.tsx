@@ -438,6 +438,82 @@ function StatCard({
 }
 
 // =============================================
+// Live Duration Hook (for active sessions)
+// =============================================
+function useLiveDuration(acctStartTime: string | null | undefined, isActive: boolean): string {
+  const [, setTick] = useState(0)
+  const startMsRef = useRef<number | null>(null)
+
+  // Keep ref in sync with props (during render, not in an effect)
+  if (!isActive || !acctStartTime) {
+    startMsRef.current = null
+  } else {
+    const ms = new Date(acctStartTime).getTime()
+    startMsRef.current = isNaN(ms) ? null : ms
+  }
+
+  useEffect(() => {
+    if (startMsRef.current === null) return
+
+    const id = setInterval(() => {
+      setTick(t => t + 1)
+    }, 1000)
+
+    return () => clearInterval(id)
+  }, [isActive, acctStartTime])
+
+  if (startMsRef.current === null) return formatDuration(0)
+  return formatDuration(Math.max(0, (Date.now() - startMsRef.current) / 1000))
+}
+
+// =============================================
+// Online User Card Component (with live duration)
+// =============================================
+function OnlineUserCard({ session }: { session: ActiveSession }) {
+  const isActive = session.status === 'active'
+  const liveDuration = useLiveDuration(isActive ? session.acctStartTime : null, isActive)
+  const initials = (session.username || '?').slice(0, 2).toUpperCase()
+  const bw = session.acctInputOctets + session.acctOutputOctets
+  const nasName = session.nas?.nasName || session.nasIpAddress || 'Unknown'
+
+  return (
+    <div
+      className="group flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 border border-transparent hover:border-border transition-all duration-200"
+    >
+      <div className="relative shrink-0">
+        <Avatar className="h-9 w-9">
+          <AvatarFallback className="bg-gradient-to-br from-emerald-400 to-teal-500 text-white text-[10px] font-bold shadow-sm">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+        <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-background animate-pulse" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <p className="text-xs font-semibold truncate">{session.username || 'Unknown'}</p>
+          <span className="text-[9px] font-mono text-muted-foreground bg-muted px-1 py-0.5 rounded">
+            RADIUS
+          </span>
+        </div>
+        <p className="text-[10px] text-muted-foreground truncate mt-0.5">{nasName}</p>
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <Clock className="h-2.5 w-2.5" />
+            <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+            {liveDuration}
+          </span>
+          {bw > 0 && (
+            <span className="text-[10px] text-muted-foreground">
+              {formatBytes(bw)}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// =============================================
 // Online Users Panel Component
 // =============================================
 function OnlineUsersPanel() {
@@ -511,46 +587,9 @@ function OnlineUsersPanel() {
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {sessions.slice(0, 6).map((session) => {
-                  const initials = (session.username || '?').slice(0, 2).toUpperCase()
-                  const bw = session.acctInputOctets + session.acctOutputOctets
-                  const nasName = session.nas?.nasName || session.nasIpAddress || 'Unknown'
-                  return (
-                    <div
-                      key={session.id}
-                      className="group flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 border border-transparent hover:border-border transition-all duration-200"
-                    >
-                      <div className="relative shrink-0">
-                        <Avatar className="h-9 w-9">
-                          <AvatarFallback className="bg-gradient-to-br from-emerald-400 to-teal-500 text-white text-[10px] font-bold shadow-sm">
-                            {initials}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-background animate-pulse" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-xs font-semibold truncate">{session.username || 'Unknown'}</p>
-                          <span className="text-[9px] font-mono text-muted-foreground bg-muted px-1 py-0.5 rounded">
-                            {session.user?.authType || 'RADIUS'}
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground truncate mt-0.5">{nasName}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                            <Clock className="h-2.5 w-2.5" />
-                            {formatDuration(session.calculatedDuration || session.acctSessionTime)}
-                          </span>
-                          {bw > 0 && (
-                            <span className="text-[10px] text-muted-foreground">
-                              {formatBytes(bw)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
+                {sessions.slice(0, 6).map((session) => (
+                  <OnlineUserCard key={session.id} session={session} />
+                ))}
               </div>
               {total > 6 && (
                 <div className="mt-3 flex justify-center">

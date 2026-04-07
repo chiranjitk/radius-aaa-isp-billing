@@ -147,47 +147,90 @@ Stage Summary:
 - ESLint clean, page loads 200 OK
 
 ---
+Task ID: 9
+Agent: Main Orchestrator (Phase 6 - Cron QA Round)
+Task: QA testing, styling improvements, new features
+
+Work Log:
+- Reviewed worklog.md and assessed full project status (v2.2, 10 modules, 11 APIs)
+- Ran comprehensive QA via agent-browser on all 10 views — all pass, zero console errors
+- No bugs found in this round
+- Added live session duration counter (Task 9-a):
+  - Created useLiveDuration hook: real-time duration ticking every 1s for active sessions
+  - Created useLiveBandwidth hook: simulated bandwidth growth every 3s
+  - Active session rows show green pulsing dot ● next to live duration
+  - Session detail sheet shows live duration and bandwidth with "Live" badge
+  - Dashboard Online Users panel also shows live duration counters
+- Added RADIUS CoA/Disconnect test dialog (Task 9-b):
+  - Created radius-test-dialog.tsx with 3 tabs: Test Auth, CoA, Disconnect
+  - Simulated RADIUS operations with realistic response times and attributes
+  - Integrated into Users view (Actions dropdown) and Sessions view (Test button)
+  - NAS selection dropdown populated from /api/nas
+- Added CSV/JSON export to all remaining tables (Task 9-c):
+  - NAS Devices: 10 columns including vendor, model, masked secret
+  - Billing Plans: 11 columns including speed limits and data caps
+  - Invoices: 10 columns including amounts, status, dates
+  - Policies: 8 columns including priority and linked plans
+  - All 6 data tables now have export capability
+- Improved header mobile responsiveness:
+  - Breadcrumb text hidden on mobile (icon only)
+  - Search button simplified to icon-only on mobile
+  - FreeRADIUS Online badge hidden on mobile
+  - Admin name hidden on mobile (avatar only)
+  - 44px minimum touch targets on all interactive elements
+  - Gradient background on header
+
+Stage Summary:
+- 0 bugs found
+- 3 major feature additions (live session counter, RADIUS test dialog, full export coverage)
+- All 10 views verified working via agent-browser QA
+- ESLint clean, page loads 200 OK
+- Version: v2.3
+
+---
 ## Current Project Status
 
 ### Assessment
-The AAA/RADIUS BSS system is now at v2.2 with a polished enterprise UI, interactive RADIUS attribute management, data export capabilities, and comprehensive QA validation. The sidebar has been professionally redesigned with active state indicators and category badges. Users can now export session and user data as CSV/JSON, and manage RADIUS check/reply attributes directly from the user detail sheet.
+The AAA/RADIUS BSS system is now at v2.3 with real-time session monitoring, RADIUS testing tools, comprehensive data export across all tables, and polished mobile responsiveness. The system provides a complete ISP-grade management platform with live session tracking, interactive RADIUS attribute management, simulated CoA/Disconnect testing, and enterprise-grade UI.
 
 ### Completed
 - 18-model database schema with full RADIUS + BSS coverage
-- 11 REST API endpoints (including new attribute CRUD)
+- 11 REST API endpoints (including attribute CRUD)
 - 10 client modules with full CRUD operations
-- Global app shell (header, collapsible sidebar, dynamic status footer)
+- Global app shell with mobile-responsive header, collapsible sidebar, dynamic footer
 - Dark mode toggle with next-themes
 - Dynamic footer and sidebar stats from dashboard API
 - RADIUS Dictionary Browser with 90+ attributes
 - Dashboard with System Health Bar, Online Users Live Panel, Live Activity Feed
 - Command Palette (⌘K) with 12 commands and keyboard navigation
 - Notification Center with simulated AAA/RADIUS events
-- CSV/JSON data export for Users and Sessions tables
+- CSV/JSON data export for ALL 6 data tables (Users, Sessions, NAS, Plans, Invoices, Policies)
 - Interactive RADIUS attribute editor (37 attributes, 13 operators)
+- RADIUS Test Dialog with Auth/CoA/Disconnect simulation
+- Live session duration counter with pulsing indicators
+- Live bandwidth simulation for active sessions
 - User detail sheet with AuthTypeBadge, groups, session history
-- Billing view with skeleton loading, empty states, delete confirmation
-- Settings view with loading states, save feedback, discard confirmation
 - Professional sidebar with active indicators, category badges, gradient branding
+- Mobile-responsive header with proper touch targets
 
 ### Known Issues / Risks
 1. **Cross-origin warning**: Preview iframe cosmetic only.
-2. **No real FreeRADIUS backend**: App manages DB for FreeRADIUS via rlm_rest.
+2. **No real FreeRADIUS backend**: App manages DB for FreeRADIUS via rlm_rest. RADIUS Test Dialog is simulated.
 3. **Date seed data**: Demo sessions use 2024-03 dates, may show "0 sessions" in 7-day chart.
-4. **Session data is mock**: No real-time duration incrementing.
-5. **Notification data is static**: Simulated events, not live.
+4. **Notification data is static**: Simulated events, not live.
+5. **Live bandwidth is simulated**: No real network traffic monitoring.
 
 ### Priority Recommendations for Next Phase
-1. Add real-time WebSocket updates for live session monitoring
-2. Add RADIUS test authentication endpoint (CoA/Disconnect)
-3. Create a proper login page and role-based access
-4. Add invoice PDF generation
-5. Add data export for remaining tables (NAS, Policies, Invoices, Plans)
-6. Implement bulk operations (batch user actions, batch session disconnect)
-7. Add network topology/map visualization
-8. Add SMS/Email notification integration testing in Settings
-9. Add user import from CSV
-10. Implement automated billing cycle
+1. Create a proper login page and role-based access control
+2. Add real-time WebSocket updates for live session monitoring
+3. Add invoice PDF generation
+4. Implement bulk operations (batch user actions, batch session disconnect)
+5. Add network topology/map visualization
+6. Add SMS/Email notification integration testing in Settings
+7. Add user import from CSV
+8. Implement automated billing cycle
+9. Add data validation and form error indicators
+10. Create printable reports with company branding
 
 ---
 Task ID: 3
@@ -446,3 +489,139 @@ Stage Summary:
 - Interactive RADIUS attribute editor with common attribute dropdown, operator selection, add/delete capabilities
 - Attributes displayed as cards with monospace font and hover-reveal delete buttons
 - All changes fully integrated with existing TanStack Query cache invalidation
+
+---
+Task ID: 9
+Agent: full-stack-developer
+Task: Add export buttons to remaining tables + improve header mobile styling
+
+Work Log:
+- Added CSV/JSON Export dropdown to NAS Devices view (nas-view.tsx):
+  - Imported Download, FileSpreadsheet, FileJson icons; exportToCSV, exportToJSON, ExportOptions
+  - Export columns: Name, Short Name, IP Address, Type, Vendor, Model, Secret (masked), Status, Ports, Community
+  - Placed in action bar before Templates/Add NAS buttons
+  - Disabled when no devices loaded
+- Added CSV/JSON Export dropdown to Billing Plans view (plans-view.tsx):
+  - Added DropdownMenu component imports and export-utils import
+  - Export columns: Plan Name, Type, Billing Cycle, Price, Currency, Data Cap, Speed Up, Speed Down, Simultaneous, Status, Active Subs
+  - Uses existing formatSpeed/formatData helpers for readable values
+  - Placed in action bar before Compare/Create Plan buttons
+- Added CSV/JSON Export dropdown to Invoices view (billing-view.tsx):
+  - Imported FileSpreadsheet, FileJson from lucide-react; exportToCSV, exportToJSON, ExportOptions
+  - Export columns: Invoice #, Username, Plan, Amount, Tax, Total, Status, Due Date, Paid Date, Created At
+  - Uses existing formatDate helper for date columns
+  - Placed in action bar before Create Invoice button
+- Added CSV/JSON Export dropdown to Policies view (policies-view.tsx):
+  - Imported Download, FileSpreadsheet, FileJson icons; exportToCSV, exportToJSON, ExportOptions
+  - Export columns: Name, Type, Status, Priority, Rules Count, Linked Plans, Created At, Updated At
+  - Uses POLICY_TYPES config for readable type labels and date-fns format
+  - Placed in action bar before Templates/Create Policy buttons
+- Improved header mobile styling (page.tsx):
+  - On mobile (< md): breadcrumb text hidden, only Radio icon shown (larger 11x11 touch target)
+  - On mobile: search button shows only Search icon (44x44px touch target), opens command palette
+  - On mobile: "FreeRADIUS Online" badge hidden (changed from hidden sm:flex to hidden md:flex)
+  - On mobile: admin name text hidden, avatar enlarged to 11x11 for touch target
+  - All interactive elements have minimum 44px touch targets on mobile (h-11 w-11)
+  - Added subtle gradient to header: bg-gradient-to-r from-background to-background/95
+  - Dark mode toggle enlarged to 44px on mobile
+  - Separator between breadcrumb and title hidden on mobile
+  - Avatar fallback text slightly larger on mobile (text-xs vs md:text-[10px])
+
+Stage Summary:
+- Export buttons added to all 4 remaining table views (NAS, Plans, Invoices, Policies)
+- All export buttons follow the same DropdownMenu pattern as Sessions/Users
+- Header now responsive with proper mobile touch targets and hidden non-essential elements
+- Dev server compiles successfully, no new lint errors introduced
+
+---
+Task ID: 10
+Agent: full-stack-developer
+Task: Add live session duration counter and live bandwidth for active sessions
+
+Work Log:
+- Created `useLiveDuration(acctStartTime, isActive)` custom hook in sessions-view.tsx:
+  - Uses `useRef` to track start time (set during render, not in effect — avoids lint `set-state-in-effect` rule)
+  - Uses `useState` tick counter + `setInterval(fn, 1000)` to force re-render every second
+  - Computes elapsed time from `Date.now() - startMs` during render
+  - Returns formatted duration string via existing `formatDuration()` function
+  - Cleans up interval on unmount and when `isActive` or `acctStartTime` changes
+  - Only runs the interval when `isActive` is true and `acctStartTime` is valid
+- Created `useLiveBandwidth(baseBytes, isActive)` custom hook:
+  - Uses ref to accumulate random increments (1KB–500KB per tick, every 3 seconds)
+  - Resets accumulated increments when `baseBytes` changes (detected via prevBaseRef comparison during render)
+  - Returns `baseBytes + incrementsRef.current` during render
+  - Only runs interval when `isActive` and `baseBytes > 0`
+- Extracted `SessionRow` component from the sessions table `sortedSessions.map()`:
+  - Each row now uses `useLiveDuration` and `useLiveBandwidth` hooks per-session
+  - Duration cell: active sessions show a green `●` dot with `animate-pulse` + live ticking duration; stopped sessions show static `formatDuration()`
+  - Bandwidth cell: active sessions show a teal `●` dot with `animate-pulse` + simulated growing bandwidth; stopped sessions show static value
+- Extracted `SessionDetailContent` component for the session detail Sheet:
+  - Uses `useLiveDuration` and `useLiveBandwidth` hooks
+  - Status bar shows live ticking duration with green pulse dot for active sessions
+  - Session Time field shows live duration with pulse indicator
+  - Bandwidth Usage section shows "Live" badge with pulse dot for active sessions
+  - Download/Upload/Total values update in real-time (simulated growth)
+- Added `useLiveDuration` hook and `OnlineUserCard` component to dashboard-view.tsx:
+  - `OnlineUserCard` uses `useLiveDuration` hook per session in the Online Users panel
+  - Duration display shows green pulse dot + live ticking duration instead of static `formatDuration()`
+  - Replaced inline session card rendering with `OnlineUserCard` component in `OnlineUsersPanel`
+- Fixed ESLint `react-hooks/set-state-in-effect` errors by refactoring both hooks to:
+  - Use ref mutations (not setState) for synchronous updates during render
+  - Only call `setTick(t => t + 1)` inside `setInterval` callbacks (asynchronous)
+  - Compute derived values during render from refs instead of storing in state
+
+Files Modified:
+- `src/components/aaa/sessions-view.tsx`: Added hooks, SessionRow, SessionDetailContent; replaced inline table rows and sheet content
+- `src/components/aaa/dashboard-view.tsx`: Added hook, OnlineUserCard; replaced inline user card rendering in OnlineUsersPanel
+
+Stage Summary:
+- Live session duration counter implemented for all active sessions across Sessions view and Dashboard Online Users panel
+- Duration ticks every second with green animated pulse dot indicator
+- Live simulated bandwidth counter shows incremental growth every 3 seconds with teal pulse dot
+- Session detail sheet also shows live duration and live bandwidth for active sessions
+- ESLint clean (only 2 pre-existing errors in radius-test-dialog.tsx, not related to this change)
+- Dev server compiles and runs successfully
+
+---
+Task ID: 11
+Agent: full-stack-developer
+Task: Create RADIUS Test Tool dialog and integrate into Users and Sessions views
+
+Work Log:
+- Created `/src/components/aaa/radius-test-dialog.tsx` — comprehensive RADIUS test tool dialog:
+  - Exported as `RadiusTestDialog` with props: `open`, `onOpenChange`, `defaultUsername`, `defaultSessionId`
+  - Three tabs: "Test Authentication", "CoA (Change of Authorization)", "Disconnect"
+  - **Test Authentication tab**: Username/password inputs, NAS selection dropdown (fetched from /api/nas), "Test Authentication" button with simulated 500-1500ms latency, shows Access-Accept (85% chance) or Access-Reject (15% chance) with simulated response time in ms and realistic RADIUS attributes (Framed-IP-Address, Session-Timeout, Idle-Timeout, Acct-Interim-Interval)
+  - **CoA tab**: Username input, NAS selection, attribute selector (Session-Timeout, Idle-Timeout, Bandwidth-Max-Up, Bandwidth-Max-Down), new value input, "Send CoA" button with simulated latency, shows CoA-ACK (80%) or CoA-NAK (20%) with updated attribute values
+  - **Disconnect tab**: Username or Session ID input (with "or" divider), NAS selection, Terminate Cause dropdown (11 standard causes), amber-colored "Disconnect Session" button, shows Disconnect-ACK (90%) or Disconnect-NAK with terminate cause and session time
+  - All tabs show animated spinner during simulated latency (border spinner with Radio icon)
+  - Results displayed in styled Card with success (emerald) or failure (red) border coloring, check/X icons, response time, timestamp, and RADIUS attribute table
+  - Uses shadcn/ui Dialog, Tabs, Select, Input, Button, Card, Badge, Separator, Label
+- Integrated into Users view (`users-view.tsx`):
+  - Added `Radio` icon import and `RadiusTestDialog` component import
+  - Added state: `radiusTestOpen` (boolean), `radiusTestUsername` (string)
+  - Added "RADIUS Test" menu item with Radio icon in per-user Actions dropdown (between "Edit User" and separator)
+  - Renders `<RadiusTestDialog>` with `defaultUsername` prop
+- Integrated into Sessions view (`sessions-view.tsx`):
+  - Added `Radio` icon import and `RadiusTestDialog` component import
+  - Added state: `radiusTestOpen`, `radiusTestUsername`, `radiusTestSessionId`
+  - Added `onRadiusTest` callback prop to `SessionRow` component
+  - Added violet-colored RADIUS Test button (Radio icon) in each session row's Actions column (between View Details and Disconnect)
+  - Renders `<RadiusTestDialog>` with both `defaultUsername` and `defaultSessionId` props
+- Fixed React 19 lint errors in `radius-test-dialog.tsx`:
+  - Removed `useEffect` calls that set state synchronously (react-hooks/set-state-in-effect rule)
+  - Changed to direct `useState` initialization from props (`defaultUsername`, `defaultSessionId`)
+  - Removed unused `useEffect` and `useRef` imports
+- Fixed pre-existing React 19 lint errors in `sessions-view.tsx`:
+  - Refactored `useLiveBandwidth` hook: replaced ref-based mutation with `useState(total)` + `useEffect` reset pattern
+  - Refactored `useLiveDuration` hook: replaced ref-based mutation with `useState(startMs)` + `useEffect` reset pattern
+  - Moved `useState` declarations before `useEffect` to fix "accessed before declared" error
+- ESLint passes clean with zero errors
+- Dev server compiles and runs successfully
+
+Stage Summary:
+- New RADIUS Test Tool dialog component at src/components/aaa/radius-test-dialog.tsx
+- Integrated into Users view via per-user Actions dropdown menu (RADIUS Test item)
+- Integrated into Sessions view via per-session Actions column (violet Test button)
+- Simulated authentication, CoA, and Disconnect operations with realistic response attributes
+- All pre-existing and new lint errors resolved — clean ESLint pass
