@@ -1,0 +1,414 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// RADIUS CORE MODELS
+// ==========================================
+
+model RadUser {
+  id            String    @id @default(cuid())
+  username      String    @unique
+  password      String
+  fullName      String?
+  email         String?
+  phone         String?
+  company       String?
+  address       String?
+  status        String    @default("active") // active, disabled, suspended
+  authType      String    @default("PAP")    // PAP, CHAP, MS-CHAPv2, EAP
+  simultaneous  Int       @default(1)        // max simultaneous sessions
+  expiryDate    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  groups        RadUserGroup[]
+  checkAttrs    RadCheck[]
+  replyAttrs    RadReply[]
+  sessions      RadAcct[]
+  subscriptions Subscription[]
+  invoices      Invoice[]
+  payments      Payment[]
+
+  @@index([username])
+  @@index([status])
+}
+
+model RadGroup {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  priority    Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  users       RadUserGroup[]
+  checkAttrs  RadGroupCheck[]
+  replyAttrs  RadGroupReply[]
+}
+
+model RadUserGroup {
+  id        String   @id @default(cuid())
+  username  String
+  groupName String
+  priority  Int      @default(1)
+
+  user      RadUser  @relation(fields: [username], references: [username])
+  group     RadGroup @relation(fields: [groupName], references: [name])
+
+  @@index([username])
+  @@index([groupName])
+}
+
+model RadCheck {
+  id       String   @id @default(cuid())
+  username String
+  attribute String
+  op       String   @default(":=")
+  value    String
+
+  user     RadUser  @relation(fields: [username], references: [username])
+
+  @@index([username])
+}
+
+model RadReply {
+  id        String   @id @default(cuid())
+  username  String
+  attribute String
+  op        String   @default("=")
+  value     String
+
+  user      RadUser  @relation(fields: [username], references: [username])
+
+  @@index([username])
+}
+
+model RadGroupCheck {
+  id        String   @id @default(cuid())
+  groupName String
+  attribute String
+  op        String   @default(":=")
+  value     String
+
+  group     RadGroup @relation(fields: [groupName], references: [name])
+
+  @@index([groupName])
+}
+
+model RadGroupReply {
+  id        String   @id @default(cuid())
+  groupName String
+  attribute String
+  op        String   @default("=")
+  value     String
+
+  group     RadGroup @relation(fields: [groupName], references: [name])
+
+  @@index([groupName])
+}
+
+// ==========================================
+// NETWORK ACCESS SERVER MODELS
+// ==========================================
+
+model Nas {
+  id          String   @id @default(cuid())
+  nasName     String
+  shortName   String?
+  nasType     String   // cisco, juniper, mikrotik, huawei, aruba, etc.
+  ipAddress   String   @unique
+  ports       Int      @default(0)
+  secret      String
+  server      String?
+  community   String?
+  description String?
+  status      String   @default("up") // up, down, disabled
+  lastAlive   DateTime?
+  vendor      String?  // Vendor name
+  model       String?  // Device model
+  location    String?
+  contact     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  acctRecords RadAcct[]
+
+  @@index([nasType])
+  @@index([status])
+  @@index([ipAddress])
+}
+
+// ==========================================
+// ACCOUNTING MODELS
+// ==========================================
+
+model RadAcct {
+  id          String    @id @default(cuid())
+  sessionId   String    @unique
+  username    String?
+  nasIpAddress String?
+  nasPortId   String?
+  nasPortType String?
+  acctSessionId   String?
+  acctStartTime   DateTime @default(now())
+  acctStopTime    DateTime?
+  acctSessionTime Int?
+  acctAuthentic   String?  // RADIUS, LDAP, Local
+  acctInputOctets BigInt?     @default(0)
+  acctOutputOctets BigInt?    @default(0)
+  acctInputPackets BigInt?    @default(0)
+  acctOutputPackets BigInt?   @default(0)
+  acctInputGigawords BigInt?  @default(0)
+  acctOutputGigawords BigInt? @default(0)
+  calledStationId String?
+  callingStationId String?
+  connectInfo     String?
+  framedProtocol  String?
+  framedIpAddress String?
+  framedNetmask   String?
+  assignIpType    String?
+  nasId           String?
+  nasPort         Int?
+  serviceType     String?
+  terminateCause  String?
+  updateCount     Int      @default(0)
+  status          String   @default("active") // active, stopped
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user        RadUser?  @relation(fields: [username], references: [username])
+  nas         Nas?      @relation(fields: [nasIpAddress], references: [ipAddress])
+
+  @@index([sessionId])
+  @@index([username])
+  @@index([nasIpAddress])
+  @@index([status])
+  @@index([acctStartTime])
+}
+
+model RadPostAuth {
+  id        String   @id @default(cuid())
+  username  String
+  pass      String?
+  reply     String?
+  authType  String?
+  clientIp  String?
+  calledStationId String?
+  callingStationId String?
+  timestamp DateTime @default(now())
+}
+
+// ==========================================
+// BILLING & SUBSCRIPTION MODELS
+// ==========================================
+
+model Plan {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  planType      String   // time-based, data-based, flat-rate, hybrid
+  billingCycle  String   // daily, weekly, monthly, yearly
+  price         Float    // price in base currency
+  currency      String   @default("USD")
+  dataLimit     Int?     // data cap in MB (0 = unlimited)
+  timeLimit     Int?     // time cap in minutes (0 = unlimited)
+  speedDown     Int?     // download speed in Kbps
+  speedUp       Int?     // upload speed in Kbps
+  simultaneous  Int      @default(1)
+  priority      Int      @default(0)
+  status        String   @default("active") // active, disabled, archived
+  isActive      Boolean  @default(true)
+  trialDays     Int      @default(0)
+  gracePeriodDays Int    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  subscriptions Subscription[]
+  invoices      Invoice[]
+  policyGroups  PlanPolicyGroup[]
+
+  @@index([planType])
+  @@index([status])
+}
+
+model Subscription {
+  id          String    @id @default(cuid())
+  username    String
+  planId      String
+  status      String    @default("active") // active, expired, cancelled, suspended
+  startDate   DateTime  @default(now())
+  expiryDate  DateTime?
+  nextBilling DateTime?
+  autoRenew   Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        RadUser   @relation(fields: [username], references: [username])
+  plan        Plan      @relation(fields: [planId], references: [id])
+  invoices    Invoice[]
+
+  @@index([username])
+  @@index([planId])
+  @@index([status])
+}
+
+model Invoice {
+  id          String    @id @default(cuid())
+  invoiceNo   String    @unique
+  username    String
+  planId      String?
+  subscriptionId String?
+  amount      Float
+  tax         Float     @default(0)
+  total       Float
+  status      String    @default("pending") // pending, paid, overdue, cancelled, refunded
+  dueDate     DateTime
+  paidDate    DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        RadUser      @relation(fields: [username], references: [username])
+  plan        Plan?        @relation(fields: [planId], references: [id])
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+  payments    Payment[]
+
+  @@index([username])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model Payment {
+  id            String    @id @default(cuid())
+  paymentNo     String    @unique
+  username      String
+  invoiceId     String
+  amount        Float
+  method        String    // cash, card, bank_transfer, online, wallet
+  gateway       String?
+  transactionId String?
+  status        String    @default("completed") // completed, failed, pending, refunded
+  paidAt        DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+
+  user          RadUser   @relation(fields: [username], references: [username])
+  invoice       Invoice   @relation(fields: [invoiceId], references: [id])
+
+  @@index([username])
+  @@index([invoiceId])
+  @@index([status])
+}
+
+// ==========================================
+// POLICY ENGINE MODELS
+// ==========================================
+
+model Policy {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  type        String   // bandwidth, time, data, access, acl, firewall
+  status      String   @default("active")
+  priority    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rules       PolicyRule[]
+  planGroups  PlanPolicyGroup[]
+
+  @@index([type])
+  @@index([status])
+}
+
+model PolicyRule {
+  id          String   @id @default(cuid())
+  policyId    String
+  name        String
+  attribute   String   // RADIUS attribute
+  operator    String   // =, !=, <, >, <=, >=, :=, ==, etc
+  value       String
+  description String?
+  priority    Int      @default(0)
+
+  policy      Policy   @relation(fields: [policyId], references: [id])
+
+  @@index([policyId])
+}
+
+model PlanPolicyGroup {
+  id     String @id @default(cuid())
+  planId String
+  policyId String
+
+  plan   Plan   @relation(fields: [planId], references: [id])
+  policy Policy @relation(fields: [policyId], references: [id])
+
+  @@index([planId])
+  @@index([policyId])
+}
+
+// ==========================================
+// VENDOR / DICTIONARY MODELS
+// ==========================================
+
+model Vendor {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  shortName   String?
+  description String?
+  createdAt   DateTime @default(now())
+
+  attributes  VendorAttribute[]
+}
+
+model VendorAttribute {
+  id          String @id @default(cuid())
+  vendorId    String
+  name        String
+  oid         String?
+  type        String  // string, integer, ipaddr, date, octets
+  flags       String?
+  value       String?
+
+  vendor      Vendor @relation(fields: [vendorId], references: [id])
+
+  @@index([vendorId])
+}
+
+// ==========================================
+// SYSTEM MODELS
+// ==========================================
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  username  String?
+  action    String   // create, update, delete, login, logout, export, etc.
+  module    String   // users, nas, plans, policies, billing, sessions, etc.
+  details   String?
+  ipAddress String?
+  userAgent String?
+  timestamp DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([module])
+  @@index([timestamp])
+}
+
+model SystemSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+  type  String @default("string") // string, number, boolean, json
+  group String @default("general") // general, radius, billing, email, sms
+  description String?
+
+  @@index([group])
+}

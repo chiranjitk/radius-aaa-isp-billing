@@ -1,0 +1,1008 @@
+'use client'
+
+import { useState, useCallback } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { format, formatDistanceToNow, isToday, isYesterday, subDays, startOfDay } from 'date-fns'
+import {
+  Activity,
+  RefreshCw,
+  Search,
+  X,
+  Eye,
+  Unplug,
+  Skull,
+  Clock,
+  Users,
+  Wifi,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Filter,
+  MonitorSmartphone,
+  Globe,
+  Server,
+  ChevronLeft,
+  ChevronRight,
+  Signal,
+  Zap,
+  Timer,
+  HardDrive,
+} from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Label } from '@/components/ui/label'
+import { ScrollArea } from '@/components/ui/scroll-area'
+
+// ==================== Utility Functions ====================
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`
+}
+
+function formatDuration(seconds: number): string {
+  if (!seconds || seconds < 0) return '0s'
+  const days = Math.floor(seconds / 86400)
+  const hours = Math.floor((seconds % 86400) / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = Math.floor(seconds % 60)
+
+  const parts: string[] = []
+  if (days > 0) parts.push(`${days}d`)
+  if (hours > 0) parts.push(`${hours}h`)
+  if (minutes > 0) parts.push(`${minutes}m`)
+  if (secs > 0 || parts.length === 0) parts.push(`${secs}s`)
+  return parts.join(' ')
+}
+
+function getTerminateCauseColor(cause: string | null): string {
+  if (!cause) return ''
+  switch (cause) {
+    case 'User-Request':
+      return 'text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950'
+    case 'Admin-Reset':
+      return 'text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950'
+    case 'Session-Timeout':
+      return 'text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-950'
+    case 'Idle-Timeout':
+      return 'text-yellow-600 bg-yellow-50 dark:text-yellow-400 dark:bg-yellow-950'
+    case 'NAS-Error':
+    case 'NAS-Reboot':
+      return 'text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-950'
+    default:
+      return 'text-muted-foreground bg-muted'
+  }
+}
+
+function truncateId(id: string, maxLen = 24): string {
+  if (!id) return '-'
+  if (id.length <= maxLen) return id
+  return `${id.slice(0, maxLen - 3)}...`
+}
+
+// ==================== Types ====================
+
+interface SessionUser {
+  id: string
+  username: string | null
+  fullName: string | null
+  email: string | null
+  company: string | null
+  status: string
+}
+
+interface SessionNas {
+  id: string
+  nasName: string
+  shortName: string | null
+  ipAddress: string | null
+  nasType: string
+  status: string
+  vendor: string | null
+  model: string | null
+}
+
+interface Session {
+  id: string
+  sessionId: string
+  username: string | null
+  nasIpAddress: string | null
+  nasPortId: string | null
+  nasPortType: string | null
+  acctSessionId: string | null
+  acctStartTime: string
+  acctStopTime: string | null
+  acctSessionTime: number | null
+  acctAuthentic: string | null
+  acctInputOctets: number | null
+  acctOutputOctets: number | null
+  acctInputPackets: number | null
+  acctOutputPackets: number | null
+  acctInputGigawords: number | null
+  acctOutputGigawords: number | null
+  calledStationId: string | null
+  callingStationId: string | null
+  connectInfo: string | null
+  framedProtocol: string | null
+  framedIpAddress: string | null
+  framedNetmask: string | null
+  assignIpType: string | null
+  nasId: string | null
+  nasPort: number | null
+  serviceType: string | null
+  terminateCause: string | null
+  updateCount: number
+  status: string
+  calculatedDuration: number
+  createdAt: string
+  updatedAt: string
+  user: SessionUser | null
+  nas: SessionNas | null
+}
+
+interface SessionsResponse {
+  sessions: Session[]
+  total: number
+  page: number
+  totalPages: number
+  stats: {
+    activeCount: number
+    todayCount: number
+    avgDuration: number
+    totalBandwidth: number
+  }
+}
+
+interface NasOption {
+  ipAddress: string
+  nasName: string
+}
+
+interface UserOption {
+  username: string
+  fullName: string | null
+}
+
+// ==================== Component ====================
+
+export function SessionsView() {
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
+
+  // State
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [nasFilter, setNasFilter] = useState<string>('all')
+  const [userFilter, setUserFilter] = useState<string>('all')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [sortField, setSortField] = useState<'acctStartTime' | 'calculatedDuration' | 'acctInputOctets'>('acctStartTime')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null)
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [disconnectDialog, setDisconnectDialog] = useState<{ open: boolean; session: Session | null }>({ open: false, session: null })
+  const [killDialog, setKillDialog] = useState<{ open: boolean; session: Session | null }>({ open: false, session: null })
+
+  // Fetch sessions
+  const { data, isLoading, isFetching, refetch } = useQuery<SessionsResponse>({
+    queryKey: ['sessions', page, search, statusFilter, nasFilter, userFilter, startDate, endDate],
+    queryFn: () => {
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: '15',
+      })
+      if (search) params.set('search', search)
+      if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter)
+      if (nasFilter && nasFilter !== 'all') params.set('nasIp', nasFilter)
+      if (userFilter && userFilter !== 'all') params.set('username', userFilter)
+      if (startDate) params.set('startDate', startDate)
+      if (endDate) params.set('endDate', endDate)
+      return fetch(`/api/sessions?${params}`).then(r => r.json())
+    },
+    refetchInterval: 15000, // Auto-refresh every 15s
+  })
+
+  // Fetch NAS options
+  const { data: nasOptions } = useQuery<NasOption[]>({
+    queryKey: ['nas-options-sessions'],
+    queryFn: () => fetch('/api/nas?limit=100&fields=ipAddress,nasName').then(r => r.json()).then(d => d.nasDevices || []),
+    staleTime: 60000,
+  })
+
+  // Fetch user options
+  const { data: userOptions } = useQuery<UserOption[]>({
+    queryKey: ['user-options-sessions'],
+    queryFn: () => fetch('/api/users?limit=100&fields=username,fullName').then(r => r.json()).then(d => d.users || []),
+    staleTime: 60000,
+  })
+
+  // Disconnect mutation
+  const disconnectMutation = useMutation({
+    mutationFn: ({ sessionId, terminateCause }: { sessionId: string; terminateCause: string }) =>
+      fetch('/api/sessions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, terminateCause }),
+      }).then(r => r.json()),
+    onSuccess: (data) => {
+      if (data.error) {
+        toast({ title: 'Error', description: data.error, variant: 'destructive' })
+      } else {
+        toast({ title: 'Session Disconnected', description: data.message })
+        setDisconnectDialog({ open: false, session: null })
+        setKillDialog({ open: false, session: null })
+        queryClient.invalidateQueries({ queryKey: ['sessions'] })
+        if (selectedSession) refetch()
+      }
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to disconnect session', variant: 'destructive' })
+    },
+  })
+
+  // Sort handler
+  const handleSort = useCallback((field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDir('desc')
+    }
+  }, [sortField])
+
+  // Sort sessions client-side
+  const sortedSessions = data?.sessions ? [...data.sessions].sort((a, b) => {
+    const aVal = a[sortField] || 0
+    const bVal = b[sortField] || 0
+    return sortDir === 'asc'
+      ? (aVal as number) - (bVal as number)
+      : (bVal as number) - (aVal as number)
+  }) : []
+
+  // Clear filters
+  const clearFilters = () => {
+    setSearch('')
+    setStatusFilter('all')
+    setNasFilter('all')
+    setUserFilter('all')
+    setStartDate('')
+    setEndDate('')
+    setPage(1)
+  }
+
+  const hasFilters = search || statusFilter !== 'all' || nasFilter !== 'all' || userFilter !== 'all' || startDate || endDate
+
+  const stats = data?.stats
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Activity className="h-5 w-5 text-emerald-500" />
+            <h2 className="text-2xl font-bold tracking-tight">Active Sessions</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {isLoading ? (
+              <Skeleton className="h-4 w-48 inline-block" />
+            ) : (
+              <>
+                <span className="text-emerald-600 font-semibold">{stats?.activeCount || 0}</span> sessions currently active
+                {stats && stats.activeCount > 0 && (
+                  <span className="inline-block ml-2">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                    </span>
+                  </span>
+                )}
+              </>
+            )}
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
+
+      {/* Live Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="relative overflow-hidden">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Sessions</p>
+                <p className="text-2xl font-bold text-emerald-600">
+                  {isLoading ? <Skeleton className="h-8 w-12" /> : (stats?.activeCount || 0)}
+                </p>
+              </div>
+              <div className="h-10 w-10 rounded-lg bg-emerald-50 dark:bg-emerald-950 flex items-center justify-center">
+                <Wifi className="h-5 w-5 text-emerald-600" />
+              </div>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 to-emerald-400" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Today&apos;s Total</p>
+                <p className="text-2xl font-bold">
+                  {isLoading ? <Skeleton className="h-8 w-12" /> : (stats?.todayCount || 0)}
+                </p>
+              </div>
+              <div className="h-10 w-10 rounded-lg bg-violet-50 dark:bg-violet-950 flex items-center justify-center">
+                <Clock className="h-5 w-5 text-violet-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Avg Duration</p>
+                <p className="text-2xl font-bold">
+                  {isLoading ? <Skeleton className="h-8 w-16" /> : formatDuration(stats?.avgDuration || 0)}
+                </p>
+              </div>
+              <div className="h-10 w-10 rounded-lg bg-amber-50 dark:bg-amber-950 flex items-center justify-center">
+                <Timer className="h-5 w-5 text-amber-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Bandwidth</p>
+                <p className="text-2xl font-bold">
+                  {isLoading ? <Skeleton className="h-8 w-16" /> : formatBytes(stats?.totalBandwidth || 0)}
+                </p>
+              </div>
+              <div className="h-10 w-10 rounded-lg bg-teal-50 dark:bg-teal-950 flex items-center justify-center">
+                <HardDrive className="h-5 w-5 text-teal-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Filter className="h-4 w-4" />
+                Filters
+              </div>
+              {hasFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs gap-1 h-7">
+                  <X className="h-3 w-3" />
+                  Clear All
+                </Button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+              {/* Search */}
+              <div className="relative sm:col-span-2">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search username or session ID..."
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+                  className="pl-8 h-9"
+                />
+              </div>
+
+              {/* Status */}
+              <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1) }}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="stopped">Stopped</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* NAS */}
+              <Select value={nasFilter} onValueChange={(v) => { setNasFilter(v); setPage(1) }}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="NAS" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All NAS</SelectItem>
+                  {nasOptions?.map(nas => (
+                    <SelectItem key={nas.ipAddress} value={nas.ipAddress}>
+                      {nas.nasName} ({nas.ipAddress})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* User */}
+              <Select value={userFilter} onValueChange={(v) => { setUserFilter(v); setPage(1) }}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="User" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Users</SelectItem>
+                  {userOptions?.map(u => (
+                    <SelectItem key={u.username} value={u.username}>
+                      {u.fullName || u.username}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Date Range */}
+              <div className="flex gap-1.5">
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => { setStartDate(e.target.value); setPage(1) }}
+                  className="h-9 text-xs"
+                  placeholder="From"
+                />
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => { setEndDate(e.target.value); setPage(1) }}
+                  className="h-9 text-xs"
+                  placeholder="To"
+                />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Sessions Table */}
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-xs">Session ID</TableHead>
+                  <TableHead className="text-xs">Username</TableHead>
+                  <TableHead className="text-xs">NAS</TableHead>
+                  <TableHead
+                    className="text-xs cursor-pointer select-none"
+                    onClick={() => handleSort('acctStartTime')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Start Time
+                      {sortField === 'acctStartTime' && (
+                        sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="text-xs cursor-pointer select-none"
+                    onClick={() => handleSort('calculatedDuration')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Duration
+                      {sortField === 'calculatedDuration' && (
+                        sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-xs">
+                    <div className="flex items-center gap-1">
+                      <ArrowDown className="h-3 w-3" />
+                      <ArrowUp className="h-3 w-3" />
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-xs">MAC</TableHead>
+                  <TableHead className="text-xs">IP</TableHead>
+                  <TableHead className="text-xs">Status</TableHead>
+                  <TableHead className="text-xs">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      {Array.from({ length: 10 }).map((_, j) => (
+                        <TableCell key={j}>
+                          <Skeleton className="h-4 w-full" />
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : sortedSessions.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
+                      <div className="flex flex-col items-center gap-2">
+                        <Activity className="h-8 w-8 opacity-30" />
+                        <p>No sessions found</p>
+                        {hasFilters && (
+                          <Button variant="link" size="sm" onClick={clearFilters}>
+                            Clear filters
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  sortedSessions.map((session) => {
+                    const inputBytes = (session.acctInputGigawords || 0) * 4294967296 + (session.acctInputOctets || 0)
+                    const outputBytes = (session.acctOutputGigawords || 0) * 4294967296 + (session.acctOutputOctets || 0)
+                    const isActive = session.status === 'active'
+
+                    return (
+                      <TableRow key={session.id} className="group">
+                        <TableCell className="font-mono text-xs max-w-[200px]">
+                          <span className="block truncate" title={session.sessionId}>
+                            {truncateId(session.sessionId)}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="text-sm font-medium">{session.username || '-'}</p>
+                            {session.user?.company && (
+                              <p className="text-xs text-muted-foreground">{session.user.company}</p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="text-sm">{session.nas?.shortName || session.calledStationId || '-'}</p>
+                            <p className="text-xs text-muted-foreground">{session.nasIpAddress || '-'}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {format(new Date(session.acctStartTime), 'MMM dd, HH:mm')}
+                        </TableCell>
+                        <TableCell className="text-xs font-mono">
+                          {formatDuration(session.calculatedDuration)}
+                        </TableCell>
+                        <TableCell className="text-xs font-mono">
+                          <span title={`↓ ${formatBytes(inputBytes)} / ↑ ${formatBytes(outputBytes)}`}>
+                            {formatBytes(inputBytes)}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-xs font-mono">
+                          {session.callingStationId || '-'}
+                        </TableCell>
+                        <TableCell className="text-xs font-mono">
+                          {session.framedIpAddress || '-'}
+                        </TableCell>
+                        <TableCell>
+                          {isActive ? (
+                            <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs gap-1">
+                              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                              Active
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-xs">
+                              Stopped
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => { setSelectedSession(session); setSheetOpen(true) }}
+                              title="View Details"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                            </Button>
+                            {isActive && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950"
+                                  onClick={() => setDisconnectDialog({ open: true, session })}
+                                  title="Disconnect"
+                                >
+                                  <Unplug className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                                  onClick={() => setKillDialog({ open: true, session })}
+                                  title="Kill Session"
+                                >
+                                  <Skull className="h-3.5 w-3.5" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Pagination */}
+          {data && data.totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t">
+              <p className="text-sm text-muted-foreground">
+                Showing {((page - 1) * 15) + 1} to {Math.min(page * 15, data.total)} of {data.total} sessions
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className="h-8 gap-1"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  Prev
+                </Button>
+                <span className="text-sm font-medium px-2">
+                  {page} / {data.totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.min(data.totalPages, p + 1))}
+                  disabled={page >= data.totalPages}
+                  className="h-8 gap-1"
+                >
+                  Next
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Session Detail Sheet */}
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Session Details</SheetTitle>
+            <SheetDescription>
+              {selectedSession?.status === 'active' ? 'Active session information' : 'Completed session details'}
+            </SheetDescription>
+          </SheetHeader>
+
+          {selectedSession && (
+            <ScrollArea className="mt-6">
+              <div className="space-y-6 pr-4">
+                {/* Status & Duration */}
+                <div className="flex items-center gap-3">
+                  {selectedSession.status === 'active' ? (
+                    <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 text-white gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                      Active
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">Stopped</Badge>
+                  )}
+                  <span className="text-sm text-muted-foreground">
+                    Duration: {formatDuration(selectedSession.calculatedDuration)}
+                  </span>
+                </div>
+
+                {/* User Info */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    User Information
+                  </h4>
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-1.5 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Username</span>
+                      <span className="font-medium">{selectedSession.username || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Full Name</span>
+                      <span>{selectedSession.user?.fullName || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Email</span>
+                      <span>{selectedSession.user?.email || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Company</span>
+                      <span>{selectedSession.user?.company || '-'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* NAS Info */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <Server className="h-4 w-4" />
+                    Network Access Server
+                  </h4>
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-1.5 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Name</span>
+                      <span className="font-medium">{selectedSession.nas?.nasName || selectedSession.calledStationId || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">IP Address</span>
+                      <span className="font-mono">{selectedSession.nasIpAddress || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Type</span>
+                      <span>{selectedSession.nas?.nasType || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Vendor / Model</span>
+                      <span>{selectedSession.nas?.vendor || '-'} {selectedSession.nas?.model || ''}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Port</span>
+                      <span>{selectedSession.nasPortId || selectedSession.nasPort || '-'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Session Info */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <Activity className="h-4 w-4" />
+                    Session Information
+                  </h4>
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-1.5 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Session ID</span>
+                      <span className="font-mono text-xs max-w-[200px] truncate" title={selectedSession.sessionId}>
+                        {selectedSession.sessionId}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Acct Session ID</span>
+                      <span className="font-mono text-xs max-w-[200px] truncate" title={selectedSession.acctSessionId || ''}>
+                        {selectedSession.acctSessionId || '-'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Start Time</span>
+                      <span>{format(new Date(selectedSession.acctStartTime), 'yyyy-MM-dd HH:mm:ss')}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Stop Time</span>
+                      <span>{selectedSession.acctStopTime ? format(new Date(selectedSession.acctStopTime), 'yyyy-MM-dd HH:mm:ss') : 'Still active'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Session Time</span>
+                      <span>{formatDuration(selectedSession.calculatedDuration)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Auth Type</span>
+                      <span>{selectedSession.acctAuthentic || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Service Type</span>
+                      <span>{selectedSession.serviceType || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Updates</span>
+                      <span>{selectedSession.updateCount}</span>
+                    </div>
+                    {selectedSession.terminateCause && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Terminate Cause</span>
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTerminateCauseColor(selectedSession.terminateCause)}`}>
+                          {selectedSession.terminateCause}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Network Info */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <Globe className="h-4 w-4" />
+                    Network Details
+                  </h4>
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-1.5 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Framed IP</span>
+                      <span className="font-mono">{selectedSession.framedIpAddress || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Netmask</span>
+                      <span className="font-mono">{selectedSession.framedNetmask || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">IP Assignment</span>
+                      <span>{selectedSession.assignIpType || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Protocol</span>
+                      <span>{selectedSession.framedProtocol || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Port Type</span>
+                      <span>{selectedSession.nasPortType || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Called Station</span>
+                      <span className="font-mono text-xs">{selectedSession.calledStationId || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Calling Station (MAC)</span>
+                      <span className="font-mono text-xs">{selectedSession.callingStationId || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Connect Info</span>
+                      <span>{selectedSession.connectInfo || '-'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bandwidth */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <Signal className="h-4 w-4" />
+                    Bandwidth Usage
+                  </h4>
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-1.5 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Download (Input)</span>
+                      <span className="font-mono">{formatBytes((selectedSession.acctInputGigawords || 0) * 4294967296 + (selectedSession.acctInputOctets || 0))}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Upload (Output)</span>
+                      <span className="font-mono">{formatBytes((selectedSession.acctOutputGigawords || 0) * 4294967296 + (selectedSession.acctOutputOctets || 0))}</span>
+                    </div>
+                    <Separator className="my-1" />
+                    <div className="flex justify-between font-semibold">
+                      <span>Total</span>
+                      <span className="font-mono">
+                        {formatBytes(
+                          ((selectedSession.acctInputGigawords || 0) * 4294967296 + (selectedSession.acctInputOctets || 0)) +
+                          ((selectedSession.acctOutputGigawords || 0) * 4294967296 + (selectedSession.acctOutputOctets || 0))
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Input Packets</span>
+                      <span className="font-mono">{(selectedSession.acctInputPackets || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Output Packets</span>
+                      <span className="font-mono">{(selectedSession.acctOutputPackets || 0).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </ScrollArea>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Disconnect Dialog */}
+      <AlertDialog open={disconnectDialog.open} onOpenChange={(open) => setDisconnectDialog({ open, session: null })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disconnect Session</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to gracefully disconnect this session?
+              <br />
+              <span className="font-mono text-xs mt-1 block">{disconnectDialog.session?.sessionId}</span>
+              <span className="text-xs mt-1 block">User: {disconnectDialog.session?.username}</span>
+              The session will be terminated with cause &quot;Admin-Reset&quot;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (disconnectDialog.session) {
+                  disconnectMutation.mutate({
+                    sessionId: disconnectDialog.session.sessionId,
+                    terminateCause: 'Admin-Reset',
+                  })
+                }
+              }}
+              className="bg-amber-600 hover:bg-amber-700"
+            >
+              Disconnect
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Kill Session Dialog */}
+      <AlertDialog open={killDialog.open} onOpenChange={(open) => setKillDialog({ open, session: null })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-600">Kill Session</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="font-semibold text-red-600">Warning:</span> This will forcefully terminate the session immediately.
+              <br />
+              <span className="font-mono text-xs mt-1 block">{killDialog.session?.sessionId}</span>
+              <span className="text-xs mt-1 block">User: {killDialog.session?.username}</span>
+              The session will be terminated with cause &quot;Admin-Reset&quot;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (killDialog.session) {
+                  disconnectMutation.mutate({
+                    sessionId: killDialog.session.sessionId,
+                    terminateCause: 'Admin-Reset',
+                  })
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Kill Session
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  )
+}
