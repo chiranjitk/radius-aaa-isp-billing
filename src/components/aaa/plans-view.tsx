@@ -397,31 +397,23 @@ export function PlansView() {
   // ─── Render ──────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Billing Plans</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage subscription packages and pricing
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant={comparisonMode ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => {
-              setComparisonMode(!comparisonMode)
-              setSelectedForCompare([])
-            }}
-          >
-            <GitCompareArrows className="mr-2 h-4 w-4" />
-            Compare
-          </Button>
-          <Button size="sm" onClick={openCreate}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Plan
-          </Button>
-        </div>
+      {/* Action Bar */}
+      <div className="flex items-center justify-end gap-2">
+        <Button
+          variant={comparisonMode ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => {
+            setComparisonMode(!comparisonMode)
+            setSelectedForCompare([])
+          }}
+        >
+          <GitCompareArrows className="mr-2 h-4 w-4" />
+          Compare
+        </Button>
+        <Button size="sm" onClick={openCreate}>
+          <Plus className="mr-2 h-4 w-4" />
+          Create Plan
+        </Button>
       </div>
 
       {/* Plan Type Summary Cards */}

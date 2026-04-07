@@ -326,12 +326,8 @@ export function BillingView() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Invoices & Payments</h1>
-          <p className="text-sm text-muted-foreground">Manage billing invoices, track payments, and monitor revenue.</p>
-        </div>
+      {/* Action Bar */}
+      <div className="flex items-center justify-end gap-2">
         <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
           <Plus className="h-4 w-4" />
           Create Invoice

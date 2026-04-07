@@ -250,12 +250,12 @@ export function DashboardView() {
 
   const { data, isLoading, isError, error } = useQuery<DashboardData>({
     queryKey: ['dashboard'],
-    queryFn: () => fetch('/api/dashboard').then((res) => res.json()),
+    queryFn: async () => { const res = await fetch('/api/dashboard'); if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); },
     refetchInterval: 30000,
   })
 
   const seedMutation = useMutation({
-    mutationFn: () => fetch('/api/seed', { method: 'POST' }).then((res) => res.json()),
+    mutationFn: async () => { const res = await fetch('/api/seed', { method: 'POST' }); if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); },
     onSuccess: () => {
       toast.success('Demo data seeded successfully!')
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
@@ -290,22 +290,22 @@ export function DashboardView() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">System overview and real-time monitoring</p>
-        </div>
+      {/* Actions Bar */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          Real-time system monitoring &middot; Last updated: {format(new Date(), 'HH:mm:ss')}
+        </p>
         <Button
           onClick={() => seedMutation.mutate()}
           disabled={seedMutation.isPending}
           variant="outline"
+          size="sm"
           className="shrink-0"
         >
           {seedMutation.isPending ? (
-            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+            <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
           ) : (
-            <Database className="mr-2 h-4 w-4" />
+            <Database className="mr-1.5 h-3.5 w-3.5" />
           )}
           Seed Demo Data
         </Button>

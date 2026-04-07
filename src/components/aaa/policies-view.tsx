@@ -317,7 +317,7 @@ export function PoliciesView() {
   // Fetch policies
   const { data, isLoading, isFetching } = useQuery<PoliciesResponse>({
     queryKey: ['policies', page, search, typeFilter, statusFilter],
-    queryFn: () => {
+    queryFn: async () => {
       const params = new URLSearchParams({
         page: String(page),
         limit: '15',
@@ -325,18 +325,19 @@ export function PoliciesView() {
       if (search) params.set('search', search)
       if (typeFilter && typeFilter !== 'all') params.set('type', typeFilter)
       if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter)
-      return fetch(`/api/policies?${params}`).then(r => r.json())
+      const res = await fetch(`/api/policies?${params}`); if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json()
     },
   })
 
   // Create policy mutation
   const createMutation = useMutation({
-    mutationFn: (body: { name: string; description: string; type: string; priority: number; status: string; rules: RuleFormData[] }) =>
-      fetch('/api/policies', {
+    mutationFn: async (body: { name: string; description: string; type: string; priority: number; status: string; rules: RuleFormData[] }) => {
+      const res = await fetch('/api/policies', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-      }).then(r => r.json()),
+      }); if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json()
+    },
     onSuccess: (data) => {
       if (data.error) {
         toast({ title: 'Error', description: data.error, variant: 'destructive' })
@@ -354,12 +355,13 @@ export function PoliciesView() {
 
   // Update policy mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, body }: { id: string; body: { name: string; description: string; type: string; priority: number; status: string; rules: RuleFormData[] } }) =>
-      fetch(`/api/policies/${id}`, {
+    mutationFn: async ({ id, body }: { id: string; body: { name: string; description: string; type: string; priority: number; status: string; rules: RuleFormData[] } }) => {
+      const res = await fetch(`/api/policies/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-      }).then(r => r.json()),
+      }); if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json()
+    },
     onSuccess: (data) => {
       if (data.error) {
         toast({ title: 'Error', description: data.error, variant: 'destructive' })
@@ -377,8 +379,9 @@ export function PoliciesView() {
 
   // Delete policy mutation
   const deleteMutation = useMutation({
-    mutationFn: (id: string) =>
-      fetch(`/api/policies/${id}`, { method: 'DELETE' }).then(r => r.json()),
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/policies/${id}`, { method: 'DELETE' }); if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json()
+    },
     onSuccess: (data) => {
       if (data.error) {
         toast({ title: 'Error', description: data.error, variant: 'destructive' })
@@ -395,9 +398,9 @@ export function PoliciesView() {
 
   // Duplicate policy mutation
   const duplicateMutation = useMutation({
-    mutationFn: (policy: Policy) => {
+    mutationFn: async (policy: Policy) => {
       const newName = `${policy.name} (Copy)`
-      return fetch('/api/policies', {
+      const res = await fetch('/api/policies', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -415,7 +418,7 @@ export function PoliciesView() {
             priority: r.priority,
           })),
         }),
-      }).then(r => r.json())
+      }); if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json()
     },
     onSuccess: (data) => {
       if (data.error) {
@@ -517,32 +520,21 @@ export function PoliciesView() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-emerald-500" />
-            <h2 className="text-2xl font-bold tracking-tight">Policy Engine</h2>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Authorization and access control rules
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setTemplateDialogOpen(true)}
-            className="gap-2"
-          >
-            <Sparkles className="h-4 w-4" />
-            Templates
-          </Button>
-          <Button size="sm" onClick={openCreateDialog} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Create Policy
-          </Button>
-        </div>
+      {/* Action Bar */}
+      <div className="flex items-center justify-end gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setTemplateDialogOpen(true)}
+          className="gap-2"
+        >
+          <Sparkles className="h-4 w-4" />
+          Templates
+        </Button>
+        <Button size="sm" onClick={openCreateDialog} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Create Policy
+        </Button>
       </div>
 
       {/* Stats Row */}

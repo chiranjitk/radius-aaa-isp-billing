@@ -342,11 +342,12 @@ export function SettingsView() {
     try {
       const entries = Object.entries(modifiedSettings)
       for (const [key, value] of entries) {
-        await fetch('/api/settings', {
+        const res = await fetch('/api/settings', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ key, value }),
         })
+        if (!res.ok) throw new Error(`Failed to save setting "${key}": HTTP ${res.status}`)
       }
       // Update local state
       const updatedSettings = { ...settings }
@@ -414,28 +415,22 @@ export function SettingsView() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">System Settings</h1>
-          <p className="text-sm text-muted-foreground">Configure system preferences, RADIUS, billing, and view audit logs.</p>
+      {/* Action Bar */}
+      {hasChanges && (
+        <div className="flex items-center justify-end gap-2">
+          <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800">
+            Unsaved changes
+          </Badge>
+          <Button variant="outline" size="sm" onClick={() => setModifiedSettings({})} className="gap-1.5">
+            <RotateCcw className="h-3.5 w-3.5" />
+            Discard
+          </Button>
+          <Button size="sm" onClick={saveSettings} disabled={saving} className="gap-1.5">
+            <Save className="h-3.5 w-3.5" />
+            {saving ? 'Saving...' : 'Save All'}
+          </Button>
         </div>
-        {hasChanges && (
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800">
-              Unsaved changes
-            </Badge>
-            <Button variant="outline" size="sm" onClick={() => setModifiedSettings({})} className="gap-1.5">
-              <RotateCcw className="h-3.5 w-3.5" />
-              Discard
-            </Button>
-            <Button size="sm" onClick={saveSettings} disabled={saving} className="gap-1.5">
-              <Save className="h-3.5 w-3.5" />
-              {saving ? 'Saving...' : 'Save All'}
-            </Button>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Settings Tabs */}
       <Tabs defaultValue="general">

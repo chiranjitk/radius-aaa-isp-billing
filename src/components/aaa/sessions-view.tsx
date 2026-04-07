@@ -227,7 +227,7 @@ export function SessionsView() {
   // Fetch sessions
   const { data, isLoading, isFetching, refetch } = useQuery<SessionsResponse>({
     queryKey: ['sessions', page, search, statusFilter, nasFilter, userFilter, startDate, endDate],
-    queryFn: () => {
+    queryFn: async () => {
       const params = new URLSearchParams({
         page: String(page),
         limit: '15',
@@ -238,7 +238,7 @@ export function SessionsView() {
       if (userFilter && userFilter !== 'all') params.set('username', userFilter)
       if (startDate) params.set('startDate', startDate)
       if (endDate) params.set('endDate', endDate)
-      return fetch(`/api/sessions?${params}`).then(r => r.json())
+      const res = await fetch(`/api/sessions?${params}`); if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json()
     },
     refetchInterval: 15000, // Auto-refresh every 15s
   })
@@ -246,25 +246,30 @@ export function SessionsView() {
   // Fetch NAS options
   const { data: nasOptions } = useQuery<NasOption[]>({
     queryKey: ['nas-options-sessions'],
-    queryFn: () => fetch('/api/nas?limit=100&fields=ipAddress,nasName').then(r => r.json()).then(d => d.nasDevices || []),
+    queryFn: async () => {
+      const res = await fetch('/api/nas?limit=100&fields=ipAddress,nasName'); if (!res.ok) throw new Error(`HTTP ${res.status}`); const d = await res.json(); return d.nasDevices || d.devices || []
+    },
     staleTime: 60000,
   })
 
   // Fetch user options
   const { data: userOptions } = useQuery<UserOption[]>({
     queryKey: ['user-options-sessions'],
-    queryFn: () => fetch('/api/users?limit=100&fields=username,fullName').then(r => r.json()).then(d => d.users || []),
+    queryFn: async () => {
+      const res = await fetch('/api/users?limit=100&fields=username,fullName'); if (!res.ok) throw new Error(`HTTP ${res.status}`); const d = await res.json(); return d.users || []
+    },
     staleTime: 60000,
   })
 
   // Disconnect mutation
   const disconnectMutation = useMutation({
-    mutationFn: ({ sessionId, terminateCause }: { sessionId: string; terminateCause: string }) =>
-      fetch('/api/sessions', {
+    mutationFn: async ({ sessionId, terminateCause }: { sessionId: string; terminateCause: string }) => {
+      const res = await fetch('/api/sessions', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, terminateCause }),
-      }).then(r => r.json()),
+      }); if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json()
+    },
     onSuccess: (data) => {
       if (data.error) {
         toast({ title: 'Error', description: data.error, variant: 'destructive' })
@@ -317,31 +322,8 @@ export function SessionsView() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-emerald-500" />
-            <h2 className="text-2xl font-bold tracking-tight">Active Sessions</h2>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {isLoading ? (
-              <Skeleton className="h-4 w-48 inline-block" />
-            ) : (
-              <>
-                <span className="text-emerald-600 font-semibold">{stats?.activeCount || 0}</span> sessions currently active
-                {stats && stats.activeCount > 0 && (
-                  <span className="inline-block ml-2">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                    </span>
-                  </span>
-                )}
-              </>
-            )}
-          </p>
-        </div>
+      {/* Action Bar */}
+      <div className="flex items-center justify-end gap-2">
         <Button
           variant="outline"
           size="sm"

@@ -377,7 +377,7 @@ function UserFormDialog({
   // Fetch groups for multi-select
   const { data: groupsData } = useQuery<{ groups: RadGroup[] }>({
     queryKey: ['groups-list'],
-    queryFn: () => fetch('/api/groups').then((r) => r.json()),
+    queryFn: async () => { const res = await fetch('/api/groups'); if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); },
   })
 
   const groups = groupsData?.groups || []
@@ -864,7 +864,7 @@ function UserDetailsSheet({
 }) {
   const { data: user, isLoading } = useQuery<UserDetail>({
     queryKey: ['user-detail', userId],
-    queryFn: () => fetch(`/api/users/${userId}`).then((r) => r.json()),
+    queryFn: async () => { const res = await fetch(`/api/users/${userId}`); if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); },
     enabled: !!userId && open,
   })
 
@@ -1248,21 +1248,23 @@ export default function UsersView() {
     refetch,
   } = useQuery<UsersResponse>({
     queryKey: ['users', search, statusFilter, groupFilter, page, limit],
-    queryFn: () => {
+    queryFn: async () => {
       const params = new URLSearchParams()
       if (search) params.set('search', search)
       if (statusFilter !== 'all') params.set('status', statusFilter)
       if (groupFilter !== 'all') params.set('group', groupFilter)
       params.set('page', String(page))
       params.set('limit', String(limit))
-      return fetch(`/api/users?${params.toString()}`).then((r) => r.json())
+      const res = await fetch(`/api/users?${params.toString()}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      return res.json()
     },
   })
 
   // Fetch groups for filter dropdown
   const { data: groupsData } = useQuery<{ groups: RadGroup[] }>({
     queryKey: ['groups-filter'],
-    queryFn: () => fetch('/api/groups').then((r) => r.json()),
+    queryFn: async () => { const res = await fetch('/api/groups'); if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); },
   })
 
   const groups = groupsData?.groups || []
@@ -1331,15 +1333,17 @@ export default function UsersView() {
 
   const handleEditUser = (user: UserListItem) => {
     // Fetch full user details for editing
-    fetch(`/api/users/${user.id}`)
-      .then((r) => r.json())
-      .then((data: UserDetail) => {
+    (async () => {
+      try {
+        const res = await fetch(`/api/users/${user.id}`)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data: UserDetail = await res.json()
         setEditUser(data)
         setFormDialogOpen(true)
-      })
-      .catch(() => {
+      } catch {
         toast.error('Failed to load user details')
-      })
+      }
+    })()
   }
 
   const handleViewUser = (userId: string) => {
@@ -1365,17 +1369,8 @@ export default function UsersView() {
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <Users className="h-6 w-6" />
-              RADIUS Users
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Manage RADIUS user accounts, authentication settings, and group assignments.
-            </p>
-          </div>
+        {/* Action Bar */}
+        <div className="flex items-center justify-end gap-2">
           <Button onClick={handleAddUser} className="gap-2 shrink-0">
             <Plus className="h-4 w-4" />
             Add User

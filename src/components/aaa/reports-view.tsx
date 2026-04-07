@@ -95,24 +95,18 @@ export function ReportsView() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Reports & Analytics</h1>
-          <p className="text-sm text-muted-foreground">Visualize system data, track trends, and gain insights.</p>
-        </div>
+      {/* Action Bar */}
+      <div className="flex items-center justify-end gap-2">
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-36" />
-            <span className="text-muted-foreground">to</span>
-            <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-36" />
-          </div>
-          <Button variant="outline" onClick={handleExport} className="gap-2">
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-36" />
+          <span className="text-muted-foreground">to</span>
+          <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-36" />
         </div>
+        <Button variant="outline" onClick={handleExport} className="gap-2">
+          <Download className="h-4 w-4" />
+          Export
+        </Button>
       </div>
 
       {/* Report Type Tabs */}

@@ -602,32 +602,21 @@ export function NasView() {
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        {/* ========== HEADER ========== */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <Server className="h-6 w-6" />
-              NAS Devices
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Manage network access servers and RADIUS clients
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setTemplateDialogOpen(true)}
-              className="hidden sm:flex"
-            >
-              <LayoutGrid className="h-4 w-4 mr-2" />
-              Templates
-            </Button>
-            <Button size="sm" onClick={openCreateDialog}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add NAS Device
-            </Button>
-          </div>
+        {/* ========== ACTION BAR ========== */}
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setTemplateDialogOpen(true)}
+            className="hidden sm:flex"
+          >
+            <LayoutGrid className="h-4 w-4 mr-2" />
+            Templates
+          </Button>
+          <Button size="sm" onClick={openCreateDialog}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add NAS Device
+          </Button>
         </div>
 
         {/* ========== STATS ROW ========== */}
