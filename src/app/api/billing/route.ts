@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { username, planId, subscriptionId, amount, tax, total, dueDate, notes } = body
+    const taxAmount = parseFloat(tax || 0)
 
     if (!username || amount === undefined || total === undefined || !dueDate) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
         planId: planId || null,
         subscriptionId: subscriptionId || null,
         amount: parseFloat(amount),
-        tax: parseFloat(tax || 0),
+        taxAmount,
         total: parseFloat(total),
         status: 'pending',
         dueDate: new Date(dueDate),

@@ -250,7 +250,7 @@ export async function GET() {
       username: inv.username,
       fullName: inv.user?.fullName || null,
       amount: inv.amount,
-      tax: inv.tax,
+      taxAmount: inv.taxAmount,
       total: inv.total,
       status: inv.status,
       dueDate: inv.dueDate,

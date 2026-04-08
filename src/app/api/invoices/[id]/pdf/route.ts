@@ -44,7 +44,7 @@ export async function GET(
 
     const user = invoice.user
     const plan = invoice.plan
-    const taxRate = invoice.amount > 0 ? ((invoice.tax / invoice.amount) * 100).toFixed(1) : '10.0'
+    const taxRate = invoice.amount > 0 ? ((invoice.taxAmount / invoice.amount) * 100).toFixed(1) : '10.0'
 
     const statusColors: Record<string, string> = {
       paid: '#059669',
@@ -458,7 +458,7 @@ export async function GET(
           <td class="description">Tax (${taxRate}%)</td>
           <td></td>
           <td></td>
-          <td>${fmtCurrency(invoice.tax)}</td>
+          <td>${fmtCurrency(invoice.taxAmount)}</td>
         </tr>
       </tbody>
     </table>
@@ -472,7 +472,7 @@ export async function GET(
         </div>
         <div class="total-row">
           <span>Tax</span>
-          <span>${fmtCurrency(invoice.tax)}</span>
+          <span>${fmtCurrency(invoice.taxAmount)}</span>
         </div>
         <div class="total-row final">
           <span>Total</span>

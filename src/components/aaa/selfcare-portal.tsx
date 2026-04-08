@@ -1156,7 +1156,7 @@ function BillingTab() {
                   <div className="flex items-center gap-3">
                     <div className="text-right">
                       <p className="text-base font-bold">${inv.total.toFixed(2)}</p>
-                      {inv.tax > 0 && <p className="text-[10px] text-muted-foreground">incl. ${inv.tax.toFixed(2)} tax</p>}
+                      {inv.taxAmount > 0 && <p className="text-[10px] text-muted-foreground">incl. ${inv.taxAmount.toFixed(2)} tax</p>}
                     </div>
                     <div className="flex gap-1.5">
                       <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => toast.info('Invoice download simulated')}>

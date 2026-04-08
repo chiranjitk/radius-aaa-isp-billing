@@ -481,7 +481,7 @@ export function BillingView() {
                     inv.username,
                     inv.plan?.name || '',
                     inv.amount,
-                    inv.tax,
+                    inv.taxAmount,
                     inv.total,
                     inv.status,
                     formatDate(inv.dueDate),
@@ -508,7 +508,7 @@ export function BillingView() {
                     inv.username,
                     inv.plan?.name || '',
                     inv.amount,
-                    inv.tax,
+                    inv.taxAmount,
                     inv.total,
                     inv.status,
                     formatDate(inv.dueDate),
@@ -726,7 +726,7 @@ export function BillingView() {
                         </TableCell>
                         <TableCell className="text-sm">{inv.plan?.name || '—'}</TableCell>
                         <TableCell className="text-right text-sm">{formatCurrency(inv.amount)}</TableCell>
-                        <TableCell className="text-right text-sm">{formatCurrency(inv.tax)}</TableCell>
+                        <TableCell className="text-right text-sm">{formatCurrency(inv.taxAmount)}</TableCell>
                         <TableCell className="text-right text-sm font-medium">{formatCurrency(inv.total)}</TableCell>
                         <TableCell>
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize chip ${getStatusBadge(inv.status)} ${getStatusGlow(inv.status)}`}>
@@ -1119,7 +1119,7 @@ export function BillingView() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Tax</span>
-                    <span>{formatCurrency(selectedInvoice.tax)}</span>
+                    <span>{formatCurrency(selectedInvoice.taxAmount)}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between font-bold">
