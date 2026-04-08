@@ -462,7 +462,7 @@ function RegistrationTab() {
                   <div
                     key={plan.id}
                     onClick={() => updateField('planId', plan.id)}
-                    className={`relative rounded-lg border-2 p-4 cursor-pointer transition-all hover:shadow-md ${
+                    className={`relative rounded-lg border-2 p-4 cursor-pointer transition-all hover:shadow-md card-glow ${
                       formData.planId === plan.id
                         ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-sm'
                         : 'border-border hover:border-emerald-300 dark:hover:border-emerald-700'
@@ -1432,7 +1432,7 @@ export function SelfcarePortal() {
             key={tab.id}
             variant={activeTab === tab.id ? 'default' : 'ghost'}
             size="sm"
-            className={`gap-1.5 text-xs rounded-lg transition-all flex-1 min-w-[120px] justify-center ${
+            className={`gap-1.5 text-xs rounded-lg transition-all flex-1 min-w-[120px] justify-center animated-underline ${
               activeTab === tab.id
                 ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted'

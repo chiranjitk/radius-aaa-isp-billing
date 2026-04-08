@@ -546,7 +546,7 @@ function OnlineUsersPanel() {
 
   return (
     <FadeIn delay={300}>
-      <Card className="border-0 shadow-md inset-card">
+      <Card className="border-0 shadow-md inset-card card-glow">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -567,7 +567,7 @@ function OnlineUsersPanel() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-xs text-muted-foreground hover:text-foreground h-7 px-2 ripple"
+                className="text-xs text-muted-foreground hover:text-foreground h-7 px-2 ripple animated-underline"
                 onClick={() => setActiveView('sessions')}
               >
                 View All <ChevronRight className="ml-0.5 h-3 w-3" />
@@ -608,7 +608,7 @@ function OnlineUsersPanel() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-xs h-8 gap-1 ripple"
+                    className="text-xs h-8 gap-1 ripple animated-underline"
                     onClick={() => setActiveView('sessions')}
                   >
                     View All {total} Active Sessions <ArrowRight className="h-3 w-3" />
@@ -677,7 +677,7 @@ function LiveActivityFeed({ sessions }: { sessions: DashboardData['recentSession
 
   return (
     <FadeIn delay={600}>
-      <Card className="border-0 shadow-md inset-card">
+      <Card className="border-0 shadow-md inset-card card-glow">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
@@ -688,7 +688,7 @@ function LiveActivityFeed({ sessions }: { sessions: DashboardData['recentSession
                 Live Activity
                 <span className="inline-flex items-center gap-1 text-[10px] font-normal text-muted-foreground">
                   <span className="pulse-dot bg-emerald-500" />
-                  Live
+                  <span className="breathe">Live</span>
                 </span>
               </CardTitle>
               <CardDescription className="text-xs">Recent system events</CardDescription>
@@ -1069,7 +1069,7 @@ function SystemActivityTimeline() {
                   System Activity
                   <span className="inline-flex items-center gap-1 text-[10px] font-normal text-muted-foreground">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Live
+                    <span className="breathe">Live</span>
                   </span>
                 </CardTitle>
                 <CardDescription className="text-xs">Recent system events across all services</CardDescription>
@@ -1078,7 +1078,7 @@ function SystemActivityTimeline() {
             <Button
               variant="ghost"
               size="sm"
-              className="text-xs text-muted-foreground hover:text-foreground h-7 px-2 ripple"
+              className="text-xs text-muted-foreground hover:text-foreground h-7 px-2 ripple animated-underline"
               onClick={() => toast.info('Full activity log available in the Sessions view')}
             >
               View All <ChevronRight className="ml-0.5 h-3 w-3" />
@@ -1822,7 +1822,7 @@ export function DashboardView() {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         {/* Recent Sessions Table */}
         <FadeIn delay={800}>
-          <Card className="border-0 shadow-md inset-card">
+          <Card className="border-0 shadow-md inset-card card-glow">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -1832,7 +1832,7 @@ export function DashboardView() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-xs text-muted-foreground hover:text-foreground h-7 px-2 ripple"
+                  className="text-xs text-muted-foreground hover:text-foreground h-7 px-2 ripple animated-underline"
                   onClick={() => setActiveView('sessions')}
                 >
                   View All <ChevronRight className="ml-0.5 h-3 w-3" />
@@ -1927,7 +1927,7 @@ export function DashboardView() {
 
         {/* Recent Invoices Table */}
         <FadeIn delay={900}>
-          <Card className="border-0 shadow-md inset-card">
+          <Card className="border-0 shadow-md inset-card card-glow">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -1937,7 +1937,7 @@ export function DashboardView() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-xs text-muted-foreground hover:text-foreground h-7 px-2 ripple"
+                  className="text-xs text-muted-foreground hover:text-foreground h-7 px-2 ripple animated-underline"
                   onClick={() => setActiveView('billing')}
                 >
                   View All <ChevronRight className="ml-0.5 h-3 w-3" />

@@ -2,7 +2,7 @@
 
 import { useState, useCallback, type FormEvent } from 'react'
 import { useTheme } from 'next-themes'
-import { useAppStore } from '@/lib/store'
+import { useAppStore, type UserRole } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,6 +10,10 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from '@/components/ui/radio-group'
 import {
   Radio,
   Shield,
@@ -20,8 +24,18 @@ import {
   Loader2,
   ArrowRight,
   Monitor,
+  Crown,
+  Wrench,
+  BookOpen,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
+
+const roleOptions: { value: UserRole; label: string; description: string; icon: React.ElementType; color: string }[] = [
+  { value: 'admin', label: 'Administrator', description: 'Full system access', icon: Crown, color: 'text-emerald-600 dark:text-emerald-400' },
+  { value: 'operator', label: 'Operator', description: 'Limited management', icon: Wrench, color: 'text-amber-600 dark:text-amber-400' },
+  { value: 'viewer', label: 'Viewer', description: 'Read-only access', icon: BookOpen, color: 'text-slate-600 dark:text-slate-400' },
+]
 
 export function LoginView() {
   const { theme, setTheme } = useTheme()
@@ -33,9 +47,10 @@ export function LoginView() {
   const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [demoRole, setDemoRole] = useState<UserRole>('admin')
 
   const handleLogin = useCallback(
-    async (e?: FormEvent) => {
+    async (e?: FormEvent, role: UserRole = 'admin') => {
       if (e) e.preventDefault()
       setError('')
 
@@ -52,10 +67,10 @@ export function LoginView() {
       // Accept any non-empty credentials
       if (username.trim() && password.trim()) {
         setAuthenticated(true)
-        setUser({ username: username.trim(), role: 'admin' })
+        setUser({ username: username.trim(), role })
         setActiveView('dashboard')
         toast.success(`Welcome back, ${username.trim()}!`, {
-          description: 'Successfully authenticated.',
+          description: `Logged in as ${roleOptions.find(r => r.value === role)?.label ?? role}.`,
         })
       } else {
         setError('Invalid credentials. Please try again.')
@@ -69,7 +84,11 @@ export function LoginView() {
   const handleDemoLogin = useCallback(() => {
     setUsername('admin')
     setPassword('admin')
-  }, [])
+    // Trigger actual login after setting credentials
+    setTimeout(() => {
+      handleLogin(undefined, demoRole)
+    }, 50)
+  }, [demoRole, handleLogin])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -96,7 +115,7 @@ export function LoginView() {
       <div className="absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-primary/[0.03] blur-3xl" />
 
       {/* Login Card */}
-      <Card className="glass-card gradient-border card-shine relative z-10 w-full max-w-md mx-4 animate-fade-in-up">
+      <Card className="glass-card gradient-border card-shine card-glow relative z-10 w-full max-w-md mx-4 animate-fade-in-up">
         <CardHeader className="space-y-4 pb-2 pt-8 px-8">
           {/* Logo + Branding */}
           <div className="flex flex-col items-center space-y-3">
@@ -129,7 +148,7 @@ export function LoginView() {
         </CardHeader>
 
         <CardContent className="px-8 pb-2 pt-4">
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={(e) => handleLogin(e)} className="space-y-4">
             {/* Secure Connection Badge */}
             <div className="flex items-center justify-center mb-2">
               <Badge
@@ -250,6 +269,41 @@ export function LoginView() {
           {/* Demo Login */}
           <div className="mt-4">
             <Separator className="mb-4" />
+            <p className="text-xs text-muted-foreground mb-3 text-center font-medium">Quick Demo Access</p>
+
+            {/* Role Selector */}
+            <RadioGroup value={demoRole} onValueChange={(v) => setDemoRole(v as UserRole)} className="space-y-2 mb-4">
+              {roleOptions.map((role) => {
+                const Icon = role.icon
+                return (
+                  <label
+                    key={role.value}
+                    htmlFor={`role-${role.value}`}
+                    className={cn(
+                      'flex items-center gap-3 rounded-lg border px-3 py-2.5 cursor-pointer transition-all duration-200',
+                      demoRole === role.value
+                        ? 'border-primary/40 bg-primary/5 shadow-sm'
+                        : 'border-border/40 bg-muted/20 hover:bg-muted/40 hover:border-border/60'
+                    )}
+                  >
+                    <RadioGroupItem value={role.value} id={`role-${role.value}`} />
+                    <Icon className={cn('h-4 w-4 shrink-0', demoRole === role.value ? role.color : 'text-muted-foreground')} />
+                    <div className="flex-1 min-w-0">
+                      <p className={cn('text-sm font-medium leading-none', demoRole === role.value && 'text-foreground')}>
+                        {role.label}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{role.description}</p>
+                    </div>
+                    {demoRole === role.value && (
+                      <Badge variant="secondary" className="text-[9px] font-bold px-1.5 h-4 shrink-0">
+                        ACTIVE
+                      </Badge>
+                    )}
+                  </label>
+                )
+              })}
+            </RadioGroup>
+
             <Button
               type="button"
               variant="outline"
@@ -257,8 +311,17 @@ export function LoginView() {
               onClick={handleDemoLogin}
               disabled={loading}
             >
-              <Monitor className="h-4 w-4 mr-2 text-muted-foreground" />
-              Demo Login (admin / admin)
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Logging in as {roleOptions.find(r => r.value === demoRole)?.label}...
+                </>
+              ) : (
+                <>
+                  <Monitor className="h-4 w-4 mr-2 text-muted-foreground" />
+                  Demo Login ({roleOptions.find(r => r.value === demoRole)?.label})
+                </>
+              )}
             </Button>
           </div>
         </CardContent>

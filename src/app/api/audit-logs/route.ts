@@ -3,12 +3,13 @@ import { db } from '@/lib/db'
 import { Prisma } from '@prisma/client'
 
 // GET /api/audit-logs — List audit logs with filters & pagination
-// Query params: page, limit, action, module, startDate, endDate
+// Query params: page, limit, action, module, startDate, endDate, username
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const action = searchParams.get('action') || ''
     const module_ = searchParams.get('module') || ''
+    const username = searchParams.get('username') || ''
     const startDate = searchParams.get('startDate') || ''
     const endDate = searchParams.get('endDate') || ''
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
@@ -18,6 +19,9 @@ export async function GET(request: NextRequest) {
 
     if (action) where.action = action
     if (module_) where.module = module_
+    if (username) {
+      where.username = { contains: username, mode: 'insensitive' }
+    }
 
     if (startDate || endDate) {
       where.timestamp = {}
@@ -39,11 +43,35 @@ export async function GET(request: NextRequest) {
       db.auditLog.count({ where }),
     ])
 
+    // Compute summary stats
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const [totalEvents24h, loginSuccessCount, loginTotalCount] = await Promise.all([
+      db.auditLog.count({
+        where: { timestamp: { gte: oneDayAgo } },
+      }),
+      db.auditLog.count({
+        where: { timestamp: { gte: oneDayAgo }, action: { in: ['login', 'auth_success'] } },
+      }),
+      db.auditLog.count({
+        where: { timestamp: { gte: oneDayAgo }, action: { in: ['login', 'auth_success', 'auth_failed', 'login_failed'] } },
+      }),
+    ])
+
+    const authSuccessRate = loginTotalCount > 0
+      ? Math.round((loginSuccessCount / loginTotalCount) * 100)
+      : 100
+
     return NextResponse.json({
       logs,
       total,
       page,
       limit,
+      stats: {
+        totalEvents24h,
+        authSuccessRate,
+        activeAlerts: 0,
+        apiRequests: totalEvents24h,
+      },
     })
   } catch (error) {
     console.error('Error fetching audit logs:', error)

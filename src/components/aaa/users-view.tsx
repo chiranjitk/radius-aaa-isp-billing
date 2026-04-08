@@ -1475,7 +1475,7 @@ function UserDetailsSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="sm:max-w-xl w-full p-0">
+      <SheetContent side="right" className="sm:max-w-xl w-full p-0 card-glow">
         {isLoading ? (
           <div className="p-6 space-y-4">
             <Skeleton className="h-6 w-48" />
@@ -1544,23 +1544,23 @@ function UserDetailsSheet({
               <Tabs defaultValue="overview" className="w-full">
                 <div className="px-6 pt-4">
                   <TabsList className="w-full">
-                    <TabsTrigger value="overview" className="flex-1 gap-1.5 text-xs">
+                    <TabsTrigger value="overview" className="flex-1 gap-1.5 text-xs animated-underline">
                       <Eye className="h-3.5 w-3.5" />
                       <span className="hidden sm:inline">Overview</span>
                     </TabsTrigger>
-                    <TabsTrigger value="attributes" className="flex-1 gap-1.5 text-xs">
+                    <TabsTrigger value="attributes" className="flex-1 gap-1.5 text-xs animated-underline">
                       <Key className="h-3.5 w-3.5" />
                       <span className="hidden sm:inline">Attributes</span>
                     </TabsTrigger>
-                    <TabsTrigger value="sessions" className="flex-1 gap-1.5 text-xs">
+                    <TabsTrigger value="sessions" className="flex-1 gap-1.5 text-xs animated-underline">
                       <Activity className="h-3.5 w-3.5" />
                       <span className="hidden sm:inline">Sessions</span>
                     </TabsTrigger>
-                    <TabsTrigger value="billing" className="flex-1 gap-1.5 text-xs">
+                    <TabsTrigger value="billing" className="flex-1 gap-1.5 text-xs animated-underline">
                       <CreditCard className="h-3.5 w-3.5" />
                       <span className="hidden sm:inline">Billing</span>
                     </TabsTrigger>
-                    <TabsTrigger value="kyc" className="flex-1 gap-1.5 text-xs">
+                    <TabsTrigger value="kyc" className="flex-1 gap-1.5 text-xs animated-underline">
                       <ShieldCheck className="h-3.5 w-3.5" />
                       <span className="hidden sm:inline">KYC</span>
                     </TabsTrigger>
@@ -2299,6 +2299,8 @@ export default function UsersView() {
                         <TableHead className="h-10 text-right pr-4">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
+                    {/* Colored status-bar below table header */}
+                    <tr><td colSpan={9}><div className="status-bar"><div className="status-bar-fill violet" style={{width:'100%'}}/></div></td></tr>
                     <TableBody>
                       {users.map((user) => (
                         <TableRow key={user.id} className="group" data-selected={selectedIds.has(user.id) || undefined}>

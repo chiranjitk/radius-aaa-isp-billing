@@ -370,7 +370,7 @@ function SessionRow({
       </TableCell>
       <TableCell>
         {isActive ? (
-          <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs gap-1.5 shadow-sm shadow-emerald-500/20">
+          <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs gap-1.5 shadow-sm shadow-emerald-500/20 breathe">
             <span className="pulse-dot bg-white" />
             Active
           </Badge>
@@ -1071,7 +1071,7 @@ export function SessionsView() {
                 Filters
               </div>
               {hasFilters && (
-                <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs gap-1 h-7">
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs gap-1 h-7 animated-underline">
                   <X className="h-3 w-3" />
                   Clear All
                 </Button>
@@ -1345,7 +1345,7 @@ export function SessionsView() {
 
       {/* Session Detail Sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto card-glow">
           <SheetHeader>
             <SheetTitle>Session Details</SheetTitle>
             <SheetDescription>

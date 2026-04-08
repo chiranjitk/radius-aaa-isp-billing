@@ -22,6 +22,8 @@ import {
   Check,
   ClipboardList,
   Receipt,
+  Printer,
+  Loader2,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -153,8 +155,8 @@ function getStatusBadge(status: string) {
     paid: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
     pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
     overdue: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
-    cancelled: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
-    refunded: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400',
+    cancelled: 'bg-slate-100 text-slate-600 dark:bg-slate-900/40 dark:text-slate-400',
+    refunded: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400',
   }
   return variants[status] || 'bg-gray-100 text-gray-600'
 }
@@ -248,6 +250,10 @@ export function BillingView() {
   // Delete confirmation
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null)
+
+  // Auto-generate invoices
+  const [generateDialogOpen, setGenerateDialogOpen] = useState(false)
+  const [generating, setGenerating] = useState(false)
 
   // Form state
   const [users, setUsers] = useState<{ username: string; fullName: string | null }[]>([])
@@ -426,6 +432,32 @@ export function BillingView() {
     setDeleteDialogOpen(true)
   }
 
+  // Auto-generate invoices
+  const handleAutoGenerate = async () => {
+    setGenerating(true)
+    try {
+      const res = await fetch('/api/billing/auto-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      if (!res.ok) throw new Error('Failed to generate')
+      const data = await res.json()
+      toast.success(`Generated ${data.generated} invoice${data.generated !== 1 ? 's' : ''}`)
+      setGenerateDialogOpen(false)
+      fetchInvoices()
+    } catch {
+      toast.error('Failed to auto-generate invoices')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  // Download PDF (opens in new tab)
+  const handleDownloadPdf = (invoiceId: string) => {
+    window.open(`/api/invoices/${invoiceId}/pdf`, '_blank')
+  }
+
   return (
     <div className="space-y-6 page-transition">
       {/* Action Bar */}
@@ -494,6 +526,10 @@ export function BillingView() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <Button onClick={() => setGenerateDialogOpen(true)} variant="outline" className="gap-2">
+          <FileText className="h-4 w-4" />
+          Generate Invoices
+        </Button>
         <Button onClick={() => { setCreateDialogOpen(true); setCreateStep(1) }} className="gap-2 btn-glow">
           <Plus className="h-4 w-4" />
           Create Invoice
@@ -725,7 +761,7 @@ export function BillingView() {
                               <DropdownMenuItem onClick={() => toast.info('Reminder sent (mock)')} className="gap-2">
                                 <Send className="h-4 w-4" /> Send Reminder
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => toast.info('PDF download started (mock)')} className="gap-2">
+                              <DropdownMenuItem onClick={() => handleDownloadPdf(inv.id)} className="gap-2">
                                 <Download className="h-4 w-4" /> Download PDF
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
@@ -759,6 +795,33 @@ export function BillingView() {
           )}
         </CardContent>
       </Card>
+
+      {/* ===== Auto-Generate Confirmation Dialog ===== */}
+      <AlertDialog open={generateDialogOpen} onOpenChange={setGenerateDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Auto-Generate Invoices</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will generate invoices for all active subscriptions with billing due within the next 7 days.
+              Invoices will be created with a 30-day due date and subscription billing cycles will be updated.
+              Continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={generating}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault()
+                handleAutoGenerate()
+              }}
+              disabled={generating}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {generating ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Generating...</> : 'Generate'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* ===== Delete Confirmation Dialog ===== */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => {
@@ -997,10 +1060,23 @@ export function BillingView() {
 
       {/* ===== Invoice Detail Sheet ===== */}
       <Sheet open={detailSheetOpen} onOpenChange={setDetailSheetOpen}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto card-glow">
           <SheetHeader>
-            <SheetTitle>Invoice {selectedInvoice?.invoiceNo}</SheetTitle>
-            <SheetDescription>Invoice details and payment history</SheetDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <SheetTitle>Invoice {selectedInvoice?.invoiceNo}</SheetTitle>
+                <SheetDescription>Invoice details and payment history</SheetDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => selectedInvoice && handleDownloadPdf(selectedInvoice.id)}
+              >
+                <Printer className="h-4 w-4" />
+                Print
+              </Button>
+            </div>
           </SheetHeader>
           {selectedInvoice && (
             <div className="mt-6 space-y-6">
@@ -1092,6 +1168,13 @@ export function BillingView() {
                 <span className="text-lg font-bold">
                   {formatCurrency(selectedInvoice.payments.reduce((s, p) => s + p.amount, 0))}
                 </span>
+              </div>
+              {/* Payment progress bar */}
+              <div className="status-bar">
+                <div
+                  className={`status-bar-fill ${selectedInvoice.status === 'paid' ? 'green' : selectedInvoice.status === 'overdue' ? 'red' : 'amber'}`}
+                  style={{ width: `${Math.min(100, (selectedInvoice.payments.reduce((s, p) => s + p.amount, 0) / selectedInvoice.total) * 100)}%` }}
+                />
               </div>
               {selectedInvoice.total - selectedInvoice.payments.reduce((s, p) => s + p.amount, 0) > 0 && (
                 <div className="flex justify-between items-center text-red-600">

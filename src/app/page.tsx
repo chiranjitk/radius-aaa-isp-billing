@@ -25,7 +25,8 @@ import { toast } from 'sonner'
 import { RegistrationsView } from '@/components/aaa/registrations-view'
 import { SelfcarePortal } from '@/components/aaa/selfcare-portal'
 import { NetworkTopology } from '@/components/aaa/network-topology'
-import { Search, Radio, Moon, Sun, Shield, Clock, Activity, Keyboard, UserCircle, LogOut } from 'lucide-react'
+import { ActivityDashboard } from '@/components/aaa/activity-dashboard'
+import { Search, Radio, Moon, Sun, Shield, Clock, Activity, Keyboard, UserCircle, LogOut, ScrollText } from 'lucide-react'
 import { KeyboardShortcutsDialog } from '@/components/aaa/keyboard-shortcuts-dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -35,6 +36,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 const viewTitles: Record<string, { title: string; description: string; icon: string }> = {
   dashboard: { title: 'Dashboard', description: 'System overview and real-time monitoring', icon: 'radar' },
+  activity: { title: 'Activity Dashboard', description: 'Comprehensive system activity monitoring and audit trail', icon: 'activity' },
   users: { title: 'RADIUS Users', description: 'Manage user accounts and authentication', icon: 'users' },
   nas: { title: 'NAS Devices', description: 'Network Access Server management', icon: 'server' },
   plans: { title: 'Billing Plans', description: 'Subscription packages and pricing', icon: 'credit' },
@@ -284,6 +286,7 @@ export default function Home() {
               {activeView === 'registrations' && <Shield className="h-3 w-3 mr-1" />}
               {activeView === 'selfcare' && <UserCircle className="h-3 w-3 mr-1" />}
               {activeView === 'topology' && <Activity className="h-3 w-3 mr-1" />}
+              {activeView === 'activity' && <ScrollText className="h-3 w-3 mr-1" />}
               {currentView.description}
             </Badge>
           </div>
@@ -305,6 +308,7 @@ export default function Home() {
               {activeView === 'registrations' && <RegistrationsView />}
               {activeView === 'selfcare' && <SelfcarePortal />}
               {activeView === 'topology' && <NetworkTopology />}
+              {activeView === 'activity' && <ActivityDashboard />}
             </div>
           </main>
 

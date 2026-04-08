@@ -518,7 +518,7 @@ function TopologyMap({
               x={centerX}
               y={centerY + 62}
               textAnchor="middle"
-              className="fill-foreground text-[13px] font-bold select-none"
+              className="fill-foreground text-[13px] font-bold select-none breathe"
               style={{ pointerEvents: 'none' }}
             >
               RADIUS Server
@@ -811,7 +811,7 @@ function InfoPanel({ stats }: { stats: TopologyStats }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-fade-in-up stagger-4">
       {/* Left: Top NAS by connections */}
-      <Card className="card-shine hover-lift border-border/50">
+      <Card className="card-shine hover-lift border-border/50 card-glow">
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-3">
             <Activity className="h-4 w-4 text-emerald-500" />
@@ -846,7 +846,7 @@ function InfoPanel({ stats }: { stats: TopologyStats }) {
       </Card>
 
       {/* Right: Network Summary */}
-      <Card className="card-shine hover-lift border-border/50">
+      <Card className="card-shine hover-lift border-border/50 card-glow">
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-3">
             <ArrowUpDown className="h-4 w-4 text-amber-500" />
