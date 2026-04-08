@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     if (action) where.action = action
     if (module_) where.module = module_
     if (username) {
-      where.username = { contains: username, mode: 'insensitive' }
+      where.username = { contains: username }
     }
 
     if (startDate || endDate) {

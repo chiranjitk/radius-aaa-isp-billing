@@ -2043,7 +2043,7 @@ export default function UsersView() {
     }
   }
 
-  const handleBulkExportSelected = (format: 'csv' | 'json') => {
+  const handleBulkExportSelected = (exportFormat: 'csv' | 'json') => {
     const selectedUsers = users.filter((u) => selectedIds.has(u.id))
     if (selectedUsers.length === 0) return
     const opts: ExportOptions = {
@@ -2055,7 +2055,7 @@ export default function UsersView() {
       ]),
       filename: `users-selected-export-${new Date().toISOString().slice(0, 10)}`,
     }
-    if (format === 'csv') {
+    if (exportFormat === 'csv') {
       exportToCSV(opts)
       toast.success(`${selectedUsers.length} users exported as CSV`)
     } else {

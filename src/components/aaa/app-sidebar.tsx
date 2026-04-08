@@ -29,6 +29,7 @@ import {
   Crown,
   Wrench,
   BookOpenCheck,
+  Headphones,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -68,12 +69,14 @@ const allNavItems: NavItem[] = [
   { id: 'registrations', label: 'Registrations', icon: UserPlus, category: 'SYS', categoryColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-400' },
   { id: 'selfcare', label: 'Selfcare Portal', icon: UserCog, category: 'SYS', categoryColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-400' },
   { id: 'topology', label: 'Network Topology', icon: Network, category: 'SYS', categoryColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-400' },
+  { id: 'bandwidth', label: 'Bandwidth Analytics', icon: TrendingUp, category: 'BSS', categoryColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' },
+  { id: 'tickets', label: 'Tickets', icon: Headphones, category: 'BSS', categoryColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' },
 ]
 
 const groupedItems = {
   'Overview': ['dashboard', 'activity'] as ViewId[],
   'AAA': ['users', 'nas', 'policies', 'sessions'] as ViewId[],
-  'BSS': ['plans', 'billing', 'reports'] as ViewId[],
+  'BSS': ['plans', 'billing', 'reports', 'bandwidth', 'tickets'] as ViewId[],
   'System': ['dictionary', 'ip-pools', 'settings', 'registrations', 'selfcare', 'topology'] as ViewId[],
 }
 

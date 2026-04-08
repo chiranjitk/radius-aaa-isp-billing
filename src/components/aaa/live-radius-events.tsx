@@ -96,13 +96,13 @@ const TYPE_LABELS: Record<string, string> = {
   alert: 'Alert ⚠',
 }
 
-const TYPE_CONFIG: Record<string, { color: string; bgClass: string }> = {
-  auth_success: { color: 'text-emerald-600', bgClass: 'bg-emerald-100 dark:bg-emerald-900/30' },
-  auth_failure: { color: 'text-red-600', bgClass: 'bg-red-100 dark:bg-red-900/30' },
-  session_start: { color: 'text-teal-600', bgClass: 'bg-teal-100 dark:bg-teal-900/30' },
-  session_stop: { color: 'text-slate-500', bgClass: 'bg-slate-100 dark:bg-slate-900/30' },
-  nas_event: { color: 'text-violet-600', bgClass: 'bg-violet-100 dark:bg-violet-900/30' },
-  alert: { color: 'text-amber-600', bgClass: 'bg-amber-100 dark:bg-amber-900/30' },
+const TYPE_CONFIG: Record<string, { color: string; bgClass: string; badgeClass: string }> = {
+  auth_success: { color: 'text-emerald-600', bgClass: 'bg-emerald-100 dark:bg-emerald-900/30', badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800' },
+  auth_failure: { color: 'text-red-600', bgClass: 'bg-red-100 dark:bg-red-900/30', badgeClass: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-800' },
+  session_start: { color: 'text-teal-600', bgClass: 'bg-teal-100 dark:bg-teal-900/30', badgeClass: 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/50 dark:text-teal-400 dark:border-teal-800' },
+  session_stop: { color: 'text-slate-500', bgClass: 'bg-slate-100 dark:bg-slate-900/30', badgeClass: 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950/50 dark:text-slate-400 dark:border-slate-800' },
+  nas_event: { color: 'text-violet-600', bgClass: 'bg-violet-100 dark:bg-violet-900/30', badgeClass: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-800' },
+  alert: { color: 'text-amber-600', bgClass: 'bg-amber-100 dark:bg-amber-900/30', badgeClass: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800' },
 }
 
 function formatTimeAgo(timestamp: string): string {

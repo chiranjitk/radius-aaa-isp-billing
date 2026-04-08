@@ -525,6 +525,31 @@ model UserDocument {
 }
 
 // ==========================================
+// TICKET / SUPPORT SYSTEM
+// ==========================================
+
+model Ticket {
+  id          String   @id @default(cuid())
+  ticketNo    String   @unique // format: TKT-0001
+  subject     String
+  description String
+  status      String   @default("open") // open, in_progress, resolved, closed
+  priority    String   @default("medium") // low, medium, high, critical
+  category    String   @default("general") // billing, technical, account, network, general
+  username    String   // RADIUS user reference
+  assignedTo  String?  // admin assigned to ticket
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  resolvedAt  DateTime?
+
+  @@index([status])
+  @@index([priority])
+  @@index([category])
+  @@index([username])
+  @@index([createdAt])
+}
+
+// ==========================================
 // USER REGISTRATION
 // ==========================================
 

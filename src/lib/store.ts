@@ -18,10 +18,12 @@ export type ViewId =
   | 'registrations'
   | 'selfcare'
   | 'topology'
+  | 'bandwidth'
+  | 'tickets'
   | 'login'
 
 // Permission definitions per role
-type PermissionAction = 'view' | 'create' | 'edit' | 'delete'
+type PermissionAction = 'view' | 'create' | 'edit' | 'delete' | 'disconnect' | 'export'
 
 const rolePermissions: Record<UserRole, Record<string, PermissionAction[]>> = {
   admin: {
@@ -38,6 +40,7 @@ const rolePermissions: Record<UserRole, Record<string, PermissionAction[]>> = {
     settings: ['view', 'edit'],
     'ip-pools': ['view', 'create', 'edit', 'delete'],
     registrations: ['view', 'create', 'edit', 'delete'],
+    tickets: ['view', 'create', 'edit', 'delete'],
     selfcare: ['view'],
     topology: ['view'],
   },
@@ -55,6 +58,7 @@ const rolePermissions: Record<UserRole, Record<string, PermissionAction[]>> = {
     settings: ['view'],
     'ip-pools': ['view'],
     registrations: ['view'],
+    tickets: ['view', 'create'],
     selfcare: ['view'],
     topology: ['view'],
   },
@@ -72,6 +76,7 @@ const rolePermissions: Record<UserRole, Record<string, PermissionAction[]>> = {
     settings: ['view'],
     'ip-pools': ['view'],
     registrations: ['view'],
+    tickets: ['view'],
     selfcare: ['view'],
     topology: ['view'],
   },

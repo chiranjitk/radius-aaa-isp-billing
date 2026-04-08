@@ -1175,13 +1175,13 @@ interface SystemHealthData {
   services: { name: string; status: string; uptime: string; port: number }[]
 }
 
-function HealthBar({ label, value, color, icon }: { label: string; value: number; color: string; icon: React.ElementType }) {
+function HealthBar({ label, value, color, icon: Icon }: { label: string; value: number; color: string; icon: React.ElementType }) {
   const clamped = Math.min(100, Math.max(0, value))
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <icon className="h-3.5 w-3.5 text-muted-foreground" />
+          <Icon className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-xs font-medium">{label}</span>
         </div>
         <span className={`text-xs font-bold ${clamped > 80 ? 'text-red-500' : clamped > 60 ? 'text-amber-500' : 'text-emerald-500'}`}>

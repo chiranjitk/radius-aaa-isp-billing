@@ -25,7 +25,9 @@ import { toast } from 'sonner'
 import { RegistrationsView } from '@/components/aaa/registrations-view'
 import { SelfcarePortal } from '@/components/aaa/selfcare-portal'
 import { NetworkTopology } from '@/components/aaa/network-topology'
+import TicketsView from '@/components/aaa/tickets-view'
 import { ActivityDashboard } from '@/components/aaa/activity-dashboard'
+import { BandwidthAnalytics } from '@/components/aaa/bandwidth-analytics'
 import { Search, Radio, Moon, Sun, Shield, Clock, Activity, Keyboard, UserCircle, LogOut, ScrollText } from 'lucide-react'
 import { KeyboardShortcutsDialog } from '@/components/aaa/keyboard-shortcuts-dialog'
 import { Button } from '@/components/ui/button'
@@ -50,6 +52,8 @@ const viewTitles: Record<string, { title: string; description: string; icon: str
   registrations: { title: 'Registrations', description: 'User registration requests and approval', icon: 'users' },
   selfcare: { title: 'Selfcare Portal', description: 'End-user portal (demo)', icon: 'user' },
   topology: { title: 'Network Topology', description: 'Visual network map and device connections', icon: 'network' },
+  bandwidth: { title: 'Bandwidth Analytics', description: 'Per-user data consumption and usage trends', icon: 'chart' },
+  tickets: { title: 'Ticket System', description: 'Support ticket management and helpdesk', icon: 'ticket' },
 }
 
 interface FooterStats {
@@ -309,6 +313,8 @@ export default function Home() {
               {activeView === 'selfcare' && <SelfcarePortal />}
               {activeView === 'topology' && <NetworkTopology />}
               {activeView === 'activity' && <ActivityDashboard />}
+              {activeView === 'bandwidth' && <BandwidthAnalytics />}
+              {activeView === 'tickets' && <TicketsView />}
             </div>
           </main>
 
@@ -317,7 +323,7 @@ export default function Home() {
             <div className="flex items-center gap-2.5">
               <span className="font-semibold text-foreground/80">FreeRADIUS AAA/BSS</span>
               <Badge variant="outline" className="text-[9px] font-mono px-1.5 h-4 rounded bg-primary/5 border-primary/10 text-primary">
-                v2.7.0
+                v2.9.0
               </Badge>
               <Separator orientation="vertical" className="h-3" />
               <span className="hidden sm:inline">{new Date().toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>

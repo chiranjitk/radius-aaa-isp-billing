@@ -80,6 +80,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { exportToCSV, exportToJSON, type ExportOptions } from '@/lib/export-utils'
+import { PlanComparison } from '@/components/aaa/plan-comparison'
 
 // ─── Types ───────────────────────────────────────────────────────────
 interface Plan {
@@ -334,7 +335,7 @@ function PlanPreviewCard({ form }: { form: ReturnType<typeof getDefaultForm> }) 
   const TypeIcon = typeConfig?.icon || Layers
   const dataLimitMb = form.dataLimit ? Number(form.dataLimit) * (form.dataLimitUnit === 'GB' ? 1024 : form.dataLimitUnit === 'TB' ? 1048576 : 1) : 0
   const price = Number(form.price) || 0
-  const sym: Record<string, string> = { USD: '$', EUR: '\u20AC', GBP: '\u00A3', JPY: '\u00A5' }[form.currency] || form.currency
+  const sym = ({ USD: '$', EUR: '\u20AC', GBP: '\u00A3', JPY: '\u00A5' } as Record<string, string>)[form.currency] || form.currency
 
   return (
     <Card className="border-dashed border-2 bg-muted/30">
@@ -1236,68 +1237,11 @@ export function PlansView() {
       )}
 
       {/* ─── Plan Comparison Dialog ──────────────────────────────── */}
-      <Dialog open={comparisonDialogOpen} onOpenChange={setComparisonDialogOpen}>
-        <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <GitCompareArrows className="h-5 w-5" />
-              Plan Comparison
-            </DialogTitle>
-            <DialogDescription>Side-by-side comparison of selected plans. Best values are highlighted.</DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="max-h-[65vh]">
-            <div className="min-w-[600px]">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 pr-4 font-medium text-muted-foreground w-40">Feature</th>
-                    {comparisonPlans.map((plan) => (
-                      <th key={plan.id} className="text-left py-3 px-4 font-semibold">
-                        <div className="flex items-center gap-2">
-                          {plan.name}
-                          {bestIds.price === plan.id && (
-                            <Badge variant="default" className="bg-emerald-500 text-white text-[10px] gap-0.5">
-                              <DollarSign className="h-2.5 w-2.5" /> Best Price
-                            </Badge>
-                          )}
-                          {bestIds.download === plan.id && (
-                            <Badge variant="default" className="bg-violet-500 text-white text-[10px] gap-0.5">
-                              <Gauge className="h-2.5 w-2.5" /> Fastest
-                            </Badge>
-                          )}
-                        </div>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {comparisonFeatures.map((feature, idx) => {
-                    const isBestRow = feature.bestKey != null
-                    return (
-                      <tr key={feature.key} className={cn(idx % 2 === 0 ? 'bg-muted/30' : '')}>
-                        <td className="py-2.5 pr-4 text-muted-foreground font-medium">{feature.label}</td>
-                        {comparisonPlans.map((plan) => {
-                          const isBest = isBestRow && bestIds[feature.bestKey as keyof typeof bestIds] === plan.id
-                          return (
-                            <td key={plan.id} className={cn('py-2.5 px-4', isBest && 'bg-emerald-50 dark:bg-emerald-950/30 font-semibold text-emerald-700 dark:text-emerald-400')}>
-                              <div className="flex items-center gap-1.5">
-                                {feature.render(plan)}
-                                {isBest && <Check className="h-3.5 w-3.5 text-emerald-500" />}
-                              </div>
-                            </td>
-                          )
-                        })}
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </ScrollArea>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setComparisonDialogOpen(false)}>Close</Button>
-            <Button variant="outline" onClick={() => { setComparisonDialogOpen(false); setComparisonMode(false); setSelectedForCompare([]) }}>Exit Compare Mode</Button>
-          </DialogFooter>
+      <Dialog open={comparisonDialogOpen} onOpenChange={(open) => { setComparisonDialogOpen(open); if (!open) { setComparisonMode(false); setSelectedForCompare([]) } }}>
+        <DialogContent className="sm:max-w-6xl max-h-[90vh] overflow-hidden p-0">
+          <div className="p-6 overflow-auto max-h-[calc(90vh-2rem)] scrollbar-thin">
+            <PlanComparison />
+          </div>
         </DialogContent>
       </Dialog>
 
