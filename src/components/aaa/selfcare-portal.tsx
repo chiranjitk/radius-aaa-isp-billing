@@ -277,11 +277,11 @@ function getDocIcon(docType: string) {
 function getDocStatusBadge(status: string) {
   switch (status) {
     case 'approved':
-      return <Badge variant="outline" className="text-[10px] gap-1 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"><Check className="h-2.5 w-2.5" />Approved</Badge>
+      return <Badge variant="outline" className="text-[10px] gap-1 chip bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"><Check className="h-2.5 w-2.5" />Approved</Badge>
     case 'rejected':
-      return <Badge variant="outline" className="text-[10px] gap-1 bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800"><X className="h-2.5 w-2.5" />Rejected</Badge>
+      return <Badge variant="outline" className="text-[10px] gap-1 chip bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800"><X className="h-2.5 w-2.5" />Rejected</Badge>
     default:
-      return <Badge variant="outline" className="text-[10px] gap-1 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800"><Clock className="h-2.5 w-2.5" />Pending</Badge>
+      return <Badge variant="outline" className="text-[10px] gap-1 chip bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800"><Clock className="h-2.5 w-2.5" />Pending</Badge>
   }
 }
 
@@ -445,7 +445,7 @@ function RegistrationTab() {
         <p className="text-sm text-muted-foreground">Sign up for internet service in just a few steps</p>
       </div>
 
-      <Card className="border-slate-200/60 dark:border-slate-700/40">
+      <Card className="border-slate-200/60 dark:border-slate-700/40 inset-card">
         <CardContent className="p-6 space-y-5">
           {/* Plan Selection */}
           <div className="space-y-2">
@@ -453,7 +453,7 @@ function RegistrationTab() {
             {plansLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[1, 2, 3, 4].map(i => (
-                  <Skeleton key={i} className="h-28 rounded-lg" />
+                  <Skeleton key={i} className="h-28 rounded-lg skeleton-shimmer" />
                 ))}
               </div>
             ) : (
@@ -643,7 +643,7 @@ function AccountTab() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Profile Header */}
-      <Card className="overflow-hidden border-slate-200/60 dark:border-slate-700/40">
+      <Card className="overflow-hidden border-slate-200/60 dark:border-slate-700/40 inset-card">
         <div className="bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="relative group">
@@ -671,7 +671,7 @@ function AccountTab() {
       </Card>
 
       {/* Profile Details */}
-      <Card className="border-slate-200/60 dark:border-slate-700/40">
+      <Card className="border-slate-200/60 dark:border-slate-700/40 inset-card">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
@@ -754,7 +754,7 @@ function AccountTab() {
       </Card>
 
       {/* Change Password */}
-      <Card className="border-slate-200/60 dark:border-slate-700/40">
+      <Card className="border-slate-200/60 dark:border-slate-700/40 inset-card">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Lock className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -834,7 +834,7 @@ function KycTab() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {/* KYC Status Overview */}
-      <Card className={`border-slate-200/60 dark:border-slate-700/40 ${kycStatus === 'verified' ? 'border-emerald-200 dark:border-emerald-800' : ''}`}>
+      <Card className={`border-slate-200/60 dark:border-slate-700/40 inset-card ${kycStatus === 'verified' ? 'border-emerald-200 dark:border-emerald-800' : ''}`}>
         <CardContent className="p-6">
           <div className="text-center space-y-4">
             <div className={`h-14 w-14 rounded-full flex items-center justify-center mx-auto ${kycStatus === 'verified' ? 'bg-emerald-100 dark:bg-emerald-950' : kycStatus === 'submitted' ? 'bg-sky-100 dark:bg-sky-950' : kycStatus === 'rejected' ? 'bg-red-100 dark:bg-red-950' : 'bg-amber-100 dark:bg-amber-950'}`}>
@@ -867,7 +867,7 @@ function KycTab() {
           const DocIcon = getDocIcon(dt.type)
 
           return (
-            <Card key={dt.type} className="border-slate-200/60 dark:border-slate-700/40">
+            <Card key={dt.type} className="border-slate-200/60 dark:border-slate-700/40 inset-card hover-lift">
               <CardContent className="p-4">
                 <div className="flex items-start gap-4">
                   <div className="h-10 w-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center shrink-0">
@@ -942,7 +942,7 @@ function ServicesTab() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Current Plan */}
-      <Card className="border-emerald-200/60 dark:border-emerald-800/40 overflow-hidden">
+      <Card className="border-emerald-200/60 dark:border-emerald-800/40 overflow-hidden inset-card">
         <div className="bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -987,7 +987,7 @@ function ServicesTab() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t">
-            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs" onClick={() => toast.info('Plan upgrade page simulated')}>
+            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs ripple" onClick={() => toast.info('Plan upgrade page simulated')}>
               <TrendingUp className="h-3 w-3 mr-1" />Upgrade Plan
             </Button>
             <Button size="sm" variant="outline" className="text-xs" onClick={() => toast.info('Plan renewal simulated')}>
@@ -998,7 +998,7 @@ function ServicesTab() {
       </Card>
 
       {/* Usage Statistics */}
-      <Card className="border-slate-200/60 dark:border-slate-700/40">
+      <Card className="border-slate-200/60 dark:border-slate-700/40 inset-card">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Activity className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -1052,7 +1052,7 @@ function ServicesTab() {
       </Card>
 
       {/* Session History */}
-      <Card className="border-slate-200/60 dark:border-slate-700/40">
+      <Card className="border-slate-200/60 dark:border-slate-700/40 inset-card">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Clock className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -1062,7 +1062,7 @@ function ServicesTab() {
         </CardHeader>
         <CardContent className="space-y-3">
           {DEMO_SESSIONS.map(session => (
-            <div key={session.id} className="rounded-lg border p-4 space-y-2 hover:bg-muted/20 transition-colors">
+            <div key={session.id} className="rounded-lg border p-4 space-y-2 hover:bg-muted/20 transition-colors table-row-hover">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className={`text-[10px] ${session.status === 'active' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' : ''}`}>
@@ -1099,19 +1099,19 @@ function BillingTab() {
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Billing Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <Card className="border-slate-200/60 dark:border-slate-700/40">
+        <Card className="border-slate-200/60 dark:border-slate-700/40 inset-card hover-lift">
           <CardContent className="p-4 text-center">
             <p className="text-xs text-muted-foreground">Outstanding</p>
             <p className="text-lg font-bold text-red-600 dark:text-red-400">$107.98</p>
           </CardContent>
         </Card>
-        <Card className="border-slate-200/60 dark:border-slate-700/40">
+        <Card className="border-slate-200/60 dark:border-slate-700/40 inset-card hover-lift">
           <CardContent className="p-4 text-center">
             <p className="text-xs text-muted-foreground">Paid This Year</p>
             <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">$599.88</p>
           </CardContent>
         </Card>
-        <Card className="border-slate-200/60 dark:border-slate-700/40 hidden sm:block">
+        <Card className="border-slate-200/60 dark:border-slate-700/40 hidden sm:block inset-card hover-lift">
           <CardContent className="p-4 text-center">
             <p className="text-xs text-muted-foreground">Current Plan</p>
             <p className="text-lg font-bold">$49.99<span className="text-xs text-muted-foreground font-normal">/mo</span></p>
@@ -1130,7 +1130,7 @@ function BillingTab() {
       </div>
 
       {activeBillingSub === 'invoices' && (
-        <Card className="border-slate-200/60 dark:border-slate-700/40">
+        <Card className="border-slate-200/60 dark:border-slate-700/40 inset-card">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <FileText className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -1139,7 +1139,7 @@ function BillingTab() {
           </CardHeader>
           <CardContent className="space-y-3">
             {DEMO_INVOICES.map(inv => (
-              <div key={inv.id} className="rounded-lg border p-4 hover:bg-muted/20 transition-colors">
+              <div key={inv.id} className="rounded-lg border p-4 hover:bg-muted/20 transition-colors table-row-hover">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -1163,7 +1163,7 @@ function BillingTab() {
                         <Download className="h-3.5 w-3.5" />
                       </Button>
                       {inv.status === 'pending' || inv.status === 'overdue' ? (
-                        <Button size="sm" className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3" onClick={() => toast.success('Payment initiated (simulated)')}>
+                        <Button size="sm" className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 ripple" onClick={() => toast.success('Payment initiated (simulated)')}>
                           Pay Now
                         </Button>
                       ) : (
@@ -1179,7 +1179,7 @@ function BillingTab() {
       )}
 
       {activeBillingSub === 'payments' && (
-        <Card className="border-slate-200/60 dark:border-slate-700/40">
+        <Card className="border-slate-200/60 dark:border-slate-700/40 inset-card">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Landmark className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -1262,7 +1262,7 @@ function SupportTab() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Ticket Form */}
-      <Card className="border-slate-200/60 dark:border-slate-700/40">
+      <Card className="border-slate-200/60 dark:border-slate-700/40 inset-card">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Send className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -1296,14 +1296,14 @@ function SupportTab() {
             <Label className="text-xs">Description <span className="text-red-500">*</span></Label>
             <Textarea placeholder="Please describe your issue in detail..." value={ticketDescription} onChange={e => setTicketDescription(e.target.value)} className="min-h-[100px] resize-none text-sm" />
           </div>
-          <Button onClick={handleSubmitTicket} disabled={submitting} className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs">
+          <Button onClick={handleSubmitTicket} disabled={submitting} className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs ripple">
             {submitting ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Submitting...</> : <><Send className="h-3.5 w-3.5 mr-1.5" />Submit Ticket</>}
           </Button>
         </CardContent>
       </Card>
 
       {/* FAQ Section */}
-      <Card className="border-slate-200/60 dark:border-slate-700/40">
+      <Card className="border-slate-200/60 dark:border-slate-700/40 inset-card">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <HelpCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -1332,7 +1332,7 @@ function SupportTab() {
       </Card>
 
       {/* Contact Information */}
-      <Card className="border-slate-200/60 dark:border-slate-700/40">
+      <Card className="border-slate-200/60 dark:border-slate-700/40 inset-card">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Contact className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />

@@ -1,0 +1,6 @@
+{
+  "name": "radius-events-service",
+  "scripts": {
+    "dev": "bun --hot index.ts"
+  }
+}

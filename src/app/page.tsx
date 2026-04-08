@@ -24,6 +24,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
 import { RegistrationsView } from '@/components/aaa/registrations-view'
 import { SelfcarePortal } from '@/components/aaa/selfcare-portal'
+import { NetworkTopology } from '@/components/aaa/network-topology'
 import { Search, Radio, Moon, Sun, Shield, Clock, Activity, Keyboard, UserCircle, LogOut } from 'lucide-react'
 import { KeyboardShortcutsDialog } from '@/components/aaa/keyboard-shortcuts-dialog'
 import { Button } from '@/components/ui/button'
@@ -46,6 +47,7 @@ const viewTitles: Record<string, { title: string; description: string; icon: str
   'ip-pools': { title: 'IP Pool Management', description: 'IP address allocation and pool management', icon: 'globe' },
   registrations: { title: 'Registrations', description: 'User registration requests and approval', icon: 'users' },
   selfcare: { title: 'Selfcare Portal', description: 'End-user portal (demo)', icon: 'user' },
+  topology: { title: 'Network Topology', description: 'Visual network map and device connections', icon: 'network' },
 }
 
 interface FooterStats {
@@ -281,6 +283,7 @@ export default function Home() {
               {activeView === 'sessions' && <Clock className="h-3 w-3 mr-1" />}
               {activeView === 'registrations' && <Shield className="h-3 w-3 mr-1" />}
               {activeView === 'selfcare' && <UserCircle className="h-3 w-3 mr-1" />}
+              {activeView === 'topology' && <Activity className="h-3 w-3 mr-1" />}
               {currentView.description}
             </Badge>
           </div>
@@ -301,6 +304,7 @@ export default function Home() {
               {activeView === 'ip-pools' && <IpPoolsView />}
               {activeView === 'registrations' && <RegistrationsView />}
               {activeView === 'selfcare' && <SelfcarePortal />}
+              {activeView === 'topology' && <NetworkTopology />}
             </div>
           </main>
 

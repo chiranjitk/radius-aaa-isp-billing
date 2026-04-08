@@ -15,6 +15,9 @@ import {
   Shield,
   Loader2,
   ShieldCheck,
+  Download,
+  FileSpreadsheet,
+  FileJson,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -51,6 +54,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { exportToCSV, exportToJSON, type ExportOptions } from '@/lib/export-utils'
 import { toast } from 'sonner'
 
 // ============ Types ============
@@ -928,6 +938,64 @@ export function SettingsView() {
                         <SelectItem value="export">Export</SelectItem>
                       </SelectContent>
                     </Select>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={auditLoading || auditLogs.length === 0}
+                          className="gap-2"
+                        >
+                          <Download className="h-4 w-4" />
+                          <span className="hidden sm:inline">Export</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            const opts: ExportOptions = {
+                              headers: ['Timestamp', 'Username', 'Action', 'Module', 'Details', 'IP Address'],
+                              rows: auditLogs.map((log) => [
+                                new Date(log.timestamp).toLocaleString(),
+                                log.username || '—',
+                                log.action,
+                                log.module,
+                                log.details || '—',
+                                log.ipAddress || '—',
+                              ]),
+                              filename: `audit-logs-${new Date().toISOString().split('T')[0]}`,
+                              title: 'Audit Log Export',
+                            }
+                            exportToCSV(opts)
+                            toast.success('Audit logs exported as CSV')
+                          }}
+                        >
+                          <FileSpreadsheet className="mr-2 h-4 w-4" />
+                          Export CSV
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            const opts: ExportOptions = {
+                              headers: ['Timestamp', 'Username', 'Action', 'Module', 'Details', 'IP Address'],
+                              rows: auditLogs.map((log) => [
+                                new Date(log.timestamp).toLocaleString(),
+                                log.username || '—',
+                                log.action,
+                                log.module,
+                                log.details || '—',
+                                log.ipAddress || '—',
+                              ]),
+                              filename: `audit-logs-${new Date().toISOString().split('T')[0]}`,
+                            }
+                            exportToJSON(opts)
+                            toast.success('Audit logs exported as JSON')
+                          }}
+                        >
+                          <FileJson className="mr-2 h-4 w-4" />
+                          Export JSON
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </CardContent>
               </Card>

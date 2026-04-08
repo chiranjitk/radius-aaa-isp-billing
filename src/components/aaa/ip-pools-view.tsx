@@ -882,7 +882,7 @@ export function IpPoolsView() {
               <RefreshCw className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Refresh</span>
             </Button>
-            <Button size="sm" onClick={openCreateDialog}>
+            <Button size="sm" onClick={openCreateDialog} className="hover-lift">
               <Plus className="h-4 w-4 mr-2" />
               Create IP Pool
             </Button>
@@ -892,7 +892,7 @@ export function IpPoolsView() {
         {/* ========== POOL OVERVIEW DASHBOARD ========== */}
         {stats ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
-            <Card className="border-none shadow-sm">
+            <Card className="border-none shadow-sm stat-card hover-lift card-shine">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10">
@@ -905,7 +905,7 @@ export function IpPoolsView() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-none shadow-sm">
+            <Card className="border-none shadow-sm stat-card hover-lift card-shine">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-slate-500/10">
@@ -918,7 +918,7 @@ export function IpPoolsView() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-none shadow-sm">
+            <Card className="border-none shadow-sm stat-card hover-lift card-shine">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-emerald-500/10">
@@ -931,7 +931,7 @@ export function IpPoolsView() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-none shadow-sm">
+            <Card className="border-none shadow-sm stat-card hover-lift card-shine">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-amber-500/10">
@@ -944,7 +944,7 @@ export function IpPoolsView() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-none shadow-sm">
+            <Card className="border-none shadow-sm stat-card hover-lift card-shine">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-violet-500/10">
@@ -957,7 +957,7 @@ export function IpPoolsView() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-none shadow-sm col-span-2 md:col-span-1">
+            <Card className="border-none shadow-sm stat-card hover-lift card-shine col-span-2 md:col-span-1">
               <CardContent className="p-4">
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
@@ -1057,7 +1057,7 @@ export function IpPoolsView() {
                         Clear Filters
                       </Button>
                     )}
-                    <Button size="sm" onClick={openCreateDialog}>
+                    <Button size="sm" onClick={openCreateDialog} className="hover-lift">
                       <Plus className="h-4 w-4 mr-2" />
                       Create IP Pool
                     </Button>
@@ -1197,7 +1197,7 @@ export function IpPoolsView() {
               <Separator />
               <div className="flex items-center justify-between">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">IP Ranges</p>
-                <Button type="button" variant="outline" size="sm" onClick={addRangeRow} className="gap-1">
+                <Button type="button" variant="outline" size="sm" onClick={addRangeRow} className="gap-1 hover-lift">
                   <Plus className="h-3.5 w-3.5" />
                   Add Range
                 </Button>
@@ -1511,10 +1511,10 @@ function StatsSkeleton() {
         <Card key={i} className="border-none shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <Skeleton className="h-10 w-10 rounded-lg" />
+              <Skeleton className="h-10 w-10 rounded-lg skeleton-shimmer" />
               <div className="space-y-1">
-                <Skeleton className="h-7 w-12" />
-                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-7 w-12 skeleton-shimmer" />
+                <Skeleton className="h-3 w-16 skeleton-shimmer" />
               </div>
             </div>
           </CardContent>
@@ -1528,12 +1528,12 @@ function PoolCardSkeleton() {
   return (
     <Card className="border shadow-sm">
       <CardContent className="p-5 space-y-3">
-        <Skeleton className="h-5 w-32" />
-        <Skeleton className="h-4 w-48" />
-        <Skeleton className="h-1.5 w-full rounded-full" />
+        <Skeleton className="h-5 w-32 skeleton-shimmer" />
+        <Skeleton className="h-4 w-48 skeleton-shimmer" />
+        <Skeleton className="h-1.5 w-full rounded-full skeleton-shimmer" />
         <div className="flex gap-3">
-          <Skeleton className="h-5 w-14 rounded-full" />
-          <Skeleton className="h-5 w-14 rounded-full" />
+          <Skeleton className="h-5 w-14 rounded-full skeleton-shimmer" />
+          <Skeleton className="h-5 w-14 rounded-full skeleton-shimmer" />
         </div>
       </CardContent>
     </Card>
@@ -1545,23 +1545,23 @@ function DetailSkeleton() {
     <Card className="border shadow-sm">
       <CardContent className="p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <Skeleton className="h-6 w-40" />
-          <Skeleton className="h-8 w-8" />
+          <Skeleton className="h-6 w-40 skeleton-shimmer" />
+          <Skeleton className="h-8 w-8 skeleton-shimmer" />
         </div>
         <div className="grid grid-cols-2 gap-3">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="space-y-1">
-              <Skeleton className="h-3 w-16" />
-              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-3 w-16 skeleton-shimmer" />
+              <Skeleton className="h-5 w-24 skeleton-shimmer" />
             </div>
           ))}
         </div>
-        <Skeleton className="h-2.5 w-full rounded-full" />
+        <Skeleton className="h-2.5 w-full rounded-full skeleton-shimmer" />
         <Separator />
         {[1, 2, 3].map((i) => (
           <div key={i} className="flex items-center gap-3">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-4 flex-1" />
+            <Skeleton className="h-4 w-20 skeleton-shimmer" />
+            <Skeleton className="h-4 flex-1 skeleton-shimmer" />
           </div>
         ))}
       </CardContent>
@@ -1595,7 +1595,7 @@ function PoolCard({
   return (
     <Card
       className={cn(
-        'border shadow-sm transition-all duration-200 hover:shadow-md cursor-pointer group',
+        'border shadow-sm inset-card transition-all duration-200 hover:shadow-md cursor-pointer group',
         isSelected && 'ring-2 ring-primary/50 border-primary/30',
         isExpanded && 'ring-1 ring-primary/20'
       )}
@@ -1713,7 +1713,7 @@ function PoolListItem({
   return (
     <Card
       className={cn(
-        'border shadow-sm transition-all duration-200 hover:shadow-md cursor-pointer',
+        'border shadow-sm inset-card transition-all duration-200 hover:shadow-md cursor-pointer',
         isSelected && 'ring-2 ring-primary/50 border-primary/30'
       )}
       onClick={onSelect}
@@ -1952,7 +1952,7 @@ function PoolDetailPanel({
                     </TableRow>
                   ) : (
                     filteredAssignments.map((assignment) => (
-                      <TableRow key={assignment.id} className="group">
+                      <TableRow key={assignment.id} className="group table-row-hover">
                         <TableCell className="py-2">
                           <div className="flex items-center gap-1.5">
                             <code className="text-xs font-mono">{assignment.ipAddress}</code>

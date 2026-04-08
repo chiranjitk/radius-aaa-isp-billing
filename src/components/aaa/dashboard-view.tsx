@@ -546,7 +546,7 @@ function OnlineUsersPanel() {
 
   return (
     <FadeIn delay={300}>
-      <Card className="border-0 shadow-md">
+      <Card className="border-0 shadow-md inset-card">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -556,7 +556,7 @@ function OnlineUsersPanel() {
               <div>
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
                   Online Users
-                  <Badge className="bg-emerald-500 text-white hover:bg-emerald-500 border-0 text-[10px] px-1.5 py-0 h-5 font-bold animate-pulse">
+                  <Badge className="bg-emerald-500 text-white hover:bg-emerald-500 border-0 text-[10px] px-1.5 py-0 h-5 font-bold animate-pulse chip">
                     {total}
                   </Badge>
                 </CardTitle>
@@ -567,7 +567,7 @@ function OnlineUsersPanel() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-xs text-muted-foreground hover:text-foreground h-7 px-2"
+                className="text-xs text-muted-foreground hover:text-foreground h-7 px-2 ripple"
                 onClick={() => setActiveView('sessions')}
               >
                 View All <ChevronRight className="ml-0.5 h-3 w-3" />
@@ -608,7 +608,7 @@ function OnlineUsersPanel() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-xs h-8 gap-1"
+                    className="text-xs h-8 gap-1 ripple"
                     onClick={() => setActiveView('sessions')}
                   >
                     View All {total} Active Sessions <ArrowRight className="h-3 w-3" />
@@ -677,7 +677,7 @@ function LiveActivityFeed({ sessions }: { sessions: DashboardData['recentSession
 
   return (
     <FadeIn delay={600}>
-      <Card className="border-0 shadow-md">
+      <Card className="border-0 shadow-md inset-card">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
@@ -738,7 +738,7 @@ function LiveActivityFeed({ sessions }: { sessions: DashboardData['recentSession
 // =============================================
 function ChartCard({ title, description, children, className = '' }: { title: string; description: string; children: React.ReactNode; className?: string }) {
   return (
-    <Card className={`border-0 shadow-md gradient-border-visible ${className}`}>
+    <Card className={`border-0 shadow-md inset-card gradient-border-visible ${className}`}>
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-semibold">{title}</CardTitle>
         <CardDescription className="text-xs">{description}</CardDescription>
@@ -790,7 +790,7 @@ function DashboardSkeleton() {
         ))}
       </div>
       {/* Online Users */}
-      <Card className="border-0 shadow-md">
+      <Card className="border-0 shadow-md inset-card">
         <CardContent className="p-6">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -867,7 +867,7 @@ function InvoiceStatusBadge({ status }: { status: string }) {
   const c = config[status] || config.pending
   const Icon = c.icon
   return (
-    <Badge variant="secondary" className={`${c.className} gap-1`}>
+    <Badge variant="secondary" className={`${c.className} gap-1 chip`}>
       <Icon className="h-2.5 w-2.5" />
       {status}
     </Badge>
@@ -1057,7 +1057,7 @@ function SystemActivityTimeline() {
 
   return (
     <FadeIn delay={450}>
-      <Card className="border-0 shadow-md">
+      <Card className="border-0 shadow-md inset-card">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -1078,7 +1078,7 @@ function SystemActivityTimeline() {
             <Button
               variant="ghost"
               size="sm"
-              className="text-xs text-muted-foreground hover:text-foreground h-7 px-2"
+              className="text-xs text-muted-foreground hover:text-foreground h-7 px-2 ripple"
               onClick={() => toast.info('Full activity log available in the Sessions view')}
             >
               View All <ChevronRight className="ml-0.5 h-3 w-3" />
@@ -1158,6 +1158,212 @@ function QuickActionsGrid() {
           )
         })}
       </div>
+    </FadeIn>
+  )
+}
+
+// =============================================
+// System Health Panel Component
+// =============================================
+interface SystemHealthData {
+  cpu: { usage: number; cores: number; temperature: string }
+  memory: { total: string; used: string; usage: number }
+  disk: { total: string; used: string; usage: number }
+  network: { interfaces: { name: string; rx: string; tx: string; status: string }[] }
+  uptime: string
+  radius: { status: string; totalAuth: number; totalAcct: number; avgResponseTime: string }
+  services: { name: string; status: string; uptime: string; port: number }[]
+}
+
+function HealthBar({ label, value, color, icon }: { label: string; value: number; color: string; icon: React.ElementType }) {
+  const clamped = Math.min(100, Math.max(0, value))
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <icon className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-xs font-medium">{label}</span>
+        </div>
+        <span className={`text-xs font-bold ${clamped > 80 ? 'text-red-500' : clamped > 60 ? 'text-amber-500' : 'text-emerald-500'}`}>
+          {value.toFixed(1)}%
+        </span>
+      </div>
+      <div className="data-bar">
+        <div className="data-bar-fill" style={{ width: `${clamped}%`, background: color }} />
+      </div>
+    </div>
+  )
+}
+
+function StatusDot({ status }: { status: string }) {
+  const isUp = status === 'up' || status === 'running'
+  return (
+    <span className={`relative flex h-2 w-2 shrink-0`}>
+      {isUp && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-50" />}
+      <span className={`relative inline-flex h-2 w-2 rounded-full ${isUp ? 'bg-emerald-500' : 'bg-red-500'}`} />
+    </span>
+  )
+}
+
+function SystemHealthPanel() {
+  const [expanded, setExpanded] = useState(false)
+  const { data: health, isLoading } = useQuery<SystemHealthData>({
+    queryKey: ['system-health'],
+    queryFn: async () => {
+      const res = await fetch('/api/system-health')
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      return res.json()
+    },
+    refetchInterval: 5000,
+    staleTime: 4000,
+  })
+
+  return (
+    <FadeIn delay={50}>
+      <Card className="border-0 shadow-md inset-card hover-lift">
+        <CardHeader
+          className="pb-0 cursor-pointer select-none"
+          onClick={() => setExpanded(!expanded)}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-emerald-500" />
+              <CardTitle className="text-sm font-semibold">System Health</CardTitle>
+              {health && (
+                <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
+                  <span className="mr-1 h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
+                  Healthy
+                </Badge>
+              )}
+            </div>
+            <ChevronRight
+              className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`}
+            />
+          </div>
+        </CardHeader>
+
+        {expanded && (
+          <CardContent className="pt-4">
+            {isLoading && !health ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full rounded-lg" />
+                  ))}
+                </div>
+                <Skeleton className="h-32 w-full rounded-lg" />
+                <Skeleton className="h-24 w-full rounded-lg" />
+              </div>
+            ) : health ? (
+              <div className="space-y-5">
+                {/* CPU / Memory / Disk bars */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="rounded-lg border bg-muted/30 p-3">
+                    <HealthBar label={`CPU (${health.cpu.cores} cores)`} value={health.cpu.usage} color="linear-gradient(to right, #06b6d4, #14b8a6)" icon={Cpu} />
+                    <p className="text-[10px] text-muted-foreground mt-2">
+                      Temp: <span className="font-medium">{health.cpu.temperature}</span>
+                    </p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/30 p-3">
+                    <HealthBar label="Memory" value={health.memory.usage} color="linear-gradient(to right, #f59e0b, #f97316)" icon={HardDrive} />
+                    <p className="text-[10px] text-muted-foreground mt-2">
+                      <span className="font-medium">{health.memory.used}</span> / {health.memory.total}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/30 p-3">
+                    <HealthBar label="Disk" value={health.disk.usage} color="linear-gradient(to right, #8b5cf6, #a855f7)" icon={Database} />
+                    <p className="text-[10px] text-muted-foreground mt-2">
+                      <span className="font-medium">{health.disk.used}</span> / {health.disk.total}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Uptime + RADIUS stats */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Uptime</p>
+                    <p className="text-sm font-bold mt-1">{health.uptime}</p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">RADIUS Status</p>
+                    <div className="flex items-center justify-center gap-1.5 mt-1">
+                      <StatusDot status={health.radius.status} />
+                      <span className="text-sm font-bold capitalize">{health.radius.status}</span>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Auth Requests</p>
+                    <p className="text-sm font-bold mt-1 tabular-nums">{health.radius.totalAuth.toLocaleString()}</p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Avg Response</p>
+                    <p className="text-sm font-bold mt-1">{health.radius.avgResponseTime}</p>
+                  </div>
+                </div>
+
+                {/* Network interfaces */}
+                <div className="rounded-lg border bg-muted/30 p-3">
+                  <p className="text-xs font-semibold mb-2 flex items-center gap-1.5">
+                    <Signal className="h-3.5 w-3.5 text-muted-foreground" />
+                    Network Interfaces
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="text-muted-foreground border-b">
+                          <th className="text-left py-1.5 font-medium">Interface</th>
+                          <th className="text-left py-1.5 font-medium hidden sm:table-cell">Status</th>
+                          <th className="text-right py-1.5 font-medium">RX</th>
+                          <th className="text-right py-1.5 font-medium">TX</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {health.network.interfaces.map((iface) => (
+                          <tr key={iface.name} className="border-b last:border-0">
+                            <td className="py-1.5 font-mono font-medium">{iface.name}</td>
+                            <td className="py-1.5 hidden sm:table-cell">
+                              <div className="flex items-center gap-1.5">
+                                <StatusDot status={iface.status} />
+                                <span className="capitalize">{iface.status}</span>
+                              </div>
+                            </td>
+                            <td className="py-1.5 text-right tabular-nums">{iface.rx}</td>
+                            <td className="py-1.5 text-right tabular-nums">{iface.tx}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Services */}
+                <div className="rounded-lg border bg-muted/30 p-3">
+                  <p className="text-xs font-semibold mb-2 flex items-center gap-1.5">
+                    <Server className="h-3.5 w-3.5 text-muted-foreground" />
+                    Services
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {health.services.map((svc) => (
+                      <div key={svc.name} className="flex items-center justify-between rounded-md border bg-background/50 px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <StatusDot status={svc.status} />
+                          <span className="text-xs font-medium">{svc.name}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[10px] text-muted-foreground">{svc.uptime}</span>
+                          {svc.port > 0 && (
+                            <span className="text-[10px] font-mono text-muted-foreground">:{svc.port}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </CardContent>
+        )}
+      </Card>
     </FadeIn>
   )
 }
@@ -1269,6 +1475,11 @@ export function DashboardView() {
       <SystemHealthBar data={data} />
 
       {/* ============================================= */}
+      {/* System Health Panel (expandable) */}
+      {/* ============================================= */}
+      <SystemHealthPanel />
+
+      {/* ============================================= */}
       {/* Actions Bar */}
       {/* ============================================= */}
       <FadeIn delay={50}>
@@ -1282,7 +1493,7 @@ export function DashboardView() {
             disabled={seedMutation.isPending}
             variant="outline"
             size="sm"
-            className="shrink-0 h-8 text-xs"
+            className="shrink-0 h-8 text-xs ripple"
           >
             {seedMutation.isPending ? (
               <RefreshCw className="mr-1.5 h-3 w-3 animate-spin" />
@@ -1611,7 +1822,7 @@ export function DashboardView() {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         {/* Recent Sessions Table */}
         <FadeIn delay={800}>
-          <Card className="border-0 shadow-md">
+          <Card className="border-0 shadow-md inset-card">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -1621,7 +1832,7 @@ export function DashboardView() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-xs text-muted-foreground hover:text-foreground h-7 px-2"
+                  className="text-xs text-muted-foreground hover:text-foreground h-7 px-2 ripple"
                   onClick={() => setActiveView('sessions')}
                 >
                   View All <ChevronRight className="ml-0.5 h-3 w-3" />
@@ -1658,7 +1869,7 @@ export function DashboardView() {
                       data.recentSessions.map((session, idx) => (
                         <TableRow
                           key={session.id}
-                          className={`group transition-colors hover:bg-muted/30 ${
+                          className={`group transition-colors hover:bg-muted/30 table-row-hover ${
                             idx % 2 === 0 ? '' : 'bg-muted/20'
                           }`}
                         >
@@ -1694,7 +1905,7 @@ export function DashboardView() {
                           <TableCell>
                             <Badge
                               variant={session.status === 'active' ? 'default' : 'secondary'}
-                              className={`text-[10px] gap-1 ${
+                              className={`text-[10px] gap-1 chip ${
                                 session.status === 'active'
                                   ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 border-0'
                                   : 'bg-slate-100 text-slate-500 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-400 border-0'
@@ -1716,7 +1927,7 @@ export function DashboardView() {
 
         {/* Recent Invoices Table */}
         <FadeIn delay={900}>
-          <Card className="border-0 shadow-md">
+          <Card className="border-0 shadow-md inset-card">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -1726,7 +1937,7 @@ export function DashboardView() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-xs text-muted-foreground hover:text-foreground h-7 px-2"
+                  className="text-xs text-muted-foreground hover:text-foreground h-7 px-2 ripple"
                   onClick={() => setActiveView('billing')}
                 >
                   View All <ChevronRight className="ml-0.5 h-3 w-3" />
@@ -1762,7 +1973,7 @@ export function DashboardView() {
                       data.recentInvoices.map((invoice, idx) => (
                         <TableRow
                           key={invoice.id}
-                          className={`group transition-colors hover:bg-muted/30 ${
+                          className={`group transition-colors hover:bg-muted/30 table-row-hover ${
                             idx % 2 === 0 ? '' : 'bg-muted/20'
                           }`}
                         >

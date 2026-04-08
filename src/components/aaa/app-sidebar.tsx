@@ -24,6 +24,7 @@ import {
   Globe,
   UserPlus,
   UserCog,
+  Network,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -60,13 +61,14 @@ const navItems: NavItem[] = [
   { id: 'settings', label: 'System Settings', icon: Settings, category: 'SYS', categoryColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-400' },
   { id: 'registrations', label: 'Registrations', icon: UserPlus, category: 'SYS', categoryColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-400' },
   { id: 'selfcare', label: 'Selfcare Portal', icon: UserCog, category: 'SYS', categoryColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-400' },
+  { id: 'topology', label: 'Network Topology', icon: Network, category: 'SYS', categoryColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-400' },
 ]
 
 const groupedItems = {
   'Overview': ['dashboard'] as ViewId[],
   'AAA': ['users', 'nas', 'policies', 'sessions'] as ViewId[],
   'BSS': ['plans', 'billing', 'reports'] as ViewId[],
-  'System': ['dictionary', 'ip-pools', 'settings', 'registrations', 'selfcare'] as ViewId[],
+  'System': ['dictionary', 'ip-pools', 'settings', 'registrations', 'selfcare', 'topology'] as ViewId[],
 }
 
 export function AppSidebar() {

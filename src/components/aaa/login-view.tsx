@@ -85,6 +85,11 @@ export function LoginView() {
       {/* Background decorations */}
       <div className="dot-pattern absolute inset-0 opacity-40" />
       <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] via-transparent to-primary/[0.05]" />
+      {/* Decorative blob */}
+      <div className="blob absolute -bottom-40 -left-40 h-[500px] w-[500px] bg-primary/[0.06] blur-3xl pointer-events-none" />
+      <div className="blob absolute -top-40 -right-40 h-[400px] w-[400px] bg-primary/[0.04] blur-3xl pointer-events-none" style={{ animationDelay: '-4s' }} />
+      {/* Grid pattern overlay on one side */}
+      <div className="absolute inset-y-0 left-0 w-1/3 grid-pattern opacity-30 pointer-events-none" />
 
       {/* Floating accent circles */}
       <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-primary/[0.04] blur-3xl" />
@@ -225,7 +230,7 @@ export function LoginView() {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full h-11 text-sm font-semibold cursor-pointer btn-glow"
+              className="w-full h-11 text-sm font-semibold cursor-pointer btn-glow ripple"
               disabled={loading}
             >
               {loading ? (
@@ -248,7 +253,7 @@ export function LoginView() {
             <Button
               type="button"
               variant="outline"
-              className="w-full h-10 text-sm font-medium cursor-pointer hover-lift"
+              className="w-full h-10 text-sm font-medium cursor-pointer hover-lift ripple"
               onClick={handleDemoLogin}
               disabled={loading}
             >

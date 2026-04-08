@@ -14,6 +14,7 @@ export type ViewId =
   | 'ip-pools'
   | 'registrations'
   | 'selfcare'
+  | 'topology'
   | 'login'
 
 interface AppState {
