@@ -8,6 +8,75 @@ datasource db {
 }
 
 // ==========================================
+// ADMIN & AUTHENTICATION MODELS
+// ==========================================
+
+model Admin {
+  id            String    @id @default(cuid())
+  username      String    @unique
+  password      String
+  fullName      String?
+  email         String    @unique
+  phone         String?
+  role          String    @default("operator") // super_admin, admin, operator, viewer, reseller
+  status        String    @default("active") // active, disabled, locked
+  twoFactorSecret String?
+  twoFactorEnabled Boolean @default(false)
+  lastLoginAt   DateTime?
+  lastLoginIp   String?
+  loginAttempts Int       @default(0)
+  lockedUntil   DateTime?
+  passwordChangedAt DateTime?
+  avatar        String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  apiKeys       ApiKey[]
+  auditLogs     AuditLog[]
+  assignedTickets Ticket[] @relation("AssignedTickets")
+
+  @@index([username])
+  @@index([email])
+  @@index([role])
+  @@index([status])
+}
+
+model LoginAttempt {
+  id          String   @id @default(cuid())
+  username    String
+  ipAddress   String?
+  userAgent   String?
+  success     Boolean  @default(false)
+  failReason  String?
+  timestamp   DateTime @default(now())
+
+  @@index([username])
+  @@index([timestamp])
+  @@index([success])
+}
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  name        String
+  keyHash     String   @unique
+  keyPrefix   String
+  adminId     String
+  permissions String   @default("read") // read, write, admin (JSON array stored as string)
+  rateLimit   Int      @default(1000) // requests per minute
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  status      String   @default("active") // active, revoked
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  admin       Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([status])
+  @@index([keyPrefix])
+}
+
+// ==========================================
 // RADIUS CORE MODELS
 // ==========================================
 
@@ -24,22 +93,26 @@ model RadUser {
   state         String?
   zipCode       String?
   country       String?
-  profilePhoto  String?                  // URL or base64 of profile photo
+  profilePhoto  String?
   dateOfBirth   String?
-  gender        String?                  // male, female, other
-  idType        String?                  // passport, national_id, driving_license
+  gender        String?
+  idType        String?
   idNumber      String?
-  kycStatus     String    @default("pending") // pending, submitted, verified, rejected
+  kycStatus     String    @default("pending")
   kycVerifiedAt DateTime?
   kycVerifiedBy String?
   kycNotes      String?
-  ipType        String    @default("dynamic") // static, dynamic, pool
-  staticIp      String?                  // assigned static IP address
+  ipType        String    @default("dynamic")
+  staticIp      String?
   ipPoolId      String?
-  status        String    @default("active") // active, disabled, suspended
-  authType      String    @default("PAP")    // PAP, CHAP, MS-CHAPv2, EAP
-  simultaneous  Int       @default(1)        // max simultaneous sessions
+  status        String    @default("active") // active, disabled, suspended, expired
+  authType      String    @default("PAP")
+  simultaneous  Int       @default(1)
   expiryDate    DateTime?
+  referredBy    String?
+  referralCode  String?   @unique
+  notes         String?
+  tags          String?   // JSON array of tags for segmentation
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -52,11 +125,15 @@ model RadUser {
   payments      Payment[]
   documents     UserDocument[]
   ipPool        IpPool?  @relation(fields: [ipPoolId], references: [id])
+  wallet        Wallet?
+  creditNotes   CreditNote[]
 
   @@index([username])
   @@index([status])
   @@index([kycStatus])
   @@index([ipType])
+  @@index([referredBy])
+  @@index([referralCode])
 }
 
 model RadGroup {
@@ -70,6 +147,8 @@ model RadGroup {
   users       RadUserGroup[]
   checkAttrs  RadGroupCheck[]
   replyAttrs  RadGroupReply[]
+
+  @@index([name])
 }
 
 model RadUserGroup {
@@ -134,6 +213,22 @@ model RadGroupReply {
 }
 
 // ==========================================
+// HUNTGROUPS (NAS grouping for RADIUS)
+// ==========================================
+
+model Huntgroup {
+  id          String   @id @default(cuid())
+  groupName   String   @unique
+  nasIpAddress String?
+  nasPortId   String?
+  description String?
+  createdAt   DateTime @default(now())
+
+  @@index([groupName])
+  @@index([nasIpAddress])
+}
+
+// ==========================================
 // NETWORK ACCESS SERVER MODELS
 // ==========================================
 
@@ -141,19 +236,28 @@ model Nas {
   id          String   @id @default(cuid())
   nasName     String
   shortName   String?
-  nasType     String   // cisco, juniper, mikrotik, huawei, aruba, etc.
+  nasType     String
   ipAddress   String   @unique
   ports       Int      @default(0)
   secret      String
   server      String?
   community   String?
   description String?
-  status      String   @default("up") // up, down, disabled
+  status      String   @default("up") // up, down, disabled, maintenance
   lastAlive   DateTime?
-  vendor      String?  // Vendor name
-  model       String?  // Device model
+  uptime      Int?
+  cpuUsage    Float?
+  memoryUsage Float?
+  vendor      String?
+  model       String?
   location    String?
   contact     String?
+  snmpVersion String?  @default("2c")
+  snmpEnabled Boolean  @default(false)
+  firmware    String?
+  serialNumber String?
+  configBackup String?
+  lastBackupAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -179,7 +283,7 @@ model RadAcct {
   acctStartTime   DateTime @default(now())
   acctStopTime    DateTime?
   acctSessionTime Int?
-  acctAuthentic   String?  // RADIUS, LDAP, Local
+  acctAuthentic   String?
   acctInputOctets BigInt?     @default(0)
   acctOutputOctets BigInt?    @default(0)
   acctInputPackets BigInt?    @default(0)
@@ -198,7 +302,7 @@ model RadAcct {
   serviceType     String?
   terminateCause  String?
   updateCount     Int      @default(0)
-  status          String   @default("active") // active, stopped
+  status          String   @default("active")
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -222,6 +326,9 @@ model RadPostAuth {
   calledStationId String?
   callingStationId String?
   timestamp DateTime @default(now())
+
+  @@index([username])
+  @@index([timestamp])
 }
 
 // ==========================================
@@ -234,18 +341,24 @@ model Plan {
   description   String?
   planType      String   // time-based, data-based, flat-rate, hybrid
   billingCycle  String   // daily, weekly, monthly, yearly
-  price         Float    // price in base currency
+  price         Float
   currency      String   @default("USD")
-  dataLimit     Int?     // data cap in MB (0 = unlimited)
-  timeLimit     Int?     // time cap in minutes (0 = unlimited)
+  dataLimit     Int?     // data cap in MB
+  timeLimit     Int?     // time cap in minutes
   speedDown     Int?     // download speed in Kbps
   speedUp       Int?     // upload speed in Kbps
   simultaneous  Int      @default(1)
   priority      Int      @default(0)
-  status        String   @default("active") // active, disabled, archived
+  status        String   @default("active")
   isActive      Boolean  @default(true)
   trialDays     Int      @default(0)
   gracePeriodDays Int    @default(0)
+  lateFeePercent  Float?  // percentage of total for late payment
+  contractMonths Int?    // minimum contract period
+  earlyTerminationFee Float?
+  setupFee       Float?  // one-time setup charge
+  popularity    Int      @default(0) // number of active subscriptions
+  features      String?  // JSON array of feature strings
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -261,11 +374,15 @@ model Subscription {
   id          String    @id @default(cuid())
   username    String
   planId      String
-  status      String    @default("active") // active, expired, cancelled, suspended
+  status      String    @default("active") // active, expired, cancelled, suspended, trial
   startDate   DateTime  @default(now())
   expiryDate  DateTime?
   nextBilling DateTime?
   autoRenew   Boolean   @default(true)
+  trialEnd    DateTime?
+  billingMode String    @default("postpaid") // postpaid, prepaid
+  canceledAt  DateTime?
+  cancelReason String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -279,29 +396,54 @@ model Subscription {
 }
 
 model Invoice {
-  id          String    @id @default(cuid())
-  invoiceNo   String    @unique
-  username    String
-  planId      String?
+  id            String    @id @default(cuid())
+  invoiceNo     String    @unique
+  username      String
+  planId        String?
   subscriptionId String?
-  amount      Float
-  tax         Float     @default(0)
-  total       Float
-  status      String    @default("pending") // pending, paid, overdue, cancelled, refunded
-  dueDate     DateTime
-  paidDate    DateTime?
-  notes       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  amount        Float
+  taxAmount     Float     @default(0)
+  discountAmount Float     @default(0)
+  lateFee       Float     @default(0)
+  total         Float
+  status        String    @default("pending") // pending, paid, overdue, cancelled, refunded, partial
+  dueDate       DateTime
+  paidDate      DateTime?
+  paidAmount    Float?
+  notes         String?
+  pdfUrl        String?
+  reminderCount Int       @default(0) // number of payment reminders sent
+  reminderSentAt DateTime?
+  gracePeriodEnds DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  user        RadUser      @relation(fields: [username], references: [username])
-  plan        Plan?        @relation(fields: [planId], references: [id])
-  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
-  payments    Payment[]
+  user          RadUser      @relation(fields: [username], references: [username])
+  plan          Plan?        @relation(fields: [planId], references: [id])
+  subscription  Subscription? @relation(fields: [subscriptionId], references: [id])
+  payments      Payment[]
+  lineItems     InvoiceLineItem[]
 
   @@index([username])
   @@index([status])
   @@index([dueDate])
+  @@index([createdAt])
+}
+
+model InvoiceLineItem {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  description String
+  quantity    Int      @default(1)
+  unitPrice   Float
+  taxPercent  Float    @default(0)
+  taxAmount   Float    @default(0)
+  total       Float
+  sortOrder   Int      @default(0)
+
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
 }
 
 model Payment {
@@ -310,11 +452,14 @@ model Payment {
   username      String
   invoiceId     String
   amount        Float
-  method        String    // cash, card, bank_transfer, online, wallet
-  gateway       String?
+  method        String    // cash, card, bank_transfer, online, wallet, upi, cheque
+  gateway       String?   // stripe, razorpay, paypal, phonepe
   transactionId String?
   status        String    @default("completed") // completed, failed, pending, refunded
   paidAt        DateTime  @default(now())
+  refundAmount  Float?
+  refundReason  String?
+  refundedAt    DateTime?
   createdAt     DateTime  @default(now())
 
   user          RadUser   @relation(fields: [username], references: [username])
@@ -322,6 +467,427 @@ model Payment {
 
   @@index([username])
   @@index([invoiceId])
+  @@index([status])
+  @@index([paidAt])
+}
+
+model CreditNote {
+  id            String   @id @default(cuid())
+  creditNo      String   @unique
+  username      String
+  invoiceId     String?
+  amount        Float
+  reason        String
+  status        String   @default("active") // active, used, expired
+  usedAmount    Float    @default(0)
+  expiresAt     DateTime?
+  issuedBy      String?
+  createdAt     DateTime @default(now())
+
+  user          RadUser  @relation(fields: [username], references: [username])
+
+  @@index([username])
+  @@index([status])
+}
+
+// ==========================================
+// TAX MANAGEMENT
+// ==========================================
+
+model TaxRate {
+  id          String   @id @default(cuid())
+  name        String
+  rate        Float    // percentage, e.g. 18.0 for 18%
+  type        String   @default("percentage") // percentage, flat
+  status      String   @default("active") // active, disabled
+  isCompound  Boolean  @default(false) // applied on top of other taxes
+  priority    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+}
+
+model TaxZone {
+  id          String   @id @default(cuid())
+  name        String
+  country     String?
+  state       String?
+  city        String?
+  taxRateIds  String   // JSON array of TaxRate IDs
+  isDefault   Boolean  @default(false)
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([country])
+  @@index([state])
+  @@index([status])
+}
+
+// ==========================================
+// WALLET / PREPAID SYSTEM
+// ==========================================
+
+model Wallet {
+  id            String   @id @default(cuid())
+  username      String   @unique
+  balance       Float    @default(0)
+  creditLimit   Float    @default(0)
+  totalTopup    Float    @default(0)
+  totalSpent    Float    @default(0)
+  status        String   @default("active") // active, frozen, closed
+  lowBalanceAlert Float   @default(10) // alert when below this
+  autoTopup     Boolean  @default(false)
+  autoTopupAmount Float   @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          RadUser  @relation(fields: [username], references: [username])
+  transactions  WalletTransaction[]
+
+  @@index([username])
+  @@index([status])
+}
+
+model WalletTransaction {
+  id            String    @id @default(cuid())
+  walletId      String
+  username      String
+  type          String    // topup, deduction, refund, adjustment, plan_renewal
+  amount        Float
+  balanceBefore Float
+  balanceAfter  Float
+  description   String?
+  referenceId   String?   // invoice ID, payment ID, etc.
+  method        String?   // cash, online, bank, admin_adjustment
+  performedBy   String?   // admin username for manual adjustments
+  createdAt     DateTime  @default(now())
+
+  wallet        Wallet    @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId])
+  @@index([username])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// ==========================================
+// COUPON / DISCOUNT SYSTEM
+// ==========================================
+
+model Coupon {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  name          String
+  description   String?
+  discountType  String    // percentage, flat, free_trial
+  discountValue Float     // percentage or flat amount
+  freeTrialDays Int?
+  maxUses       Int?      // null = unlimited
+  usedCount     Int       @default(0)
+  minOrderAmount Float?    // minimum invoice amount to apply
+  maxDiscount   Float?     // maximum discount amount (for percentage type)
+  applicablePlans String?  // JSON array of plan IDs, null = all plans
+  startDate     DateTime?
+  expiresAt     DateTime?
+  status        String    @default("active") // active, disabled, expired
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  usages        CouponUsage[]
+
+  @@index([code])
+  @@index([status])
+}
+
+model CouponUsage {
+  id            String   @id @default(cuid())
+  couponId      String
+  username      String
+  invoiceId     String?
+  discountGiven Float
+  usedAt        DateTime @default(now())
+
+  coupon        Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+
+  @@index([couponId])
+  @@index([username])
+}
+
+// ==========================================
+// HOTSPOT / CAPTIVE PORTAL
+// ==========================================
+
+model HotspotLocation {
+  id            String    @id @default(cuid())
+  name          String
+  description   String?
+  nasId         String?   // linked NAS device
+  address       String?
+  latitude      Float?
+  longitude     Float?
+  splashPageUrl String?
+  logoUrl       String?
+  welcomeMsg    String?
+  termsOfService String?
+  bandwidthLimitDown Int?
+  bandwidthLimitUp Int?
+  sessionTimeout Int?     // max session in minutes
+  dailyDataLimit Int?     // daily data cap in MB
+  allowFreeAccess Boolean @default(false)
+  freeDataLimit Int?      // free access data limit MB
+  freeTimeLimit Int?      // free access time limit minutes
+  walledGardenSites String? // JSON array of allowed sites
+  status        String    @default("active")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  vouchers      Voucher[]
+
+  @@index([status])
+  @@index([nasId])
+}
+
+model Voucher {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  batchId       String?  // batch reference for bulk generated
+  locationId    String?
+  planId        String?
+  username      String?  // null = unused, set = claimed
+  type          String   @default("time") // time, data, unlimited
+  value         Int      // minutes or MB depending on type
+  speedDown     Int?
+  speedUp       Int?
+  simultaneous  Int      @default(1)
+  status        String   @default("available") // available, used, expired, disabled
+  usedAt        DateTime?
+  expiresAt     DateTime?
+  macAddress    String?  // if MAC-bound voucher
+  printedAt     DateTime?
+  createdAt     DateTime @default(now())
+
+  location      HotspotLocation? @relation(fields: [locationId], references: [id])
+
+  @@index([code])
+  @@index([batchId])
+  @@index([locationId])
+  @@index([status])
+  @@index([username])
+}
+
+model MacAuth {
+  id            String   @id @default(cuid())
+  macAddress    String   @unique
+  username      String?
+  description   String?
+  locationId    String?
+  bandwidthDown Int?
+  bandwidthUp   Int?
+  dailyDataLimit Int?
+  timeLimit     Int?     // minutes per session
+  expiryDate    DateTime?
+  status        String   @default("active") // active, disabled, expired
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([macAddress])
+  @@index([status])
+  @@index([locationId])
+}
+
+model HotspotSession {
+  id            String    @id @default(cuid())
+  sessionId     String    @unique
+  username      String?
+  macAddress    String?
+  locationId    String?
+  nasIpAddress  String?
+  authMethod    String    // password, voucher, mac, social, free
+  voucherCode   String?
+  ipAddress     String?
+  startTime     DateTime  @default(now())
+  stopTime      DateTime?
+  downloadBytes BigInt?
+  uploadBytes   BigInt?
+  status        String    @default("active") // active, stopped
+  terminateCause String?
+  createdAt     DateTime  @default(now())
+
+  @@index([sessionId])
+  @@index([username])
+  @@index([macAddress])
+  @@index([locationId])
+  @@index([status])
+}
+
+// ==========================================
+// RESELLER / MULTI-TENANT
+// ==========================================
+
+model Reseller {
+  id            String    @id @default(cuid())
+  username      String    @unique
+  password      String
+  fullName      String
+  email         String    @unique
+  phone         String?
+  company       String?
+  address       String?
+  city          String?
+  state         String?
+  country       String?
+  balance       Float     @default(0)
+  commissionRate Float    @default(10) // percentage commission
+  creditLimit   Float     @default(0)
+  parentId      String?   // parent reseller ID for hierarchy
+  level         Int       @default(1) // hierarchy level
+  status        String    @default("active") // active, disabled, suspended
+  logoUrl       String?
+  primaryColor  String?
+  customDomain  String?
+  customEmail   String?
+  maxUsers      Int?
+  maxNas        Int?
+  ipPoolIds     String?   // JSON array of allocated pool IDs
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  commissions   ResellerCommission[]
+  transactions  ResellerTransaction[]
+
+  @@index([username])
+  @@index([email])
+  @@index([parentId])
+  @@index([status])
+  @@index([level])
+}
+
+model ResellerCommission {
+  id            String   @id @default(cuid())
+  resellerId    String
+  username      String   // end user who triggered commission
+  invoiceId     String?
+  amount        Float
+  rate          Float    // commission rate applied
+  status        String   @default("pending") // pending, paid, reversed
+  paidAt        DateTime?
+  createdAt     DateTime @default(now())
+
+  reseller      Reseller @relation(fields: [resellerId], references: [id], onDelete: Cascade)
+
+  @@index([resellerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ResellerTransaction {
+  id            String    @id @default(cuid())
+  resellerId    String
+  type          String    // topup, deduction, commission, adjustment
+  amount        Float
+  balanceBefore Float
+  balanceAfter  Float
+  description   String?
+  referenceId   String?
+  performedBy   String?
+  createdAt     DateTime  @default(now())
+
+  reseller      Reseller  @relation(fields: [resellerId], references: [id], onDelete: Cascade)
+
+  @@index([resellerId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// ==========================================
+// NOTIFICATION ENGINE
+// ==========================================
+
+model NotificationTemplate {
+  id            String   @id @default(cuid())
+  name          String
+  type          String   // email, sms, whatsapp, push
+  category      String   // welcome, invoice, payment, reminder, alert, suspension, otp, marketing
+  subject       String?  // for email
+  body          String   // template body with {{variables}}
+  variables     String?  // JSON array of available variables
+  channel       String   // smtp, twilio, msg91, whatsapp_business
+  status        String   @default("active")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([type])
+  @@index([category])
+  @@index([status])
+}
+
+model NotificationLog {
+  id            String    @id @default(cuid())
+  templateId    String?
+  recipient     String    // email or phone
+  type          String    // email, sms, whatsapp, push
+  category      String
+  subject       String?
+  body          String?
+  status        String    @default("sent") // sent, delivered, failed, queued
+  error         String?
+  sentVia       String?   // smtp, twilio, etc.
+  sentAt        DateTime  @default(now())
+  deliveredAt   DateTime?
+  readAt        DateTime?
+  metadata      String?   // JSON for extra info
+
+  @@index([recipient])
+  @@index([type])
+  @@index([category])
+  @@index([status])
+  @@index([sentAt])
+}
+
+// ==========================================
+// WEBHOOK SYSTEM
+// ==========================================
+
+model Webhook {
+  id            String   @id @default(cuid())
+  name          String
+  url           String
+  secret        String
+  events        String   // JSON array of event types: user.created, invoice.paid, session.start, etc.
+  status        String   @default("active") // active, disabled
+  lastTriggered DateTime?
+  successCount  Int      @default(0)
+  failureCount  Int      @default(0)
+  createdBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  deliveries    WebhookDelivery[]
+
+  @@index([status])
+}
+
+model WebhookDelivery {
+  id            String    @id @default(cuid())
+  webhookId     String
+  eventId       String
+  eventType     String
+  payload       String    // JSON payload
+  responseCode  Int?
+  responseBody  String?
+  status        String    @default("pending") // pending, success, failed
+  attempts      Int       @default(0)
+  nextRetry     DateTime?
+  duration      Int?      // response time in ms
+  createdAt     DateTime  @default(now())
+
+  webhook       Webhook   @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId])
+  @@index([eventType])
   @@index([status])
 }
 
@@ -350,8 +916,8 @@ model PolicyRule {
   id          String   @id @default(cuid())
   policyId    String
   name        String
-  attribute   String   // RADIUS attribute
-  operator    String   // =, !=, <, >, <=, >=, :=, ==, etc
+  attribute   String
+  operator    String
   value       String
   description String?
   priority    Int      @default(0)
@@ -392,7 +958,7 @@ model VendorAttribute {
   vendorId    String
   name        String
   oid         String?
-  type        String  // string, integer, ipaddr, date, octets
+  type        String
   flags       String?
   value       String?
 
@@ -409,8 +975,8 @@ model AuditLog {
   id        String   @id @default(cuid())
   userId    String?
   username  String?
-  action    String   // create, update, delete, login, logout, export, etc.
-  module    String   // users, nas, plans, policies, billing, sessions, etc.
+  action    String
+  module    String
   details   String?
   ipAddress String?
   userAgent String?
@@ -423,32 +989,74 @@ model AuditLog {
 }
 
 model SystemSetting {
-  id    String @id @default(cuid())
-  key   String @unique
-  value String
-  type  String @default("string") // string, number, boolean, json
-  group String @default("general") // general, radius, billing, email, sms
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  type        String   @default("string")
+  group       String   @default("general") // general, radius, billing, email, sms, hotspot, payment, branding
   description String?
+  isSecret    Boolean  @default(false) // for sensitive values like API keys
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([group])
 }
 
+model CronJob {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  schedule    String   // cron expression
+  command     String   // what to execute
+  status      String   @default("active") // active, disabled, running, error
+  lastRunAt   DateTime?
+  nextRunAt   DateTime?
+  lastResult  String?
+  runCount    Int      @default(0)
+  failCount   Int      @default(0)
+  timeout     Int      @default(300) // max runtime in seconds
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([nextRunAt])
+}
+
+model Backup {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   // full, incremental
+  filePath    String
+  fileSize    Int?
+  checksum    String?
+  status      String   @default("completed") // pending, completed, failed
+  createdById String?
+  restoredAt  DateTime?
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+}
+
 // ==========================================
-// IP POOL MANAGEMENT (24online-style)
+// IP POOL MANAGEMENT
 // ==========================================
 
 model IpPool {
   id          String   @id @default(cuid())
   name        String   @unique
   description String?
-  network     String                    // e.g. "10.0.0.0/24"
+  network     String
   gateway     String?
   subnetMask  String?
   dnsPrimary  String?
   dnsSecondary String?
-  leaseTime   Int      @default(86400)  // in seconds
-  type        String   @default("dhcp")  // dhcp, static, pppoe
-  status      String   @default("active") // active, disabled, full
+  leaseTime   Int      @default(86400)
+  type        String   @default("dhcp")
+  status      String   @default("active")
+  vlanId      Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -462,9 +1070,9 @@ model IpPool {
 model IpPoolRange {
   id        String  @id @default(cuid())
   poolId    String
-  startIp   String  // e.g. "10.0.0.100"
-  endIp     String  // e.g. "10.0.0.200"
-  currentIp String? // next IP to assign (for sequential allocation)
+  startIp   String
+  endIp     String
+  currentIp String?
   isAvailable Boolean @default(true)
 
   pool      IpPool  @relation(fields: [poolId], references: [id], onDelete: Cascade)
@@ -478,12 +1086,12 @@ model IpAssignment {
   poolId      String
   rangeId     String
   ipAddress   String   @unique
-  username    String?  // null = available, set = assigned
+  username    String?
   macAddress  String?
   hostname    String?
   assignedAt  DateTime?
   releasedAt  DateTime?
-  status      String   @default("available") // available, assigned, reserved, quarantined
+  status      String   @default("available")
 
   pool        IpPool     @relation(fields: [poolId], references: [id], onDelete: Cascade)
   range       IpPoolRange @relation(fields: [rangeId], references: [id], onDelete: Cascade)
@@ -502,13 +1110,13 @@ model UserDocument {
   id          String   @id @default(cuid())
   userId      String
   username    String
-  docType     String   // id_proof, address_proof, photo, contract, other
-  docName     String   // display name
-  fileName    String   // original file name
-  filePath    String   // stored path/URL
+  docType     String
+  docName     String
+  fileName    String
+  filePath    String
   fileSize    Int?
   mimeType    String?
-  status      String   @default("pending") // pending, approved, rejected
+  status      String   @default("pending")
   verifiedBy  String?
   verifiedAt  DateTime?
   rejectReason String?
@@ -530,22 +1138,45 @@ model UserDocument {
 
 model Ticket {
   id          String   @id @default(cuid())
-  ticketNo    String   @unique // format: TKT-0001
+  ticketNo    String   @unique
   subject     String
   description String
-  status      String   @default("open") // open, in_progress, resolved, closed
-  priority    String   @default("medium") // low, medium, high, critical
-  category    String   @default("general") // billing, technical, account, network, general
-  username    String   // RADIUS user reference
-  assignedTo  String?  // admin assigned to ticket
+  status      String   @default("open")
+  priority    String   @default("medium")
+  category    String   @default("general")
+  username    String
+  assignedTo  String?
+  closedBy    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   resolvedAt  DateTime?
+  responseTime Int?    // first response time in minutes
+  resolutionTime Int?  // total resolution time in minutes
+
+  assignedToAdmin Admin?  @relation("AssignedTickets", fields: [assignedTo], references: [username])
+  messages    TicketMessage[]
 
   @@index([status])
   @@index([priority])
   @@index([category])
   @@index([username])
+  @@index([assignedTo])
+  @@index([createdAt])
+}
+
+model TicketMessage {
+  id          String   @id @default(cuid())
+  ticketId    String
+  sender      String   // username or admin username
+  senderType  String   // user, admin, system
+  message     String
+  attachments String?  // JSON array of file references
+  isInternal  Boolean  @default(false) // internal note visible only to admins
+  createdAt   DateTime @default(now())
+
+  ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
   @@index([createdAt])
 }
 
@@ -565,13 +1196,15 @@ model Registration {
   planId        String?
   ipAddress     String?
   userAgent     String?
-  status        String   @default("pending") // pending, approved, rejected, completed
+  status        String   @default("pending")
   approvedBy    String?
   approvedAt    DateTime?
   rejectReason  String?
-  token         String?  @unique // verification token
+  token         String?  @unique
   tokenExpiresAt DateTime?
   verifiedAt    DateTime?
+  referralCode  String?
+  source        String?  // web, mobile, api, referral
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
