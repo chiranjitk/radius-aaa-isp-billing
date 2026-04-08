@@ -37,6 +37,7 @@ import { WalletView } from '@/components/aaa/wallet-view'
 import { CouponsView } from '@/components/aaa/coupons-view'
 import { BillingEngineView } from '@/components/aaa/billing-engine-view'
 import { AdminView } from '@/components/aaa/admin-view'
+import { SystemOpsView } from '@/components/aaa/system-ops-view'
 import { ActivityDashboard } from '@/components/aaa/activity-dashboard'
 import { BandwidthAnalytics } from '@/components/aaa/bandwidth-analytics'
 import { Search, Radio, Moon, Sun, Shield, Clock, Activity, Keyboard, UserCircle, LogOut, ScrollText } from 'lucide-react'
@@ -76,6 +77,7 @@ const viewTitles: Record<string, { title: string; description: string; icon: str
   coupons: { title: 'Coupons & Discounts', description: 'Create and manage promotional coupons and vouchers', icon: 'tag' },
   'billing-engine': { title: 'Billing Engine', description: 'Advanced automated billing, invoicing, and credit note management', icon: 'calculator' },
   admin: { title: 'Admin & RBAC', description: 'Administrator accounts, roles, and access control management', icon: 'shield' },
+  'system-ops': { title: 'System Operations', description: 'Backup management, cron jobs, and system health monitoring', icon: 'harddrive' },
 }
 
 interface FooterStats {
@@ -348,6 +350,7 @@ export default function Home() {
               {activeView === 'coupons' && <CouponsView />}
               {activeView === 'billing-engine' && <BillingEngineView />}
               {activeView === 'admin' && <AdminView />}
+              {activeView === 'system-ops' && <SystemOpsView />}
             </div>
           </main>
 

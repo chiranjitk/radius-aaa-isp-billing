@@ -31,6 +31,7 @@ export type ViewId =
   | 'coupons'
   | 'billing-engine'
   | 'admin'
+  | 'system-ops'
   | 'login'
 
 // Permission definitions per role
@@ -63,6 +64,7 @@ const rolePermissions: Record<UserRole, Record<string, PermissionAction[]>> = {
     coupons: ['view', 'create', 'edit', 'delete'],
     'billing-engine': ['view', 'create', 'edit', 'delete'],
     admin: ['view', 'create', 'edit', 'delete'],
+    'system-ops': ['view', 'create', 'edit', 'delete'],
     selfcare: ['view'],
     topology: ['view'],
   },
@@ -92,6 +94,7 @@ const rolePermissions: Record<UserRole, Record<string, PermissionAction[]>> = {
     coupons: ['view'],
     'billing-engine': ['view'],
     admin: ['view'],
+    'system-ops': ['view'],
     selfcare: ['view'],
     topology: ['view'],
   },
@@ -121,6 +124,7 @@ const rolePermissions: Record<UserRole, Record<string, PermissionAction[]>> = {
     coupons: ['view'],
     'billing-engine': ['view'],
     admin: ['view'],
+    'system-ops': ['view'],
     selfcare: ['view'],
     topology: ['view'],
   },

@@ -41,6 +41,7 @@ import {
   Tag,
   Calculator,
   ShieldCheck,
+  HardDrive,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -93,6 +94,7 @@ const allNavItems: NavItem[] = [
   { id: 'coupons', label: 'Coupons', icon: Tag, category: 'BSS', categoryColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' },
   { id: 'billing-engine', label: 'Billing Engine', icon: Calculator, category: 'BSS', categoryColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' },
   { id: 'admin', label: 'Admin', icon: ShieldCheck, category: 'SYS', categoryColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-400' },
+  { id: 'system-ops', label: 'System Ops', icon: HardDrive, category: 'SYS', categoryColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-400' },
 ]
 
 const groupedItems = {
@@ -100,7 +102,7 @@ const groupedItems = {
   'AAA': ['users', 'nas', 'policies', 'sessions'] as ViewId[],
   'BSS': ['plans', 'billing', 'reports', 'bandwidth', 'tickets', 'resellers', 'tax', 'wallet', 'coupons', 'billing-engine'] as ViewId[],
   'Hotspot': ['hotspot', 'vouchers'] as ViewId[],
-  'System': ['dictionary', 'ip-pools', 'settings', 'registrations', 'selfcare', 'topology', 'notifications', 'webhooks', 'api-keys', 'admin'] as ViewId[],
+  'System': ['dictionary', 'ip-pools', 'settings', 'registrations', 'selfcare', 'topology', 'notifications', 'webhooks', 'api-keys', 'admin', 'system-ops'] as ViewId[],
 }
 
 const roleConfig: Record<UserRole, { label: string; icon: React.ElementType; colorClass: string; badgeClass: string }> = {
