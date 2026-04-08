@@ -29,6 +29,8 @@ export type ViewId =
   | 'tax'
   | 'wallet'
   | 'coupons'
+  | 'billing-engine'
+  | 'admin'
   | 'login'
 
 // Permission definitions per role
@@ -59,6 +61,8 @@ const rolePermissions: Record<UserRole, Record<string, PermissionAction[]>> = {
     tax: ['view', 'create', 'edit', 'delete'],
     wallet: ['view', 'create', 'edit'],
     coupons: ['view', 'create', 'edit', 'delete'],
+    'billing-engine': ['view', 'create', 'edit', 'delete'],
+    admin: ['view', 'create', 'edit', 'delete'],
     selfcare: ['view'],
     topology: ['view'],
   },
@@ -86,6 +90,8 @@ const rolePermissions: Record<UserRole, Record<string, PermissionAction[]>> = {
     tax: ['view'],
     wallet: ['view'],
     coupons: ['view'],
+    'billing-engine': ['view'],
+    admin: ['view'],
     selfcare: ['view'],
     topology: ['view'],
   },
@@ -113,6 +119,8 @@ const rolePermissions: Record<UserRole, Record<string, PermissionAction[]>> = {
     tax: ['view'],
     wallet: ['view'],
     coupons: ['view'],
+    'billing-engine': ['view'],
+    admin: ['view'],
     selfcare: ['view'],
     topology: ['view'],
   },
