@@ -30,6 +30,15 @@ import {
   Wrench,
   BookOpenCheck,
   Headphones,
+  MapPin,
+  Ticket,
+  Building2,
+  Bell,
+  Webhook,
+  KeyRound,
+  Percent,
+  Wallet,
+  Tag,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -71,13 +80,23 @@ const allNavItems: NavItem[] = [
   { id: 'topology', label: 'Network Topology', icon: Network, category: 'SYS', categoryColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-400' },
   { id: 'bandwidth', label: 'Bandwidth Analytics', icon: TrendingUp, category: 'BSS', categoryColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' },
   { id: 'tickets', label: 'Tickets', icon: Headphones, category: 'BSS', categoryColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' },
+  { id: 'hotspot', label: 'Hotspot Locations', icon: MapPin, category: 'HSP', categoryColor: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400' },
+  { id: 'vouchers', label: 'Voucher Manager', icon: Ticket, category: 'HSP', categoryColor: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400' },
+  { id: 'resellers', label: 'Resellers', icon: Building2, category: 'BSS', categoryColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' },
+  { id: 'notifications', label: 'Notifications', icon: Bell, category: 'SYS', categoryColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-400' },
+  { id: 'webhooks', label: 'Webhooks', icon: Webhook, category: 'SYS', categoryColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-400' },
+  { id: 'api-keys', label: 'API Keys', icon: KeyRound, category: 'SYS', categoryColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-400' },
+  { id: 'tax', label: 'Tax & Zones', icon: Percent, category: 'BSS', categoryColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' },
+  { id: 'wallet', label: 'Wallet / Prepaid', icon: Wallet, category: 'BSS', categoryColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' },
+  { id: 'coupons', label: 'Coupons', icon: Tag, category: 'BSS', categoryColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' },
 ]
 
 const groupedItems = {
   'Overview': ['dashboard', 'activity'] as ViewId[],
   'AAA': ['users', 'nas', 'policies', 'sessions'] as ViewId[],
-  'BSS': ['plans', 'billing', 'reports', 'bandwidth', 'tickets'] as ViewId[],
-  'System': ['dictionary', 'ip-pools', 'settings', 'registrations', 'selfcare', 'topology'] as ViewId[],
+  'BSS': ['plans', 'billing', 'reports', 'bandwidth', 'tickets', 'resellers', 'tax', 'wallet', 'coupons'] as ViewId[],
+  'Hotspot': ['hotspot', 'vouchers'] as ViewId[],
+  'System': ['dictionary', 'ip-pools', 'settings', 'registrations', 'selfcare', 'topology', 'notifications', 'webhooks', 'api-keys'] as ViewId[],
 }
 
 const roleConfig: Record<UserRole, { label: string; icon: React.ElementType; colorClass: string; badgeClass: string }> = {

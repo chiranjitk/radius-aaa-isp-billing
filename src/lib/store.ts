@@ -20,6 +20,15 @@ export type ViewId =
   | 'topology'
   | 'bandwidth'
   | 'tickets'
+  | 'hotspot'
+  | 'vouchers'
+  | 'resellers'
+  | 'notifications'
+  | 'webhooks'
+  | 'api-keys'
+  | 'tax'
+  | 'wallet'
+  | 'coupons'
   | 'login'
 
 // Permission definitions per role
@@ -41,6 +50,15 @@ const rolePermissions: Record<UserRole, Record<string, PermissionAction[]>> = {
     'ip-pools': ['view', 'create', 'edit', 'delete'],
     registrations: ['view', 'create', 'edit', 'delete'],
     tickets: ['view', 'create', 'edit', 'delete'],
+    resellers: ['view', 'create', 'edit', 'delete'],
+    notifications: ['view', 'create', 'edit', 'delete'],
+    webhooks: ['view', 'create', 'edit', 'delete'],
+    'api-keys': ['view', 'create', 'edit', 'delete'],
+    hotspot: ['view', 'create', 'edit', 'delete'],
+    vouchers: ['view', 'create', 'edit', 'delete'],
+    tax: ['view', 'create', 'edit', 'delete'],
+    wallet: ['view', 'create', 'edit'],
+    coupons: ['view', 'create', 'edit', 'delete'],
     selfcare: ['view'],
     topology: ['view'],
   },
@@ -59,6 +77,15 @@ const rolePermissions: Record<UserRole, Record<string, PermissionAction[]>> = {
     'ip-pools': ['view'],
     registrations: ['view'],
     tickets: ['view', 'create'],
+    resellers: ['view'],
+    notifications: ['view'],
+    webhooks: ['view'],
+    'api-keys': ['view'],
+    hotspot: ['view', 'create', 'edit'],
+    vouchers: ['view', 'create', 'edit'],
+    tax: ['view'],
+    wallet: ['view'],
+    coupons: ['view'],
     selfcare: ['view'],
     topology: ['view'],
   },
@@ -77,6 +104,15 @@ const rolePermissions: Record<UserRole, Record<string, PermissionAction[]>> = {
     'ip-pools': ['view'],
     registrations: ['view'],
     tickets: ['view'],
+    resellers: ['view'],
+    notifications: ['view'],
+    webhooks: ['view'],
+    'api-keys': ['view'],
+    hotspot: ['view'],
+    vouchers: ['view'],
+    tax: ['view'],
+    wallet: ['view'],
+    coupons: ['view'],
     selfcare: ['view'],
     topology: ['view'],
   },

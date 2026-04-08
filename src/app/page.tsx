@@ -26,6 +26,15 @@ import { RegistrationsView } from '@/components/aaa/registrations-view'
 import { SelfcarePortal } from '@/components/aaa/selfcare-portal'
 import { NetworkTopology } from '@/components/aaa/network-topology'
 import TicketsView from '@/components/aaa/tickets-view'
+import { HotspotView } from '@/components/aaa/hotspot-view'
+import { VouchersView } from '@/components/aaa/vouchers-view'
+import { ResellerView } from '@/components/aaa/reseller-view'
+import { NotificationsView } from '@/components/aaa/notifications-view'
+import { WebhooksView } from '@/components/aaa/webhooks-view'
+import { ApiKeysView } from '@/components/aaa/api-keys-view'
+import { TaxView } from '@/components/aaa/tax-view'
+import { WalletView } from '@/components/aaa/wallet-view'
+import { CouponsView } from '@/components/aaa/coupons-view'
 import { ActivityDashboard } from '@/components/aaa/activity-dashboard'
 import { BandwidthAnalytics } from '@/components/aaa/bandwidth-analytics'
 import { Search, Radio, Moon, Sun, Shield, Clock, Activity, Keyboard, UserCircle, LogOut, ScrollText } from 'lucide-react'
@@ -54,6 +63,15 @@ const viewTitles: Record<string, { title: string; description: string; icon: str
   topology: { title: 'Network Topology', description: 'Visual network map and device connections', icon: 'network' },
   bandwidth: { title: 'Bandwidth Analytics', description: 'Per-user data consumption and usage trends', icon: 'chart' },
   tickets: { title: 'Ticket System', description: 'Support ticket management and helpdesk', icon: 'ticket' },
+  hotspot: { title: 'Hotspot Locations', description: 'Captive portal and hotspot zone management', icon: 'map-pin' },
+  vouchers: { title: 'Voucher Manager', description: 'Generate, manage, and print access vouchers', icon: 'ticket' },
+  resellers: { title: 'Reseller Management', description: 'Reseller accounts, commissions, and hierarchy', icon: 'building' },
+  notifications: { title: 'Notification Center', description: 'Templates, delivery logs, and notification settings', icon: 'bell' },
+  webhooks: { title: 'Webhook Management', description: 'Configure real-time event webhook endpoints', icon: 'webhook' },
+  'api-keys': { title: 'API Key Management', description: 'Manage API keys for external integrations', icon: 'key' },
+  tax: { title: 'Tax Management', description: 'Configure tax rates and zones for billing', icon: 'percent' },
+  wallet: { title: 'Wallet & Prepaid', description: 'Prepaid wallet balances and transaction history', icon: 'wallet' },
+  coupons: { title: 'Coupons & Discounts', description: 'Create and manage promotional coupons and vouchers', icon: 'tag' },
 }
 
 interface FooterStats {
@@ -315,6 +333,15 @@ export default function Home() {
               {activeView === 'activity' && <ActivityDashboard />}
               {activeView === 'bandwidth' && <BandwidthAnalytics />}
               {activeView === 'tickets' && <TicketsView />}
+              {activeView === 'hotspot' && <HotspotView />}
+              {activeView === 'vouchers' && <VouchersView />}
+              {activeView === 'resellers' && <ResellerView />}
+              {activeView === 'notifications' && <NotificationsView />}
+              {activeView === 'webhooks' && <WebhooksView />}
+              {activeView === 'api-keys' && <ApiKeysView />}
+              {activeView === 'tax' && <TaxView />}
+              {activeView === 'wallet' && <WalletView />}
+              {activeView === 'coupons' && <CouponsView />}
             </div>
           </main>
 
@@ -323,7 +350,7 @@ export default function Home() {
             <div className="flex items-center gap-2.5">
               <span className="font-semibold text-foreground/80">FreeRADIUS AAA/BSS</span>
               <Badge variant="outline" className="text-[9px] font-mono px-1.5 h-4 rounded bg-primary/5 border-primary/10 text-primary">
-                v2.9.0
+                v3.0.0
               </Badge>
               <Separator orientation="vertical" className="h-3" />
               <span className="hidden sm:inline">{new Date().toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
