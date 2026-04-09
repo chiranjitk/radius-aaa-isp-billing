@@ -35,6 +35,7 @@ import {
   CheckSquare,
   Square,
   Trash2,
+  Printer,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -82,6 +83,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { exportToCSV, exportToJSON, type ExportOptions } from '@/lib/export-utils'
@@ -672,6 +674,7 @@ export function SessionsView() {
   // State
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [nasFilter, setNasFilter] = useState<string>('all')
   const [userFilter, setUserFilter] = useState<string>('all')
@@ -704,6 +707,26 @@ export function SessionsView() {
   const clearSelection = useCallback(() => {
     setSelectedIds(new Set())
   }, [])
+
+  // Search debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput !== search) {
+        setSearch(searchInput)
+        setPage(1)
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchInput])
+
+  // Active filters for chips
+  const activeFilters: { key: string; label: string; onRemove: () => void }[] = []
+  if (search) activeFilters.push({ key: 'search', label: `Search: "${search}"`, onRemove: () => { setSearchInput(''); setSearch('') } })
+  if (statusFilter !== 'all') activeFilters.push({ key: 'status', label: `Status: ${statusFilter}`, onRemove: () => setStatusFilter('all') })
+  if (nasFilter !== 'all') activeFilters.push({ key: 'nas', label: `NAS: ${nasFilter}`, onRemove: () => setNasFilter('all') })
+  if (userFilter !== 'all') activeFilters.push({ key: 'user', label: `User: ${userFilter}`, onRemove: () => setUserFilter('all') })
+  if (startDate) activeFilters.push({ key: 'start', label: `From: ${startDate}`, onRemove: () => setStartDate('') })
+  if (endDate) activeFilters.push({ key: 'end', label: `To: ${endDate}`, onRemove: () => setEndDate('') })
 
   // Fetch sessions
   const { data, isLoading, isFetching, refetch } = useQuery<SessionsResponse>({
@@ -978,6 +1001,11 @@ export function SessionsView() {
               <FileJson className="h-4 w-4" />
               Export JSON
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => window.print()} className="gap-2">
+              <Printer className="h-4 w-4" />
+              Print / PDF
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <Button
@@ -1084,8 +1112,8 @@ export function SessionsView() {
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search username or session ID..."
-                  value={search}
-                  onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+                  value={searchInput}
+                  onChange={(e) => { setSearchInput(e.target.value); setPage(1) }}
                   className="pl-8 h-9"
                 />
               </div>
@@ -1150,6 +1178,23 @@ export function SessionsView() {
                 />
               </div>
             </div>
+
+            {/* Filter Chips */}
+            {activeFilters.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {activeFilters.map((f) => (
+                  <Badge key={f.key} variant="secondary" className="gap-1 text-xs pr-1 pl-2 py-1 font-normal">
+                    {f.label}
+                    <button
+                      onClick={f.onRemove}
+                      className="ml-0.5 rounded-full p-0.5 hover:bg-muted-foreground/20 transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

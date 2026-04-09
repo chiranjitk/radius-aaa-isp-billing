@@ -524,6 +524,11 @@ export function BillingView() {
               <FileJson className="h-4 w-4" />
               Export JSON
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => window.print()} className="gap-2">
+              <Printer className="h-4 w-4" />
+              Print / PDF
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <Button onClick={() => setGenerateDialogOpen(true)} variant="outline" className="gap-2">
@@ -658,6 +663,51 @@ export function BillingView() {
               className="w-full sm:w-40"
             />
           </div>
+          {/* Filter Chips */}
+          {(search || statusFilter || dateFrom || dateTo) && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-2">
+              {search && (
+                <Badge variant="secondary" className="gap-1 text-xs pr-1 pl-2 py-1 font-normal">
+                  Search: &quot;{search}&quot;
+                  <button onClick={() => { setSearch('') }} className="ml-0.5 rounded-full p-0.5 hover:bg-muted-foreground/20 transition-colors">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {statusFilter && (
+                <Badge variant="secondary" className="gap-1 text-xs pr-1 pl-2 py-1 font-normal">
+                  Status: {statusFilter}
+                  <button onClick={() => { setStatusFilter('') }} className="ml-0.5 rounded-full p-0.5 hover:bg-muted-foreground/20 transition-colors">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {dateFrom && (
+                <Badge variant="secondary" className="gap-1 text-xs pr-1 pl-2 py-1 font-normal">
+                  From: {dateFrom}
+                  <button onClick={() => { setDateFrom('') }} className="ml-0.5 rounded-full p-0.5 hover:bg-muted-foreground/20 transition-colors">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {dateTo && (
+                <Badge variant="secondary" className="gap-1 text-xs pr-1 pl-2 py-1 font-normal">
+                  To: {dateTo}
+                  <button onClick={() => { setDateTo('') }} className="ml-0.5 rounded-full p-0.5 hover:bg-muted-foreground/20 transition-colors">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 text-xs text-muted-foreground px-2"
+                onClick={() => { setSearch(''); setStatusFilter(''); setDateFrom(''); setDateTo(''); setPage(1) }}
+              >
+                Clear all
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

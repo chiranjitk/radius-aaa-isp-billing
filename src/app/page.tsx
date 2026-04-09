@@ -216,12 +216,12 @@ export default function Home() {
         <AppSidebar />
         <div className="flex flex-1 flex-col overflow-hidden">
           {/* Top Header Bar */}
-          <header className="glass-panel flex h-14 shrink-0 items-center gap-4 border-b px-4 md:px-6 z-10">
+          <header className="glass-panel gradient-border-bottom flex h-14 shrink-0 items-center gap-4 border-b border-b-0 px-4 md:px-6 z-10">
             {/* Mobile hamburger menu */}
             <Button
               variant="ghost"
               size="icon"
-              className="h-11 w-11 md:hidden rounded-lg shrink-0"
+              className="h-11 w-11 md:hidden rounded-lg shrink-0 hamburger-icon"
               onClick={() => setSidebarOpen(true)}
               aria-label="Open sidebar"
             >
@@ -374,7 +374,7 @@ export default function Home() {
           </main>
 
           {/* Status Footer */}
-          <footer className="glass-panel flex h-9 shrink-0 items-center justify-between border-t px-4 text-[10px] text-muted-foreground z-10">
+          <footer className="glass-panel gradient-border-top flex h-10 shrink-0 items-center justify-between border-t border-t-0 px-4 text-[10px] text-muted-foreground z-10">
             <div className="flex items-center gap-2.5">
               <span className="font-semibold text-foreground/80">FreeRADIUS AAA/BSS</span>
               <Badge variant="outline" className="text-[9px] font-mono px-1.5 h-4 rounded bg-primary/5 border-primary/10 text-primary">
@@ -422,7 +422,7 @@ export default function Home() {
           </footer>
         </div>
       </div>
-      <Toaster position="top-right" richColors closeButton />
+      <Toaster position="top-right" richColors closeButton className="glass-toast" toastOptions={{ className: 'glass-toast' }} />
       <CommandPalette />
       <KeyboardShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
       <UserProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />

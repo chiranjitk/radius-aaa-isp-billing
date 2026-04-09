@@ -45,7 +45,7 @@ export { useCommandPaletteStore }
 interface CommandItem {
   id: string
   label: string
-  category: 'Navigation' | 'Actions'
+  category: 'Navigation' | 'Actions' | 'Users'
   icon: LucideIcon
   shortcut?: string
   action: () => void
@@ -59,6 +59,12 @@ export function CommandPalette() {
   const setActiveView = useAppStore((s) => s.setActiveView)
   const { theme, setTheme } = useTheme()
   const { isOpen, open, close, toggle } = useCommandPaletteStore()
+
+  // User lookup state
+  const [userQuery, setUserQuery] = useState<string | null>(null)
+  const [userResults, setUserResults] = useState<Array<{ id: string; username: string; fullName: string | null }>>([])
+  const [userSearchLoading, setUserSearchLoading] = useState(false)
+  const userSearchTimerRef = useRef<ReturnType<typeof setTimeout>>()
 
   const commands: CommandItem[] = useMemo(
     () => [
@@ -182,6 +188,73 @@ export function CommandPalette() {
     [setActiveView, setTheme, theme]
   )
 
+  // User lookup effect — search users API with debounce
+  useEffect(() => {
+    if (!search.trim() || search.length < 2) {
+      setUserQuery(null)
+      setUserResults([])
+      if (userSearchTimerRef.current) clearTimeout(userSearchTimerRef.current)
+      return
+    }
+
+    // Don't trigger user search for very short queries or command-like queries
+    const looksLikeUserSearch = search.length >= 2 && !search.startsWith('Go to') && !search.startsWith('Toggle') && !search.startsWith('Seed')
+
+    if (!looksLikeUserSearch) {
+      setUserQuery(null)
+      setUserResults([])
+      return
+    }
+
+    setUserSearchLoading(true)
+    setUserQuery(search)
+
+    if (userSearchTimerRef.current) clearTimeout(userSearchTimerRef.current)
+    userSearchTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/users?search=${encodeURIComponent(search)}&limit=5`)
+        if (!res.ok) throw new Error()
+        const data = await res.json()
+        setUserResults((data.users || []).map((u: { id: string; username: string; fullName: string | null }) => ({
+          id: u.id,
+          username: u.username,
+          fullName: u.fullName,
+        })))
+      } catch {
+        setUserResults([])
+      } finally {
+        setUserSearchLoading(false)
+      }
+    }, 250)
+
+    return () => {
+      if (userSearchTimerRef.current) clearTimeout(userSearchTimerRef.current)
+    }
+  }, [search])
+
+  // Build user command items from results
+  const userCommands: CommandItem[] = useMemo(() => {
+    if (!userQuery || userResults.length === 0) return []
+    return userResults.map((u) => ({
+      id: `user-${u.id}`,
+      label: `${u.fullName ? `${u.fullName} ` : ''}(${u.username})`,
+      category: 'Users' as const,
+      icon: Users,
+      action: () => {
+        // Navigate to users view with the search pre-filled
+        setActiveView('users')
+      },
+    }))
+  }, [userResults, userQuery, setActiveView])
+
+  // Combine all items
+  const allItems = useMemo(() => {
+    if (userCommands.length > 0) {
+      return [...userCommands, ...commands]
+    }
+    return commands
+  }, [userCommands, commands])
+
   const filtered = useMemo(() => {
     if (!search.trim()) return commands
     const q = search.toLowerCase()
@@ -192,6 +265,14 @@ export function CommandPalette() {
   const grouped = useMemo(() => {
     const groups: { category: string; items: CommandItem[] }[] = []
     let currentCategory = ''
+
+    if (userCommands.length > 0 && userQuery) {
+      // Show user results first
+      if (userCommands.length > 0) {
+        groups.push({ category: 'Users', items: userCommands })
+      }
+    }
+
     for (const cmd of filtered) {
       if (cmd.category !== currentCategory) {
         groups.push({ category: cmd.category, items: [cmd] })
@@ -201,13 +282,16 @@ export function CommandPalette() {
       }
     }
     return groups
-  }, [filtered])
+  }, [filtered, userCommands, userQuery])
 
   // Reset state when dialog opens/closes
   useEffect(() => {
     if (isOpen) {
       setSearch('')
       setActiveIndex(0)
+      setUserQuery(null)
+      setUserResults([])
+      setUserSearchLoading(false)
       // Auto-focus input after dialog animation
       requestAnimationFrame(() => {
         inputRef.current?.focus()
@@ -232,18 +316,18 @@ export function CommandPalette() {
     (e: React.KeyboardEvent) => {
       if (e.key === 'ArrowDown') {
         e.preventDefault()
-        setActiveIndex((prev) => (prev + 1) % filtered.length)
+        setActiveIndex((prev) => (prev + 1) % allItems.length)
       } else if (e.key === 'ArrowUp') {
         e.preventDefault()
-        setActiveIndex((prev) => (prev - 1 + filtered.length) % filtered.length)
-      } else if (e.key === 'Enter' && filtered[activeIndex]) {
+        setActiveIndex((prev) => (prev - 1 + allItems.length) % allItems.length)
+      } else if (e.key === 'Enter' && allItems[activeIndex]) {
         e.preventDefault()
-        const cmd = filtered[activeIndex]
+        const cmd = allItems[activeIndex]
         cmd.action()
         close()
       }
     },
-    [filtered, activeIndex, close]
+    [allItems, activeIndex, close]
   )
 
   // Scroll active item into view
@@ -281,14 +365,17 @@ export function CommandPalette() {
               setActiveIndex(0)
             }}
             onKeyDown={handleKeyDown}
-            placeholder="Search commands... ⌘K"
+            placeholder="Search commands or users... ⌘K"
             className="flex-1 h-12 bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground"
           />
+          {userSearchLoading && (
+            <span className="text-[10px] text-muted-foreground animate-pulse">...</span>
+          )}
         </div>
 
         {/* Results List */}
         <div ref={listRef} className="max-h-80 overflow-y-auto py-2">
-          {filtered.length === 0 ? (
+          {grouped.length === 0 ? (
             <div className="py-8 text-center text-sm text-muted-foreground">
               No commands found.
             </div>
@@ -299,7 +386,7 @@ export function CommandPalette() {
                   {group.category}
                 </div>
                 {group.items.map((cmd) => {
-                  const flatIndex = filtered.indexOf(cmd)
+                  const flatIndex = allItems.indexOf(cmd)
                   const Icon = cmd.icon
                   const isActive = flatIndex === activeIndex
 
@@ -351,6 +438,9 @@ export function CommandPalette() {
           <span className="flex items-center gap-1">
             <kbd className="rounded border bg-muted px-1 py-0.5 font-mono text-[10px]">esc</kbd>
             Close
+          </span>
+          <span className="ml-auto hidden sm:flex items-center gap-1 opacity-60">
+            Type a name to search users
           </span>
         </div>
       </DialogContent>

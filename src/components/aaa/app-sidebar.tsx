@@ -293,7 +293,7 @@ export function AppSidebar() {
             return (
               <div key={group} className="mb-3">
                 {sidebarOpen && (
-                  <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+                  <p className="section-header text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
                     {group}
                   </p>
                 )}
@@ -308,7 +308,7 @@ export function AppSidebar() {
                       key={id}
                       onClick={() => handleNavClick(id)}
                       className={cn(
-                        'group relative w-full flex items-center gap-2.5 rounded-lg text-[13px] transition-all duration-200 hover:scale-[1.02] hover-lift min-h-[44px]',
+                        'group relative w-full flex items-center gap-2.5 rounded-lg text-[13px] transition-all duration-200 hover-lift min-h-[44px] focus-ring-smooth',
                         sidebarOpen ? 'px-2.5 py-2' : 'px-0 py-2 justify-center',
                         isActive
                           ? 'bg-gradient-to-r from-primary/8 to-transparent text-primary font-medium'
@@ -343,7 +343,7 @@ export function AppSidebar() {
                       )} />
                       {sidebarOpen && (
                         <span className={cn(
-                          'flex-1 text-left truncate',
+                          'flex-1 text-left truncate transition-all duration-200',
                           isActive && 'gradient-text'
                         )}>
                           {item.label}
@@ -388,7 +388,7 @@ export function AppSidebar() {
         </ScrollArea>
 
         {/* Footer / Collapse */}
-        <div className="border-t px-2 py-2 shrink-0 space-y-1">
+        <div className="border-t border-border/50 px-2 py-2.5 shrink-0 space-y-1.5">
           {sidebarOpen && (
             <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/20">
               <div className="relative">

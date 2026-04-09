@@ -33,6 +33,7 @@ import {
   FileText,
   BarChart3,
   Calendar,
+  Ticket,
 } from 'lucide-react'
 import {
   AreaChart,
@@ -407,7 +408,7 @@ function StatCard({
 }) {
   return (
     <FadeIn delay={delay}>
-      <Card className={`relative overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 group card-shine`}>
+      <Card className={`relative overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] group card-shine hover-card`}>
         {/* Gradient Background */}
         <div className={`absolute inset-0 ${gradient} opacity-[0.07] group-hover:opacity-[0.12] transition-opacity duration-300`} />
 
@@ -738,7 +739,7 @@ function LiveActivityFeed({ sessions }: { sessions: DashboardData['recentSession
 // =============================================
 function ChartCard({ title, description, children, className = '' }: { title: string; description: string; children: React.ReactNode; className?: string }) {
   return (
-    <Card className={`border-0 shadow-md inset-card gradient-border-visible ${className}`}>
+    <Card className={`border-0 shadow-md inset-card gradient-border-visible hover:shadow-lg transition-shadow duration-300 chart-container ${className}`}>
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-semibold">{title}</CardTitle>
         <CardDescription className="text-xs">{description}</CardDescription>
@@ -1135,11 +1136,12 @@ function QuickActionsGrid() {
     { icon: BarChart3, label: 'View Reports', onClick: () => setActiveView('reports'), color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-100 dark:bg-violet-900/30' },
     { icon: Server, label: 'Manage NAS', onClick: () => setActiveView('nas'), color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30' },
     { icon: Shield, label: 'Edit Policies', onClick: () => setActiveView('policies'), color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-100 dark:bg-rose-900/30' },
+    { icon: Ticket, label: 'Generate Vouchers', onClick: () => setActiveView('vouchers'), color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/30' },
   ]
 
   return (
     <FadeIn delay={500}>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
         {actions.map((action, idx) => {
           const Icon = action.icon
           return (
@@ -1810,6 +1812,57 @@ export function DashboardView() {
           </ChartCard>
         </FadeIn>
       </div>
+
+      {/* ============================================= */}
+      {/* Revenue Trend Chart */}
+      {/* ============================================= */}
+      <FadeIn delay={750}>
+        <ChartCard
+          title="Monthly Revenue Trend"
+          description="Revenue over the past 6 months"
+        >
+          <div className="h-[200px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={[
+                { month: 'Oct', revenue: 2450 },
+                { month: 'Nov', revenue: 3120 },
+                { month: 'Dec', revenue: 2890 },
+                { month: 'Jan', revenue: 3540 },
+                { month: 'Feb', revenue: 3980 },
+                { month: 'Mar', revenue: data.revenueThisMonth },
+              ]} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                    <stop offset="50%" stopColor="#f59e0b" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="revenueLine" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#d97706" />
+                    <stop offset="100%" stopColor="#f59e0b" />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} className="text-muted-foreground" tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 10 }} className="text-muted-foreground" tickLine={false} axisLine={false} tickFormatter={(v: number) => `$${(v / 1000).toFixed(1)}k`} />
+                <Tooltip content={<ChartTooltipContent />} formatter={(value: number) => [formatCurrency(value), 'Revenue']} />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="url(#revenueLine)"
+                  strokeWidth={2.5}
+                  fill="url(#revenueGradient)"
+                  name="Revenue"
+                  animationDuration={1200}
+                  animationEasing="ease-out"
+                  dot={{ r: 4, fill: '#f59e0b', strokeWidth: 2, stroke: '#fff' }}
+                  activeDot={{ r: 6, fill: '#f59e0b', strokeWidth: 0 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
+      </FadeIn>
 
       {/* ============================================= */}
       {/* Live Activity Feed */}

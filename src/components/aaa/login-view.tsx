@@ -101,6 +101,8 @@ export function LoginView() {
 
   return (
     <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-background">
+      {/* Animated gradient background */}
+      <div className="animated-gradient-bg absolute inset-0" />
       {/* Background decorations */}
       <div className="dot-pattern absolute inset-0 opacity-40" />
       <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] via-transparent to-primary/[0.05]" />
@@ -115,7 +117,7 @@ export function LoginView() {
       <div className="absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-primary/[0.03] blur-3xl" />
 
       {/* Login Card */}
-      <Card className="glass-card gradient-border card-shine card-glow relative z-10 w-full max-w-md mx-4 animate-fade-in-up">
+      <Card className="glass-panel gradient-border card-shine card-glow pulse-glow relative z-10 w-full max-w-md mx-4 animate-fade-in-up" style={{ borderRadius: '1.25rem' }}>
         <CardHeader className="space-y-4 pb-2 pt-8 px-8">
           {/* Logo + Branding */}
           <div className="flex flex-col items-center space-y-3">
@@ -165,8 +167,8 @@ export function LoginView() {
               <Label htmlFor="username" className="text-sm font-medium">
                 Username
               </Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <div className="relative input-glow rounded-lg">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none transition-colors duration-200 peer-focus:text-primary" />
                 <Input
                   id="username"
                   type="text"
@@ -190,8 +192,8 @@ export function LoginView() {
               <Label htmlFor="password" className="text-sm font-medium">
                 Password
               </Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <div className="relative input-glow rounded-lg">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none transition-colors duration-200 peer-focus:text-primary" />
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -249,7 +251,7 @@ export function LoginView() {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full h-11 text-sm font-semibold cursor-pointer btn-glow ripple"
+              className="w-full h-11 text-sm font-semibold cursor-pointer btn-glow ripple focus-ring-smooth transition-all duration-200 hover:shadow-lg"
               disabled={loading}
             >
               {loading ? (

@@ -1064,6 +1064,250 @@
   }
 }
 
+/* ===== Fade In Animation ===== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ===== Slide Up Animation ===== */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-slide-up {
+  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ===== Pulse Glow Animation ===== */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 8px -2px oklch(0.55 0.2 264 / 20%);
+  }
+  50% {
+    box-shadow: 0 0 20px -2px oklch(0.55 0.2 264 / 35%);
+  }
+}
+.pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+.dark .pulse-glow {
+  animation-name: pulseGlowDark;
+}
+@keyframes pulseGlowDark {
+  0%, 100% {
+    box-shadow: 0 0 10px -2px oklch(0.65 0.2 264 / 15%);
+  }
+  50% {
+    box-shadow: 0 0 24px -2px oklch(0.65 0.2 264 / 30%);
+  }
+}
+
+/* ===== Animated Gradient Background ===== */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  25% { background-position: 100% 50%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 100%; }
+  100% { background-position: 0% 50%; }
+}
+.animated-gradient-bg {
+  background: linear-gradient(-45deg,
+    oklch(0.45 0.18 264 / 0.08),
+    oklch(0.65 0.17 162 / 0.06),
+    oklch(0.6 0.2 310 / 0.07),
+    oklch(0.45 0.18 264 / 0.05)
+  );
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+}
+.dark .animated-gradient-bg {
+  background: linear-gradient(-45deg,
+    oklch(0.65 0.2 264 / 0.06),
+    oklch(0.696 0.17 162 / 0.04),
+    oklch(0.769 0.188 310 / 0.05),
+    oklch(0.65 0.2 264 / 0.03)
+  );
+  background-size: 400% 400%;
+}
+
+/* ===== Input Focus Glow ===== */
+.input-glow {
+  transition: box-shadow 200ms ease, border-color 200ms ease;
+}
+.input-glow:focus-within {
+  box-shadow: 0 0 0 3px oklch(0.55 0.2 264 / 10%);
+  border-color: oklch(0.55 0.2 264 / 40%);
+}
+.dark .input-glow:focus-within {
+  box-shadow: 0 0 0 3px oklch(0.65 0.2 264 / 12%);
+  border-color: oklch(0.65 0.2 264 / 30%);
+}
+
+/* ===== Glass Toast ===== */
+.glass-toast {
+  background: oklch(1 0 0 / 75%) !important;
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid oklch(1 0 0 / 30%);
+  box-shadow: 0 8px 32px -4px oklch(0 0 0 / 12%),
+              0 2px 8px -2px oklch(0 0 0 / 6%);
+}
+.dark .glass-toast {
+  background: oklch(0.18 0.008 264 / 80%) !important;
+  border: 1px solid oklch(1 0 0 / 6%);
+  box-shadow: 0 8px 32px -4px oklch(0 0 0 / 40%),
+              0 2px 8px -2px oklch(0 0 0 / 20%);
+}
+
+/* ===== Toast Exit Animation ===== */
+@keyframes toastExit {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%) scale(0.95);
+  }
+}
+.toast-exit {
+  animation: toastExit 200ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+/* ===== Gradient Border (Header/Footer) ===== */
+.gradient-border-bottom {
+  position: relative;
+}
+.gradient-border-bottom::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    oklch(0.55 0.2 264 / 30%),
+    oklch(0.65 0.17 162 / 25%),
+    oklch(0.55 0.2 264 / 30%),
+    transparent
+  );
+  pointer-events: none;
+}
+.dark .gradient-border-bottom::after {
+  background: linear-gradient(90deg,
+    transparent,
+    oklch(0.65 0.2 264 / 20%),
+    oklch(0.696 0.17 162 / 15%),
+    oklch(0.65 0.2 264 / 20%),
+    transparent
+  );
+}
+.gradient-border-top {
+  position: relative;
+}
+.gradient-border-top::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    oklch(0.55 0.2 264 / 30%),
+    oklch(0.65 0.17 162 / 25%),
+    oklch(0.55 0.2 264 / 30%),
+    transparent
+  );
+  pointer-events: none;
+}
+.dark .gradient-border-top::before {
+  background: linear-gradient(90deg,
+    transparent,
+    oklch(0.65 0.2 264 / 20%),
+    oklch(0.696 0.17 162 / 15%),
+    oklch(0.65 0.2 264 / 20%),
+    transparent
+  );
+}
+
+/* ===== Section Header (Sidebar Groups) ===== */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.75rem;
+  margin-bottom: 0.375rem;
+  position: relative;
+}
+.section-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, oklch(0 0 0 / 0.08), transparent);
+}
+.dark .section-header::after {
+  background: linear-gradient(90deg, oklch(1 0 0 / 0.06), transparent);
+}
+
+/* ===== Hamburger Menu Animation ===== */
+.hamburger-icon {
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hamburger-icon:hover {
+  transform: scale(1.1);
+}
+.hamburger-icon:active {
+  transform: scale(0.92);
+}
+
+/* ===== Chart Container Styling ===== */
+.chart-container {
+  border-radius: var(--radius, 0.625rem);
+  overflow: hidden;
+}
+.chart-container .recharts-wrapper {
+  border-radius: inherit;
+}
+
+/* ===== Focus Ring Styles (Light/Dark) ===== */
+.focus-ring-smooth {
+ outline: none;
+  transition: box-shadow 200ms ease;
+}
+.focus-ring-smooth:focus-visible {
+  box-shadow: 0 0 0 2px oklch(1 0 0), 0 0 0 4px oklch(0.55 0.2 264 / 40%);
+  border-radius: var(--radius, 0.5rem);
+}
+.dark .focus-ring-smooth:focus-visible {
+  box-shadow: 0 0 0 2px oklch(0.18 0.008 264), 0 0 0 4px oklch(0.65 0.2 264 / 35%);
+}
+
+/* ===== Hover Card Transition ===== */
+.hover-card {
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 200ms ease;
+}
+.hover-card:hover {
+  transform: translateY(-2px) scale(1.005);
+  box-shadow: 0 8px 24px -4px oklch(0 0 0 / 10%);
+}
+.dark .hover-card:hover {
+  box-shadow: 0 8px 32px -4px oklch(0 0 0 / 25%);
+}
+
 /* ===== Reduced Motion ===== */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

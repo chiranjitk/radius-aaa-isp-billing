@@ -20,10 +20,14 @@ import {
   CreditCard,
   RefreshCw,
   Loader2,
+  Info,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { formatDistanceToNow, parseISO } from 'date-fns'
 
 // ==========================================
 // Types
@@ -79,7 +83,31 @@ function getIconColor(severity: string) {
       return 'text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-950'
     case 'info':
     default:
-      return 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-950'
+      return 'text-sky-600 bg-sky-100 dark:text-sky-400 dark:bg-sky-950'
+  }
+}
+
+function formatRelativeTime(timeStr: string): string {
+  try {
+    const date = parseISO(timeStr)
+    if (isNaN(date.getTime())) return timeStr
+    return formatDistanceToNow(date, { addSuffix: true })
+  } catch {
+    return timeStr
+  }
+}
+
+function getSeverityIcon(severity: string) {
+  switch (severity) {
+    case 'error':
+      return <XCircle className="h-3.5 w-3.5" />
+    case 'warning':
+      return <AlertTriangle className="h-3.5 w-3.5" />
+    case 'success':
+      return <CheckCircle2 className="h-3.5 w-3.5" />
+    case 'info':
+    default:
+      return <Info className="h-3.5 w-3.5" />
   }
 }
 
@@ -126,8 +154,8 @@ export function NotificationCenter() {
             <Bell className="h-4 w-4" />
           )}
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-destructive text-[8px] font-bold text-destructive-foreground flex items-center justify-center">
-              {unreadCount}
+            <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground flex items-center justify-center ring-2 ring-background">
+              {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
         </Button>
@@ -138,7 +166,7 @@ export function NotificationCenter() {
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold">Notifications</h3>
             {unreadCount > 0 && (
-              <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-semibold">
+              <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-semibold bg-primary/10 text-primary border-primary/20">
                 {unreadCount} new
               </Badge>
             )}
@@ -189,7 +217,7 @@ export function NotificationCenter() {
                     !notification.read && 'bg-muted/30'
                   )}
                 >
-                  {/* Icon */}
+                  {/* Icon with severity-based coloring */}
                   <div
                     className={cn(
                       'flex items-center justify-center h-8 w-8 rounded-full shrink-0 mt-0.5',
@@ -210,14 +238,19 @@ export function NotificationCenter() {
                       >
                         {notification.title}
                       </p>
-                      {!notification.read && (
-                        <span className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1" />
-                      )}
+                      <div className="flex items-center gap-1 shrink-0">
+                        {getSeverityIcon(notification.severity)}
+                        {!notification.read && (
+                          <span className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1" />
+                        )}
+                      </div>
                     </div>
                     <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
                       {notification.description}
                     </p>
-                    <p className="text-[10px] text-muted-foreground/70">{notification.time}</p>
+                    <p className="text-[10px] text-muted-foreground/70">
+                      {formatRelativeTime(notification.time)}
+                    </p>
                   </div>
                 </div>
               ))}

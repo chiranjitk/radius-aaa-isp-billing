@@ -39,6 +39,7 @@ import {
   FileJson,
   Radio,
   Minus,
+  Printer,
   UserCheck,
   UserX,
   UsersRound,
@@ -47,6 +48,7 @@ import {
   ShieldCheck,
   Calendar,
   Hash,
+  Printer,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -1899,6 +1901,16 @@ export default function UsersView() {
   const someSelected = users.some((u) => selectedIds.has(u.id)) && !allSelected
 
   // Search debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput !== search) {
+        setSearch(searchInput)
+        setPage(1)
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchInput])
+
   const handleSearch = () => {
     setSearch(searchInput)
     setPage(1)
@@ -1909,6 +1921,12 @@ export default function UsersView() {
       handleSearch()
     }
   }
+
+  // Active filters for chips
+  const activeFilters: { key: string; label: string; onRemove: () => void }[] = []
+  if (search) activeFilters.push({ key: 'search', label: `Search: "${search}"`, onRemove: () => { setSearchInput(''); setSearch('') } })
+  if (statusFilter !== 'all') activeFilters.push({ key: 'status', label: `Status: ${statusFilter}`, onRemove: () => setStatusFilter('all') })
+  if (groupFilter !== 'all') activeFilters.push({ key: 'group', label: `Group: ${groupFilter}`, onRemove: () => setGroupFilter('all') })
 
   // Status change mutation
   const toggleStatusMutation = useMutation({
@@ -2163,6 +2181,13 @@ export default function UsersView() {
                 <FileJson className="h-4 w-4 mr-2" />
                 Export JSON
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => window.print()}
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                Print / PDF
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setCsvImportOpen(true)}>
@@ -2229,6 +2254,30 @@ export default function UsersView() {
                 <TooltipContent>Refresh</TooltipContent>
               </Tooltip>
             </div>
+            {/* Filter Chips */}
+            {activeFilters.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-2">
+                {activeFilters.map((f) => (
+                  <Badge key={f.key} variant="secondary" className="gap-1 text-xs pr-1 pl-2 py-1 font-normal">
+                    {f.label}
+                    <button
+                      onClick={f.onRemove}
+                      className="ml-0.5 rounded-full p-0.5 hover:bg-muted-foreground/20 transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-xs text-muted-foreground px-2"
+                  onClick={() => { setSearchInput(''); setSearch(''); setStatusFilter('all'); setGroupFilter('all'); setPage(1) }}
+                >
+                  Clear all
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
