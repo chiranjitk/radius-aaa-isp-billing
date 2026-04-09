@@ -1508,7 +1508,7 @@ export function DashboardView() {
       {/* ============================================= */}
       {/* Stats Grid */}
       {/* ============================================= */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           title="RADIUS Users"
           value={animUsers.toLocaleString()}
@@ -1840,7 +1840,7 @@ export function DashboardView() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="max-h-[380px] overflow-y-auto rounded-lg border">
+              <div className="max-h-[380px] overflow-y-auto overflow-x-auto rounded-lg border">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50 hover:bg-muted/50">

@@ -193,7 +193,7 @@ export function AppSidebar() {
           {isMobile && (
             <button
               onClick={() => setSidebarOpen(false)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center h-11 w-11 -mr-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
               aria-label="Close sidebar"
             >
               <X className="h-4 w-4" />
@@ -308,7 +308,7 @@ export function AppSidebar() {
                       key={id}
                       onClick={() => handleNavClick(id)}
                       className={cn(
-                        'group relative w-full flex items-center gap-2.5 rounded-lg text-[13px] transition-all duration-200 hover:scale-[1.02] hover-lift',
+                        'group relative w-full flex items-center gap-2.5 rounded-lg text-[13px] transition-all duration-200 hover:scale-[1.02] hover-lift min-h-[44px]',
                         sidebarOpen ? 'px-2.5 py-2' : 'px-0 py-2 justify-center',
                         isActive
                           ? 'bg-gradient-to-r from-primary/8 to-transparent text-primary font-medium'
@@ -414,7 +414,7 @@ export function AppSidebar() {
               variant="ghost"
               size="sm"
               className={cn(
-                'glass-card h-7 w-9 rounded-full p-0 flex items-center justify-center',
+                'glass-card h-11 w-11 rounded-full p-0 flex items-center justify-center',
                 'text-muted-foreground transition-all duration-200',
                 'hover:bg-primary/10 hover:text-primary hover:shadow-[0_0_8px_var(--primary)/20]'
               )}

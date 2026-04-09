@@ -43,6 +43,7 @@ import { ActivityDashboard } from '@/components/aaa/activity-dashboard'
 import { BandwidthAnalytics } from '@/components/aaa/bandwidth-analytics'
 import { Search, Radio, Moon, Sun, Shield, Clock, Activity, Keyboard, UserCircle, LogOut, ScrollText, Menu } from 'lucide-react'
 import { KeyboardShortcutsDialog } from '@/components/aaa/keyboard-shortcuts-dialog'
+import { PwaInstallPrompt } from '@/components/pwa-install-prompt'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -425,6 +426,7 @@ export default function Home() {
       <CommandPalette />
       <KeyboardShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
       <UserProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
+      <PwaInstallPrompt />
     </>
   )
 }

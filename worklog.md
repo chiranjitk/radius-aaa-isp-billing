@@ -2444,3 +2444,54 @@ Production-grade AAA/RADIUS ISP Billing Platform with comprehensive feature set 
 - Command palette (Cmd+K)
 - Dark mode with next-themes
 - Responsive mobile design
+
+---
+Task ID: 3
+Agent: fullstack-dev
+Task: Implement PWA (Progressive Web App) support
+
+Work Log:
+- Created public/manifest.json with PWA configuration:
+  - name: "FreeRADIUS AAA/BSS", short_name: "RADIUS AAA"
+  - display: "standalone", theme_color: "#0f172a", background_color: "#ffffff"
+  - icons: 192x192 and 512x512 PNG with maskable purpose
+  - categories: ["business", "productivity"]
+- Generated PWA app icons using z-ai image generation:
+  - Created 1024x1024 base icon via z-ai CLI with shield + radio waves prompt
+  - Resized to 192x192 and 512x512 using sharp
+  - Saved to public/icons/icon-192.png and public/icons/icon-512.png
+- Created service worker at public/sw.js with offline caching strategies:
+  - Versioned cache name (radius-aaa-v1)
+  - Pre-caches shell resources on install (/, /manifest.json, icons)
+  - Cache-first strategy for static assets (JS, CSS, images, fonts)
+  - Network-first strategy for API calls (/api/*)
+  - Stale-while-revalidate for navigation/page requests
+  - Automatic cache cleanup on activate (removes old cache versions)
+  - Background update checking every 30 minutes
+  - Message handler for SKIP_WAITING on update
+- Created pwa-register.tsx client component:
+  - Registers /sw.js service worker on page load
+  - Listens for updatefound event, dispatches 'sw-update-available' custom event
+  - Periodic update check every 30 minutes via registration.update()
+  - Graceful fallback if serviceWorker API not available
+- Created pwa-install-prompt.tsx component:
+  - Listens for beforeinstallprompt event to show install banner
+  - Slide-up banner at bottom with Install and Dismiss buttons
+  - Update Available banner when new service worker is ready
+  - Session-based dismiss tracking (sessionStorage)
+  - Mobile-friendly responsive design with backdrop blur
+- Updated layout.tsx:
+  - Added Viewport export with viewport-fit=cover and theme-color for light/dark
+  - Added manifest: "/manifest.json" to metadata
+  - Added appleWebApp config (capable, statusBarStyle, title)
+  - Added formatDetection: telephone=false
+  - Added icon entries for favicon, apple-touch-icon
+  - Added PwaRegister component after QueryProvider in ThemeProvider
+- Updated page.tsx:
+  - Imported and added PwaInstallPrompt component
+
+Stage Summary:
+- Full PWA support implemented with manifest, service worker, offline caching
+- Install prompt banner with update notification
+- Cache-first for static assets, network-first for APIs
+- ESLint passes clean with zero errors
