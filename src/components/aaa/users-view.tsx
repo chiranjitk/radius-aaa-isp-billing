@@ -48,7 +48,6 @@ import {
   ShieldCheck,
   Calendar,
   Hash,
-  Printer,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'

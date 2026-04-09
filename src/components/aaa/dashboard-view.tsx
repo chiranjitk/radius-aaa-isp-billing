@@ -34,7 +34,6 @@ import {
   BarChart3,
   Calendar,
   Ticket,
-  Zap,
   CheckCircle2,
   ArrowUpRight,
   MoreHorizontal,
