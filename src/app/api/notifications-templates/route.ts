@@ -69,9 +69,9 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    const { name, type, category, subject, body, variables, channel, status } = body
+    const { name, type, category, subject, body: templateBody, variables, channel, status } = body
 
-    if (!name || !type || !category || !body) {
+    if (!name || !type || !category || !templateBody) {
       return NextResponse.json(
         { error: "Name, type, category, and body are required" },
         { status: 400 }
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
         type,
         category,
         subject: subject || null,
-        body,
+        body: templateBody,
         variables: variables ? JSON.stringify(variables) : null,
         channel: channel || type === "email" ? "smtp" : type === "sms" ? "twilio" : type === "whatsapp" ? "whatsapp_business" : "push",
         status: status || "active",

@@ -54,7 +54,7 @@ export async function PUT(
       return NextResponse.json({ error: "Template not found" }, { status: 404 })
     }
 
-    const { name, type, category, subject, body, variables, channel, status } = body
+    const { name, type, category, subject, body: templateBody, variables, channel, status } = body
 
     const template = await db.notificationTemplate.update({
       where: { id },
@@ -63,7 +63,7 @@ export async function PUT(
         ...(type != null && { type }),
         ...(category != null && { category }),
         ...(subject != null && { subject }),
-        ...(body != null && { body }),
+        ...(templateBody != null && { body: templateBody }),
         ...(variables != null && { variables: JSON.stringify(variables) }),
         ...(channel != null && { channel }),
         ...(status != null && { status }),
