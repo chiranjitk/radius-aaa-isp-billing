@@ -538,7 +538,7 @@ export function BillingView() {
 
       {/* Stats Row */}
       {loading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Card key={i} className="card-hover">
               <CardContent className="p-4">
@@ -555,7 +555,7 @@ export function BillingView() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="stat-card hover-lift card-shine animate-fade-in-up stagger-1 inset-card relative overflow-hidden">
             <div className="h-1 bg-gradient-to-r from-emerald-400 to-teal-500" />
             <CardContent className="p-4">
@@ -698,19 +698,19 @@ export function BillingView() {
             </div>
           ) : (
             <>
-              <div className="max-h-[520px] overflow-y-auto">
+              <div className="max-h-[520px] overflow-y-auto overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="table-row-hover">
                       <TableHead className="sticky top-0 bg-card z-10">Invoice #</TableHead>
                       <TableHead className="sticky top-0 bg-card z-10">User</TableHead>
-                      <TableHead className="sticky top-0 bg-card z-10">Plan</TableHead>
+                      <TableHead className="sticky top-0 bg-card z-10 hidden sm:table-cell">Plan</TableHead>
                       <TableHead className="sticky top-0 bg-card z-10 text-right">Amount</TableHead>
-                      <TableHead className="sticky top-0 bg-card z-10 text-right">Tax</TableHead>
+                      <TableHead className="sticky top-0 bg-card z-10 text-right hidden md:table-cell">Tax</TableHead>
                       <TableHead className="sticky top-0 bg-card z-10 text-right">Total</TableHead>
                       <TableHead className="sticky top-0 bg-card z-10">Status</TableHead>
-                      <TableHead className="sticky top-0 bg-card z-10">Due Date</TableHead>
-                      <TableHead className="sticky top-0 bg-card z-10">Paid Date</TableHead>
+                      <TableHead className="sticky top-0 bg-card z-10 hidden sm:table-cell">Due Date</TableHead>
+                      <TableHead className="sticky top-0 bg-card z-10 hidden md:table-cell">Paid Date</TableHead>
                       <TableHead className="sticky top-0 bg-card z-10 text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -724,17 +724,17 @@ export function BillingView() {
                             <p className="text-xs text-muted-foreground">{inv.username}</p>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm">{inv.plan?.name || '—'}</TableCell>
+                        <TableCell className="text-sm hidden sm:table-cell">{inv.plan?.name || '—'}</TableCell>
                         <TableCell className="text-right text-sm">{formatCurrency(inv.amount)}</TableCell>
-                        <TableCell className="text-right text-sm">{formatCurrency(inv.taxAmount)}</TableCell>
+                        <TableCell className="text-right text-sm hidden md:table-cell">{formatCurrency(inv.taxAmount)}</TableCell>
                         <TableCell className="text-right text-sm font-medium">{formatCurrency(inv.total)}</TableCell>
                         <TableCell>
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize chip ${getStatusBadge(inv.status)} ${getStatusGlow(inv.status)}`}>
                             {inv.status}
                           </span>
                         </TableCell>
-                        <TableCell className="text-sm">{formatDate(inv.dueDate)}</TableCell>
-                        <TableCell className="text-sm">{formatDate(inv.paidDate)}</TableCell>
+                        <TableCell className="text-sm hidden sm:table-cell">{formatDate(inv.dueDate)}</TableCell>
+                        <TableCell className="text-sm hidden md:table-cell">{formatDate(inv.paidDate)}</TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -1060,7 +1060,7 @@ export function BillingView() {
 
       {/* ===== Invoice Detail Sheet ===== */}
       <Sheet open={detailSheetOpen} onOpenChange={setDetailSheetOpen}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto card-glow">
+        <SheetContent className="w-full sm:max-w-lg max-w-[95vw] overflow-y-auto card-glow">
           <SheetHeader>
             <div className="flex items-center justify-between">
               <div>

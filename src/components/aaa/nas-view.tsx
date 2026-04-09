@@ -986,7 +986,7 @@ export function NasView() {
 
         {/* ========== ADD/EDIT DIALOG ========== */}
         <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
-          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-lg max-w-[95vw] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingDevice ? 'Edit NAS Device' : 'Add NAS Device'}
@@ -1228,7 +1228,7 @@ export function NasView() {
 
         {/* ========== VENDOR TEMPLATES DIALOG ========== */}
         <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-w-[95vw] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Vendor Templates</DialogTitle>
               <DialogDescription>

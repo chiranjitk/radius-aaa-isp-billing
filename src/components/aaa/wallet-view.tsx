@@ -721,7 +721,7 @@ export function WalletView() {
 
       {/* ─── Create Wallet Dialog ───────────────────────────────── */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-w-[95vw]">
           <DialogHeader>
             <DialogTitle>Create Wallet</DialogTitle>
             <DialogDescription>Create a new prepaid wallet for a user</DialogDescription>
@@ -803,7 +803,7 @@ export function WalletView() {
 
       {/* ─── Top-up Dialog ─────────────────────────────────────── */}
       <Dialog open={topupDialogOpen} onOpenChange={setTopupDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-w-[95vw]">
           <DialogHeader>
             <DialogTitle>Top-up Wallet</DialogTitle>
             <DialogDescription>
@@ -863,7 +863,7 @@ export function WalletView() {
 
       {/* ─── Adjust Balance Dialog ─────────────────────────────── */}
       <Dialog open={adjustDialogOpen} onOpenChange={setAdjustDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-w-[95vw]">
           <DialogHeader>
             <DialogTitle>Adjust Balance</DialogTitle>
             <DialogDescription>

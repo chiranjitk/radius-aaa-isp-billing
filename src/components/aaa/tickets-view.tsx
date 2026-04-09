@@ -487,7 +487,7 @@ export default function TicketsView() {
                 New Ticket
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-lg max-w-[95vw]">
               <DialogHeader>
                 <DialogTitle>Create New Ticket</DialogTitle>
                 <DialogDescription>Submit a new support ticket for the helpdesk team.</DialogDescription>
@@ -830,7 +830,7 @@ export default function TicketsView() {
 
       {/* Ticket Detail Sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="sm:max-w-xl">
+        <SheetContent className="sm:max-w-xl max-w-[95vw]">
           {selectedTicket && (
             <>
               <SheetHeader>

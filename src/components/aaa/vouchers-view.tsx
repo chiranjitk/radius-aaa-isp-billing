@@ -824,7 +824,7 @@ export function VouchersView() {
 
         {/* Batch Generate Dialog */}
         <Dialog open={batchDialogOpen} onOpenChange={(open) => !open && setBatchDialogOpen(false)}>
-          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-lg max-w-[95vw] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Generate Vouchers</DialogTitle>
               <DialogDescription>
@@ -988,7 +988,7 @@ export function VouchersView() {
 
         {/* Print Dialog */}
         <Dialog open={printDialogOpen} onOpenChange={setPrintDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-w-[95vw] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Print Vouchers</DialogTitle>
               <DialogDescription>

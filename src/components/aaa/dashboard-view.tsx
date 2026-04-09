@@ -1945,7 +1945,7 @@ export function DashboardView() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="max-h-[380px] overflow-y-auto rounded-lg border">
+              <div className="max-h-[380px] overflow-y-auto overflow-x-auto rounded-lg border">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50 hover:bg-muted/50">

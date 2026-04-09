@@ -703,7 +703,7 @@ export function ResellerView() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingReseller ? 'Edit Reseller' : 'Create Reseller'}</DialogTitle>
             <DialogDescription>
@@ -907,7 +907,7 @@ export function ResellerView() {
 
       {/* Topup Dialog */}
       <Dialog open={topupDialogOpen} onOpenChange={setTopupDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-w-[95vw]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wallet className="h-5 w-5 text-emerald-600" />
@@ -987,7 +987,7 @@ export function ResellerView() {
 
       {/* Detail Sheet */}
       <Sheet open={detailSheetOpen} onOpenChange={setDetailSheetOpen}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-lg max-w-[95vw] overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Reseller Details</SheetTitle>
           </SheetHeader>

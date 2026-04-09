@@ -988,7 +988,7 @@ function UserFormDialog({
   if (isEdit && isLoadingUser) {
     return (
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-2xl max-w-[95vw]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserCircle className="h-5 w-5" />
@@ -1025,7 +1025,7 @@ function UserFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-w-[95vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserCircle className="h-5 w-5" />
@@ -2290,12 +2290,12 @@ export default function UsersView() {
                           />
                         </TableHead>
                         <TableHead className="h-10 pl-4">Username</TableHead>
-                        <TableHead className="h-10">Full Name</TableHead>
-                        <TableHead className="h-10">Email</TableHead>
-                        <TableHead className="h-10">Groups</TableHead>
+                        <TableHead className="h-10 hidden sm:table-cell">Full Name</TableHead>
+                        <TableHead className="h-10 hidden md:table-cell">Email</TableHead>
+                        <TableHead className="h-10 hidden lg:table-cell">Groups</TableHead>
                         <TableHead className="h-10">Status</TableHead>
-                        <TableHead className="h-10">Auth Type</TableHead>
-                        <TableHead className="h-10 text-center">Sim.</TableHead>
+                        <TableHead className="h-10 hidden sm:table-cell">Auth Type</TableHead>
+                        <TableHead className="h-10 text-center hidden md:table-cell">Sim.</TableHead>
                         <TableHead className="h-10 text-right pr-4">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -2324,13 +2324,13 @@ export default function UsersView() {
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell className="py-3 text-sm">
+                          <TableCell className="py-3 hidden sm:table-cell text-sm">
                             {user.fullName || <span className="text-muted-foreground">—</span>}
                           </TableCell>
-                          <TableCell className="py-3 text-sm">
+                          <TableCell className="py-3 hidden md:table-cell text-sm">
                             {user.email || <span className="text-muted-foreground">—</span>}
                           </TableCell>
-                          <TableCell className="py-3">
+                          <TableCell className="py-3 hidden lg:table-cell">
                             <div className="flex flex-wrap gap-1 max-w-[180px]">
                               {user.groups.length > 0 ? (
                                 user.groups.slice(0, 2).map((g) => (
@@ -2351,10 +2351,10 @@ export default function UsersView() {
                           <TableCell className="py-3">
                             <StatusBadge status={user.status} />
                           </TableCell>
-                          <TableCell className="py-3 text-sm font-mono text-xs">
+                          <TableCell className="py-3 hidden sm:table-cell text-sm font-mono text-xs">
                             {user.authType}
                           </TableCell>
-                          <TableCell className="py-3 text-center text-sm">
+                          <TableCell className="py-3 text-center text-sm hidden md:table-cell">
                             {user.simultaneous}
                           </TableCell>
                           <TableCell className="py-3 text-right pr-4">

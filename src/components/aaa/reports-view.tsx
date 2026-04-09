@@ -118,7 +118,7 @@ export function ReportsView() {
       </div>
 
       {/* Quick Stats Row */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {QUICK_STATS.map((stat, i) => {
           const Icon = stat.icon
           const staggerClasses = ['stagger-1', 'stagger-2', 'stagger-3', 'stagger-4']
@@ -166,7 +166,7 @@ export function ReportsView() {
 
       {/* Report Type Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="flex w-full overflow-x-auto">
           {TABS.map((tab) => {
             const Icon = tab.icon
             return (
@@ -292,14 +292,14 @@ function renderUsageTab(data: ReportData | undefined, loading: boolean) {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Bandwidth Details</CardTitle>
           </CardHeader>
-          <CardContent className="max-h-[260px] overflow-y-auto">
+          <CardContent className="max-h-[260px] overflow-y-auto overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="table-row-hover">
                   <TableHead>User</TableHead>
                   <TableHead className="text-right">Download</TableHead>
                   <TableHead className="text-right">Upload</TableHead>
-                  <TableHead className="text-right">Sessions</TableHead>
+                  <TableHead className="text-right hidden sm:table-cell">Sessions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -308,7 +308,7 @@ function renderUsageTab(data: ReportData | undefined, loading: boolean) {
                     <TableCell className="font-medium text-sm">{u.username}</TableCell>
                     <TableCell className="text-right text-sm">{u.downloadGB} GB</TableCell>
                     <TableCell className="text-right text-sm">{u.uploadGB} GB</TableCell>
-                    <TableCell className="text-right text-sm">{u.sessions}</TableCell>
+                    <TableCell className="text-right text-sm hidden sm:table-cell">{u.sessions}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -645,13 +645,13 @@ function renderNasTab(data: ReportData | undefined, loading: boolean) {
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">NAS Performance Details</CardTitle>
         </CardHeader>
-        <CardContent className="max-h-[320px] overflow-y-auto">
+        <CardContent className="max-h-[320px] overflow-y-auto overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="table-row-hover">
                 <TableHead>NAS Name</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Total Sessions</TableHead>
+                <TableHead className="text-right hidden sm:table-cell">Total Sessions</TableHead>
                 <TableHead className="text-right">Utilization</TableHead>
               </TableRow>
             </TableHeader>
@@ -668,7 +668,7 @@ function renderNasTab(data: ReportData | undefined, loading: boolean) {
                       {nas.status}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right text-sm">{nas.totalSessions.toLocaleString()}</TableCell>
+                  <TableCell className="text-right text-sm hidden sm:table-cell">{nas.totalSessions.toLocaleString()}</TableCell>
                   <TableCell className="text-right text-sm">{nas.utilization}%</TableCell>
                 </TableRow>
               ))}

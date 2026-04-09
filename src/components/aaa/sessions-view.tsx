@@ -331,17 +331,17 @@ function SessionRow({
         <div>
           <p className="text-sm font-medium">{session.username || '-'}</p>
           {session.user?.company && (
-            <p className="text-xs text-muted-foreground">{session.user.company}</p>
+            <p className="text-xs text-muted-foreground hidden sm:block">{session.user.company}</p>
           )}
         </div>
       </TableCell>
-      <TableCell>
+      <TableCell className="hidden sm:table-cell">
         <div>
           <p className="text-sm">{session.nas?.shortName || session.calledStationId || '-'}</p>
           <p className="text-xs text-muted-foreground">{session.nasIpAddress || '-'}</p>
         </div>
       </TableCell>
-      <TableCell className="text-xs">
+      <TableCell className="text-xs hidden md:table-cell">
         {format(new Date(session.acctStartTime), 'MMM dd, HH:mm')}
       </TableCell>
       <TableCell className="text-xs font-mono">
@@ -354,7 +354,7 @@ function SessionRow({
           formatDuration(session.calculatedDuration)
         )}
       </TableCell>
-      <TableCell className="text-xs font-mono">
+      <TableCell className="text-xs font-mono hidden md:table-cell">
         <span className="inline-flex items-center gap-1" title={`↓ ${formatBytes(liveInputBytes)} / ↑ ${formatBytes(liveOutputBytes)}`}>
           {isActive && (
             <span className="pulse-dot bg-teal-500" />
@@ -362,10 +362,10 @@ function SessionRow({
           {formatBytes(liveTotalBytes)}
         </span>
       </TableCell>
-      <TableCell className="text-xs font-mono">
+      <TableCell className="text-xs font-mono hidden lg:table-cell">
         {session.callingStationId || '-'}
       </TableCell>
-      <TableCell className="text-xs font-mono">
+      <TableCell className="text-xs font-mono hidden lg:table-cell">
         {session.framedIpAddress || '-'}
       </TableCell>
       <TableCell>
@@ -994,7 +994,7 @@ export function SessionsView() {
       </div>
 
       {/* Live Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Card className="stat-card hover-lift card-shine animate-fade-in-up stagger-1 inset-card relative overflow-hidden">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -1078,7 +1078,7 @@ export function SessionsView() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
               {/* Search */}
               <div className="relative sm:col-span-2">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1224,9 +1224,9 @@ export function SessionsView() {
                   </TableHead>
                   <TableHead className="text-xs">Session ID</TableHead>
                   <TableHead className="text-xs">Username</TableHead>
-                  <TableHead className="text-xs">NAS</TableHead>
+                  <TableHead className="text-xs hidden sm:table-cell">NAS</TableHead>
                   <TableHead
-                    className="text-xs cursor-pointer select-none"
+                    className="text-xs cursor-pointer select-none hidden md:table-cell"
                     onClick={() => handleSort('acctStartTime')}
                   >
                     <div className="flex items-center gap-1">
@@ -1247,14 +1247,14 @@ export function SessionsView() {
                       )}
                     </div>
                   </TableHead>
-                  <TableHead className="text-xs">
+                  <TableHead className="text-xs hidden md:table-cell">
                     <div className="flex items-center gap-1">
                       <ArrowDown className="h-3 w-3" />
                       <ArrowUp className="h-3 w-3" />
                     </div>
                   </TableHead>
-                  <TableHead className="text-xs">MAC</TableHead>
-                  <TableHead className="text-xs">IP</TableHead>
+                  <TableHead className="text-xs hidden lg:table-cell">MAC</TableHead>
+                  <TableHead className="text-xs hidden lg:table-cell">IP</TableHead>
                   <TableHead className="text-xs">Status</TableHead>
                   <TableHead className="text-xs">Actions</TableHead>
                 </TableRow>
@@ -1345,7 +1345,7 @@ export function SessionsView() {
 
       {/* Session Detail Sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto card-glow">
+        <SheetContent className="w-full sm:max-w-lg max-w-[95vw] overflow-y-auto card-glow">
           <SheetHeader>
             <SheetTitle>Session Details</SheetTitle>
             <SheetDescription>

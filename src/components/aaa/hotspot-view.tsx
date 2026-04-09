@@ -723,7 +723,7 @@ export function HotspotView() {
 
         {/* Create/Edit Dialog */}
         <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-w-[95vw] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingLocation ? 'Edit Hotspot Location' : 'Add Hotspot Location'}</DialogTitle>
               <DialogDescription>

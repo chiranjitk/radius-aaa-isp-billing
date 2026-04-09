@@ -700,7 +700,7 @@ export function PlansView() {
   return (
     <div className="space-y-6 page-transition">
       {/* Plan Statistics Overview */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Card className="hover-lift">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -891,7 +891,7 @@ export function PlansView() {
       </div>
 
       {/* Plan Type Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {Object.entries(PLAN_TYPE_CONFIG).map(([type, config]) => {
           const Icon = config.icon
           const count = data?.typeCounts?.[type] ?? 0
@@ -1238,7 +1238,7 @@ export function PlansView() {
 
       {/* ─── Plan Comparison Dialog ──────────────────────────────── */}
       <Dialog open={comparisonDialogOpen} onOpenChange={(open) => { setComparisonDialogOpen(open); if (!open) { setComparisonMode(false); setSelectedForCompare([]) } }}>
-        <DialogContent className="sm:max-w-6xl max-h-[90vh] overflow-hidden p-0">
+        <DialogContent className="sm:max-w-6xl max-w-[95vw] max-h-[90vh] overflow-hidden p-0">
           <div className="p-6 overflow-auto max-h-[calc(90vh-2rem)] scrollbar-thin">
             <PlanComparison />
           </div>
@@ -1247,7 +1247,7 @@ export function PlansView() {
 
       {/* ─── Create / Edit Dialog ────────────────────────────────── */}
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
-        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-hidden">
+        <DialogContent className="sm:max-w-3xl max-w-[95vw] max-h-[90vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>{editingPlan ? 'Edit Plan' : 'Create Plan'}</DialogTitle>
             <DialogDescription>
