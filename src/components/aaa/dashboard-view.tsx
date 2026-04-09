@@ -34,6 +34,13 @@ import {
   BarChart3,
   Calendar,
   Ticket,
+  Zap,
+  CheckCircle2,
+  ArrowUpRight,
+  MoreHorizontal,
+  PlusCircle,
+  Receipt,
+  Printer,
 } from 'lucide-react'
 import {
   AreaChart,
@@ -54,6 +61,12 @@ import {
 } from 'recharts'
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Table,
   TableBody,
@@ -1207,6 +1220,190 @@ function StatusDot({ status }: { status: string }) {
   )
 }
 
+// =============================================
+// Quick Actions Widget
+// =============================================
+function QuickActionsWidget() {
+  const setActiveView = useAppStore((s) => s.setActiveView)
+
+  const actions = [
+    { label: 'Add User', icon: UserPlus, color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border-emerald-200/60 dark:border-emerald-800/40', view: 'users' as const },
+    { label: 'Create Invoice', icon: FileText, color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 border-amber-200/60 dark:border-amber-800/40', view: 'billing' as const },
+    { label: 'Generate Vouchers', icon: Ticket, color: 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 hover:bg-violet-100 dark:hover:bg-violet-900/40 border-violet-200/60 dark:border-violet-800/40', view: 'vouchers' as const },
+    { label: 'View Reports', icon: BarChart3, color: 'text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/40 border-teal-200/60 dark:border-teal-800/40', view: 'reports' as const },
+  ]
+
+  return (
+    <FadeIn delay={100}>
+      <Card className="border-0 shadow-md inset-card">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Zap className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-base font-semibold">Quick Actions</CardTitle>
+              <CardDescription className="text-xs">Common tasks</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-3">
+            {actions.map((action) => {
+              const Icon = action.icon
+              return (
+                <button
+                  key={action.label}
+                  onClick={() => setActiveView(action.view)}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer group ${action.color}`}
+                >
+                  <div className="h-10 w-10 rounded-xl bg-background/80 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <span className="text-xs font-semibold">{action.label}</span>
+                  <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    </FadeIn>
+  )
+}
+
+// =============================================
+// Recent Activity Widget (Last 5 Actions)
+// =============================================
+function RecentActivityWidget() {
+  const [activities, setActivities] = useState([
+    { id: '1', message: 'john.doe authenticated via MS-CHAPv2', type: 'login' as const, time: '2 min ago' },
+    { id: '2', message: 'Invoice #INV-0142 paid — $29.99', type: 'payment' as const, time: '8 min ago' },
+    { id: '3', message: 'NAS BRANCH-03 went offline', type: 'alert' as const, time: '15 min ago' },
+    { id: '4', message: 'New user mark.wilson registered', type: 'user' as const, time: '22 min ago' },
+    { id: '5', message: 'Policy "Rate-Limit" updated', type: 'system' as const, time: '30 min ago' },
+  ])
+
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'login': return <LogIn className="h-3 w-3 text-emerald-500" />
+      case 'payment': return <DollarSign className="h-3 w-3 text-emerald-500" />
+      case 'alert': return <AlertTriangle className="h-3 w-3 text-red-500" />
+      case 'user': return <UserPlus className="h-3 w-3 text-teal-500" />
+      case 'system': return <Shield className="h-3 w-3 text-violet-500" />
+      default: return <Activity className="h-3 w-3 text-muted-foreground" />
+    }
+  }
+
+  const getBg = (type: string) => {
+    switch (type) {
+      case 'login': return 'bg-emerald-100 dark:bg-emerald-900/30'
+      case 'payment': return 'bg-emerald-100 dark:bg-emerald-900/30'
+      case 'alert': return 'bg-red-100 dark:bg-red-900/30'
+      case 'user': return 'bg-teal-100 dark:bg-teal-900/30'
+      case 'system': return 'bg-violet-100 dark:bg-violet-900/30'
+      default: return 'bg-muted'
+    }
+  }
+
+  return (
+    <FadeIn delay={200}>
+      <Card className="border-0 shadow-md inset-card">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <CardTitle className="text-base font-semibold">Recent Activity</CardTitle>
+                <CardDescription className="text-xs">Last 5 actions</CardDescription>
+              </div>
+            </div>
+            <Badge variant="secondary" className="text-[10px] font-normal h-5">
+              <span className="pulse-dot bg-emerald-500 mr-1" />
+              Live
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-0">
+            {activities.map((activity, idx) => (
+              <div key={activity.id} className="flex items-center gap-3 py-2.5 group">
+                <div className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 ${getBg(activity.type)}`}>
+                  {getIcon(activity.type)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium truncate">{activity.message}</p>
+                </div>
+                <span className="text-[10px] text-muted-foreground whitespace-nowrap">{activity.time}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </FadeIn>
+  )
+}
+
+// =============================================
+// System Health Status Widget
+// =============================================
+function SystemHealthStatusWidget() {
+  const services = [
+    { name: 'FreeRADIUS Server', status: 'operational' as const, icon: Radio, uptime: '99.98%' },
+    { name: 'MySQL Database', status: 'operational' as const, icon: Database, uptime: '99.99%' },
+    { name: 'API Gateway', status: 'operational' as const, icon: Zap, uptime: '99.95%' },
+    { name: 'RADIUS Auth', status: 'operational' as const, icon: Shield, uptime: '100%' },
+    { name: 'RADIUS Acct', status: 'degraded' as const, icon: Activity, uptime: '98.5%' },
+    { name: 'Web Server', status: 'operational' as const, icon: Server, uptime: '99.97%' },
+  ]
+
+  return (
+    <FadeIn delay={300}>
+      <Card className="border-0 shadow-md inset-card">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <CardTitle className="text-base font-semibold">System Health</CardTitle>
+              <CardDescription className="text-xs">Service status overview</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {services.map((service) => {
+              const Icon = service.icon
+              return (
+                <div key={service.name} className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-2.5">
+                    <Icon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs font-medium">{service.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground hidden sm:inline">{service.uptime}</span>
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                      service.status === 'operational'
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                        : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                    }`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${service.status === 'operational' ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+                      {service.status === 'operational' ? 'Operational' : 'Degraded'}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    </FadeIn>
+  )
+}
+
 function SystemHealthPanel() {
   const [expanded, setExpanded] = useState(false)
   const { data: health, isLoading } = useQuery<SystemHealthData>({
@@ -1480,6 +1677,15 @@ export function DashboardView() {
       {/* System Health Panel (expandable) */}
       {/* ============================================= */}
       <SystemHealthPanel />
+
+      {/* ============================================= */}
+      {/* Quick Actions, Recent Activity, System Health */}
+      {/* ============================================= */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <QuickActionsWidget />
+        <RecentActivityWidget />
+        <SystemHealthStatusWidget />
+      </div>
 
       {/* ============================================= */}
       {/* Actions Bar */}

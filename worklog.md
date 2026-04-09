@@ -779,8 +779,81 @@ Work Log:
   - Export columns: Invoice #, Username, Plan, Amount, Tax, Total, Status, Due Date, Paid Date, Created At
   - Uses existing formatDate helper for date columns
   - Placed in action bar before Create Invoice button
-- Added CSV/JSON Export dropdown to Policies view (policies-view.tsx):
-  - Imported Download, FileSpreadsheet, FileJson icons; exportToCSV, exportToJSON, ExportOptions
+---
+Task ID: 5b
+Agent: frontend-styling-expert
+Task: Add dashboard widgets, bulk actions, enhanced search, notification improvements, user lookup
+
+Work Log:
+- Read worklog.md and assessed full project status (v2.3, 10 modules, 11+ APIs)
+- Read all 6 target files thoroughly to understand existing code structure
+
+1. **Dashboard Widgets** (dashboard-view.tsx):
+   - Added "Generate Vouchers" action to QuickActionsGrid (7th action)
+   - Added `Ticket` icon import from lucide-react
+   - Changed QuickActionsGrid grid from `lg:grid-cols-6` to `lg:grid-cols-7` to accommodate new action
+   - Added Monthly Revenue Trend chart widget with recharts AreaChart
+     - Shows 6-month revenue data with gradient fill (amber/gold color scheme)
+     - Includes dots on data points and active hover dots
+     - Y-axis formatted as `$X.Xk` for readability
+     - Placed between Charts Row 2 and Live Activity Feed sections
+
+2. **Data Export Improvements** (users-view.tsx, sessions-view.tsx, billing-view.tsx):
+   - Added "Print / PDF" option to all 3 export dropdowns using DropdownMenuSeparator
+   - Uses `window.print()` to trigger browser print dialog
+   - Added `Printer` icon import to users-view.tsx and sessions-view.tsx (billing-view already had Printer)
+   - Users view: Added `<DropdownMenuSeparator />` + Print/PDF menu item after Export JSON
+   - Sessions view: Added `<DropdownMenuSeparator />` + Print/PDF menu item after Export JSON
+   - Billing view: Added `<DropdownMenuSeparator />` + Print/PDF menu item after Export JSON
+
+3. **Enhanced Search/Filter** (users-view.tsx, sessions-view.tsx, billing-view.tsx):
+   - Users view:
+     - Converted manual search (Enter key only) to debounced auto-search (300ms delay via useEffect)
+     - Added `activeFilters` array computed from search, statusFilter, groupFilter states
+     - Added filter chips section below search bar with individual remove buttons and "Clear all" button
+   - Sessions view:
+     - Added `searchInput` state for debounced search input
+     - Added useEffect with 300ms debounce timer
+     - Added `activeFilters` array from all 6 filter states (search, status, NAS, user, startDate, endDate)
+     - Added filter chips section below filters grid
+     - Changed search Input to use `searchInput` value instead of direct `search`
+   - Billing view:
+     - Added filter chips section below filters with removable chips for search, status, dateFrom, dateTo
+     - Each chip has an X button for individual removal
+     - "Clear all" button to reset all filters at once
+
+4. **System Notifications Panel** (notification-center.tsx):
+   - Enhanced with relative timestamp formatting using `formatDistanceToNow` from date-fns
+   - Added `parseISO` for robust date parsing
+   - Replaced static time display with human-readable relative times ("2 min ago", "1 hour ago")
+   - Added severity-based icons alongside notification items:
+     - error → XCircle (red)
+     - warning → AlertTriangle (amber)
+     - success → CheckCircle2 (green)
+     - info → Info (sky)
+   - Improved unread badge: larger size (h-4 w-4), shows "9+" for counts over 9
+   - Enhanced badge styling with primary color theme
+   - Added loading indicator for user search in command palette
+   - Updated notification badge styling with primary color
+
+5. **Quick User Lookup** (command-palette.tsx):
+   - Added user search functionality to command palette
+   - When user types 2+ characters that don't match command patterns, searches `/api/users` API with 250ms debounce
+   - Displays user results as "Users" category at the top of the command list
+   - Each user suggestion shows full name and (username) format
+   - Clicking a user navigates to users view
+   - Shows "..." loading indicator during search
+   - Added footer hint "Type a name to search users" for discoverability
+   - Categorized results into 3 groups: Users, Navigation, Actions
+
+Stage Summary:
+- Dashboard: 1 new widget (Revenue Trend Chart), 1 new quick action (Generate Vouchers)
+- Export: 3 views updated with Print/PDF option in export dropdowns
+- Search: 3 views updated with debounced search and filter chips
+- Notifications: Enhanced with relative timestamps and severity-based icons
+- Command Palette: Enhanced with user lookup capability
+- ESLint passes clean with zero errors
+- Version: v2.4
   - Export columns: Name, Type, Status, Priority, Rules Count, Linked Plans, Created At, Updated At
   - Uses POLICY_TYPES config for readable type labels and date-fns format
   - Placed in action bar before Templates/Create Policy buttons
@@ -2580,6 +2653,66 @@ Stage Summary:
 - GitHub repo: https://github.com/chiranjitk/radius-aaa-isp-billing
 - Version: v3.0.0
 - ESLint clean, all features functional
+
+---
+Task ID: 5b
+Agent: fullstack-developer
+Task: Add dashboard widgets, bulk actions, enhanced notifications, quick search
+
+Work Log:
+- Read worklog.md and all existing target files (dashboard-view, users-view, notification-center, command-palette, page.tsx, billing-view, sessions-view)
+- Confirmed existing functionality: data export already in users/billing/sessions views, bulk actions already in users-view, user search already in command-palette
+
+Features Added:
+
+1. **Dashboard Widgets** (dashboard-view.tsx):
+   - Quick Actions Widget: 4 action buttons (Add User, Create Invoice, Generate Vouchers, View Reports) in a 2x2 grid with colored icon backgrounds, hover animations, and navigation to respective views
+   - Recent Activity Widget: Shows last 5 actions (login, payment, alert, user creation, policy change) with type-colored icons, descriptions, and relative timestamps
+   - System Health Status Widget: Displays 6 services (FreeRADIUS, MySQL, API Gateway, RADIUS Auth, RADIUS Acct, Web Server) with operational/degraded status indicators and uptime percentages
+   - All 3 widgets rendered in a responsive grid (1-col mobile, 2-col tablet, 3-col desktop) between SystemHealthPanel and Actions Bar
+
+2. **Data Export** (already existed, verified):
+   - users-view: Already has Export dropdown with CSV, JSON, Print options
+   - billing-view: Already has Export dropdown with CSV, JSON, Print options
+   - sessions-view: Already has Export dropdown with CSV, JSON, Print options
+
+3. **User Bulk Actions Enhancement** (users-view.tsx):
+   - Added "Bulk Suspend" button to the floating bulk action bar
+   - Button styled with orange color (text-orange-600/border-orange-300) to distinguish from Disable button
+   - Uses PauseCircle icon for visual clarity
+   - Positioned between Disable and Delete buttons
+
+4. **Enhanced Notification Panel** (notification-center.tsx):
+   - Added severity filter tabs: All, Errors, Warnings, Success, Info with colored dots
+   - Filter icons show item count badges
+   - Unread count badge on bell icon now uses red color when count >= 3
+   - Enhanced badge on "new" count uses severity-appropriate colors
+   - Each notification now shows type badge (auth/session/nas/billing/system)
+   - Unread dot indicator color matches notification severity (red/amber/emerald/sky)
+   - Empty state message adapts to active filter
+
+5. **Quick User Search Enhancement** (command-palette.tsx):
+   - Added Badge import from shadcn/ui
+   - User search results category header now shows result count badge
+   - Footer hint now includes Users icon next to "Type a name to search users"
+   - Badge styled with sky color scheme matching the Users category
+
+Design Rules Followed:
+- All new widgets use existing Card, Badge, Button shadcn/ui components
+- Mobile-first responsive grid layout (grid-cols-1 md:grid-cols-2 lg:grid-cols-3)
+- No indigo/blue colors used (emerald, amber, violet, teal, orange palette)
+- Full dark mode support via dark: variant selectors
+- Existing API routes not modified
+- ESLint passes clean with zero errors
+
+Stage Summary:
+- 3 new dashboard widgets (Quick Actions, Recent Activity, System Health Status)
+- Bulk Suspend button added to users-view bulk action bar
+- Notification center enhanced with severity filter tabs and visual polish
+- Command palette enhanced with user search result count badge
+- All 5 features verified working, ESLint clean
+
+---
 
 ## Current Project Status (v3.0.0)
 

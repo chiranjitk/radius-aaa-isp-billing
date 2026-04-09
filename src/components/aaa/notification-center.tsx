@@ -1,11 +1,16 @@
 'use client'
 
+import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
+import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
+import { useAppStore } from '@/lib/store'
+import { formatDistanceToNow, parseISO } from 'date-fns'
 import {
   Bell,
   Check,
@@ -23,11 +28,8 @@ import {
   Info,
   CheckCircle2,
   XCircle,
+  Filter,
 } from 'lucide-react'
-import { useAppStore } from '@/lib/store'
-import { cn } from '@/lib/utils'
-import { toast } from 'sonner'
-import { formatDistanceToNow, parseISO } from 'date-fns'
 
 // ==========================================
 // Types
@@ -42,6 +44,8 @@ interface ApiNotification {
   severity: 'info' | 'success' | 'warning' | 'error'
   read: boolean
 }
+
+type SeverityFilter = 'all' | 'info' | 'success' | 'warning' | 'error'
 
 // ==========================================
 // Helpers
@@ -111,6 +115,20 @@ function getSeverityIcon(severity: string) {
   }
 }
 
+function getSeverityBadgeClass(severity: string) {
+  switch (severity) {
+    case 'error':
+      return 'bg-red-500 text-white hover:bg-red-500'
+    case 'warning':
+      return 'bg-amber-500 text-white hover:bg-amber-500'
+    case 'success':
+      return 'bg-emerald-500 text-white hover:bg-emerald-500'
+    case 'info':
+    default:
+      return 'bg-sky-500 text-white hover:bg-sky-500'
+  }
+}
+
 // ==========================================
 // Component
 // ==========================================
@@ -118,6 +136,7 @@ function getSeverityIcon(severity: string) {
 export function NotificationCenter() {
   const queryClient = useQueryClient()
   const setActiveView = useAppStore((s) => s.setActiveView)
+  const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all')
 
   const { data: notifications = [], isLoading } = useQuery<ApiNotification[]>({
     queryKey: ['notifications'],
@@ -126,6 +145,19 @@ export function NotificationCenter() {
   })
 
   const unreadCount = notifications.filter((n) => !n.read).length
+
+  // Filtered notifications
+  const filteredNotifications = severityFilter === 'all'
+    ? notifications
+    : notifications.filter((n) => n.severity === severityFilter)
+
+  // Count by severity
+  const counts = {
+    error: notifications.filter((n) => n.severity === 'error').length,
+    warning: notifications.filter((n) => n.severity === 'warning').length,
+    success: notifications.filter((n) => n.severity === 'success').length,
+    info: notifications.filter((n) => n.severity === 'info').length,
+  }
 
   const handleMarkAllRead = async () => {
     try {
@@ -144,6 +176,14 @@ export function NotificationCenter() {
     }
   }
 
+  const filterTabs: { key: SeverityFilter; label: string; color: string }[] = [
+    { key: 'all', label: 'All', color: 'text-foreground' },
+    { key: 'error', label: 'Errors', color: 'text-red-500' },
+    { key: 'warning', label: 'Warnings', color: 'text-amber-500' },
+    { key: 'success', label: 'Success', color: 'text-emerald-500' },
+    { key: 'info', label: 'Info', color: 'text-sky-500' },
+  ]
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -154,7 +194,10 @@ export function NotificationCenter() {
             <Bell className="h-4 w-4" />
           )}
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground flex items-center justify-center ring-2 ring-background">
+            <span className={cn(
+              "absolute -top-0.5 -right-0.5 h-[18px] min-w-[18px] rounded-full text-[9px] font-bold text-white flex items-center justify-center ring-2 ring-background",
+              unreadCount >= 3 ? "bg-red-500" : "bg-primary"
+            )}>
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
@@ -166,7 +209,9 @@ export function NotificationCenter() {
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold">Notifications</h3>
             {unreadCount > 0 && (
-              <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-semibold bg-primary/10 text-primary border-primary/20">
+              <Badge className={cn("h-5 px-1.5 text-[10px] font-semibold", getSeverityBadgeClass(
+                counts.error > 0 ? 'error' : counts.warning > 0 ? 'warning' : 'info'
+              ))}>
                 {unreadCount} new
               </Badge>
             )}
@@ -193,23 +238,46 @@ export function NotificationCenter() {
             </Button>
           </div>
         </div>
+
+        {/* Severity Filter Tabs */}
+        <div className="flex items-center gap-1 px-3 pb-2 overflow-x-auto">
+          <Filter className="h-3 w-3 text-muted-foreground shrink-0 mr-1" />
+          {filterTabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setSeverityFilter(tab.key)}
+              className={cn(
+                "flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap cursor-pointer",
+                severityFilter === tab.key
+                  ? "bg-muted text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              )}
+            >
+              <span className={tab.color}>{tab.label}</span>
+              {tab.key !== 'all' && counts[tab.key] > 0 && (
+                <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60" />
+              )}
+            </button>
+          ))}
+        </div>
+
         <Separator />
 
         {/* Notification List */}
-        <ScrollArea className="max-h-96 overflow-y-auto">
+        <ScrollArea className="max-h-[320px] overflow-y-auto">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               <span className="ml-2 text-xs text-muted-foreground">Loading...</span>
             </div>
-          ) : notifications.length === 0 ? (
+          ) : filteredNotifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Bell className="h-8 w-8 mb-2 opacity-40" />
-              <p className="text-xs">No notifications</p>
+              <p className="text-xs">{severityFilter !== 'all' ? `No ${severityFilter} notifications` : 'No notifications'}</p>
             </div>
           ) : (
             <div className="flex flex-col">
-              {notifications.map((notification) => (
+              {filteredNotifications.map((notification) => (
                 <div
                   key={notification.id}
                   className={cn(
@@ -241,16 +309,26 @@ export function NotificationCenter() {
                       <div className="flex items-center gap-1 shrink-0">
                         {getSeverityIcon(notification.severity)}
                         {!notification.read && (
-                          <span className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1" />
+                          <span className={cn(
+                            "h-2 w-2 rounded-full shrink-0 mt-1",
+                            notification.severity === 'error' ? "bg-red-500" :
+                            notification.severity === 'warning' ? "bg-amber-500" :
+                            notification.severity === 'success' ? "bg-emerald-500" : "bg-primary"
+                          )} />
                         )}
                       </div>
                     </div>
                     <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
                       {notification.description}
                     </p>
-                    <p className="text-[10px] text-muted-foreground/70">
-                      {formatRelativeTime(notification.time)}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-[10px] text-muted-foreground/70">
+                        {formatRelativeTime(notification.time)}
+                      </p>
+                      <span className="text-[9px] font-mono px-1 py-0 rounded bg-muted text-muted-foreground uppercase">
+                        {notification.type}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}

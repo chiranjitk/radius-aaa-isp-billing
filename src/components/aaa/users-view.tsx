@@ -2042,6 +2042,10 @@ export default function UsersView() {
     bulkMutation.mutate({ action: 'disable', userIds: Array.from(selectedIds) })
   }
 
+  const handleBulkSuspend = () => {
+    bulkMutation.mutate({ action: 'disable', userIds: Array.from(selectedIds) })
+  }
+
   const handleBulkDelete = () => {
     setBulkDeleteDialogOpen(true)
   }
@@ -2685,6 +2689,20 @@ export default function UsersView() {
                 <UserX className="h-3.5 w-3.5" />
               )}
               Disable
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-700 hover:bg-orange-50 dark:hover:bg-orange-950 h-8 text-xs"
+              onClick={handleBulkSuspend}
+              disabled={bulkMutation.isPending}
+            >
+              {bulkMutation.isPending && bulkMutation.variables?.action === 'disable' ? (
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <PauseCircle className="h-3.5 w-3.5" />
+              )}
+              Suspend
             </Button>
             <Button
               size="sm"

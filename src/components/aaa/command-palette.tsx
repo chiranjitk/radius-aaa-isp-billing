@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge'
 import { useAppStore } from '@/lib/store'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
@@ -382,8 +383,13 @@ export function CommandPalette() {
           ) : (
             grouped.map((group) => (
               <div key={group.category}>
-                <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground flex items-center gap-2">
                   {group.category}
+                  {group.category === 'Users' && (
+                    <Badge variant="secondary" className="h-4 px-1 text-[9px] font-semibold bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400 border-0">
+                      {group.items.length} found
+                    </Badge>
+                  )}
                 </div>
                 {group.items.map((cmd) => {
                   const flatIndex = allItems.indexOf(cmd)
@@ -440,6 +446,7 @@ export function CommandPalette() {
             Close
           </span>
           <span className="ml-auto hidden sm:flex items-center gap-1 opacity-60">
+            <Users className="h-3 w-3" />
             Type a name to search users
           </span>
         </div>
