@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
 import { AppSidebar } from '@/components/aaa/app-sidebar'
 import { useAppStore } from '@/lib/store'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { LoginView } from '@/components/aaa/login-view'
 import { DashboardView } from '@/components/aaa/dashboard-view'
 import UsersView from '@/components/aaa/users-view'
@@ -40,7 +41,7 @@ import { AdminView } from '@/components/aaa/admin-view'
 import { SystemOpsView } from '@/components/aaa/system-ops-view'
 import { ActivityDashboard } from '@/components/aaa/activity-dashboard'
 import { BandwidthAnalytics } from '@/components/aaa/bandwidth-analytics'
-import { Search, Radio, Moon, Sun, Shield, Clock, Activity, Keyboard, UserCircle, LogOut, ScrollText } from 'lucide-react'
+import { Search, Radio, Moon, Sun, Shield, Clock, Activity, Keyboard, UserCircle, LogOut, ScrollText, Menu } from 'lucide-react'
 import { KeyboardShortcutsDialog } from '@/components/aaa/keyboard-shortcuts-dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -125,6 +126,12 @@ export default function Home() {
   const commandPaletteStore = useCommandPaletteStore()
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const isMobile = useIsMobile()
+
+  // Close sidebar when switching to mobile
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(false)
+  }, [isMobile, setSidebarOpen])
 
   const currentView = viewTitles[activeView] || viewTitles.dashboard
 
@@ -209,6 +216,17 @@ export default function Home() {
         <div className="flex flex-1 flex-col overflow-hidden">
           {/* Top Header Bar */}
           <header className="glass-panel flex h-14 shrink-0 items-center gap-4 border-b px-4 md:px-6 z-10">
+            {/* Mobile hamburger menu */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-11 w-11 md:hidden rounded-lg shrink-0"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open sidebar"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+
             {/* Breadcrumb / View Title */}
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="flex items-center justify-center w-9 h-9 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10">

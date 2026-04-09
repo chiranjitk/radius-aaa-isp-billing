@@ -1,6 +1,8 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useAppStore, type ViewId, type UserRole } from '@/lib/store'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { useQuery } from '@tanstack/react-query'
 import {
   LayoutDashboard,
@@ -16,6 +18,7 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  X,
   Zap,
   Clock,
   Wifi,
@@ -128,6 +131,18 @@ const roleConfig: Record<UserRole, { label: string; icon: React.ElementType; col
 
 export function AppSidebar() {
   const { activeView, setActiveView, sidebarOpen, setSidebarOpen, hasPermission, activeRole } = useAppStore()
+  const isMobile = useIsMobile()
+
+  // Close sidebar on mobile on mount and when switching to mobile
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(false)
+  }, [isMobile, setSidebarOpen])
+
+  // Handle nav item click — close sidebar on mobile
+  const handleNavClick = (id: ViewId) => {
+    setActiveView(id)
+    if (isMobile) setSidebarOpen(false)
+  }
 
   const { data: quickStats } = useQuery({
     queryKey: ['sidebar-stats'],
@@ -160,14 +175,30 @@ export function AppSidebar() {
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          'glass-card flex flex-col transition-all duration-300 ease-in-out shrink-0 relative z-30',
-          sidebarOpen ? 'w-64' : 'w-[58px]'
+          // Base styles shared by mobile and desktop
+          'glass-card flex flex-col shrink-0',
+          // Desktop: inline sidebar with collapse toggle
+          'md:relative md:z-30 md:transition-all md:duration-300 md:ease-in-out',
+          sidebarOpen ? 'md:w-64' : 'md:w-[58px]',
+          // Mobile: fixed drawer overlay
+          'max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-50 max-md:w-72 max-md:transition-transform max-md:duration-300 max-md:ease-in-out max-md:h-full',
+          isMobile && !sidebarOpen ? 'max-md:-translate-x-full' : 'max-md:translate-x-0'
         )}
       >
         {/* Logo / Brand */}
         <div className="relative flex items-center gap-3 h-14 px-3 border-b shrink-0 bg-gradient-to-r from-primary/5 via-primary/[0.02] to-transparent overflow-hidden">
           {/* dot-pattern overlay */}
           <div className="dot-pattern absolute inset-0 opacity-50 pointer-events-none" />
+          {/* Mobile close button */}
+          {isMobile && (
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
+              aria-label="Close sidebar"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
           <div className="gradient-border flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shrink-0 shadow-md shadow-primary/20">
             <Radio className="h-4.5 w-4.5" />
           </div>
@@ -255,7 +286,7 @@ export function AppSidebar() {
         )}
 
         {/* Navigation */}
-        <ScrollArea className="flex-1 px-2 py-2">
+        <ScrollArea className="flex-1 overflow-hidden px-2 py-2">
           {Object.entries(filteredGroupedItems).map(([group, ids]) => {
             // Skip groups with no visible items
             if (ids.length === 0) return null
@@ -275,7 +306,7 @@ export function AppSidebar() {
                   const button = (
                     <button
                       key={id}
-                      onClick={() => setActiveView(id)}
+                      onClick={() => handleNavClick(id)}
                       className={cn(
                         'group relative w-full flex items-center gap-2.5 rounded-lg text-[13px] transition-all duration-200 hover:scale-[1.02] hover-lift',
                         sidebarOpen ? 'px-2.5 py-2' : 'px-0 py-2 justify-center',
@@ -419,6 +450,14 @@ export function AppSidebar() {
           )}
         </div>
       </aside>
+      {/* Mobile backdrop overlay */}
+      {isMobile && sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
     </TooltipProvider>
   )
 }
